@@ -1,5 +1,7 @@
 services:
   how-llms-work:
+    build:
+      context: .
     command: flask --app app run --debug --host=0.0.0.0 --port=8080
     environment:
       FLASK_ENV: development

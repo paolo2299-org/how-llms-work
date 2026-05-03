@@ -1,10 +1,7 @@
 services:
   how-llms-work:
-    build:
-      context: .
+    image: ${IMAGE_NAME:-how-llms-work}:${IMAGE_TAG:-main}
     env_file:
       - ${ENV_FILE:-.env}
     environment:
       PORT: 8080
-    volumes:
-      - /app/data
