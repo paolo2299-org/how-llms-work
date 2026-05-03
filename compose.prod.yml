@@ -1,0 +1,17 @@
+services:
+  how-llms-work:
+    command: >
+      gunicorn --bind 0.0.0.0:8080
+      --workers 4 --threads 2 --timeout 120
+      "app:create_app()"
+    environment:
+      FLASK_ENV: production
+    restart: unless-stopped
+    volumes:
+      - /srv/how-llms-work/data:/app/data
+    networks:
+      - web
+
+networks:
+  web:
+    external: true

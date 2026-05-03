@@ -1,0 +1,10 @@
+services:
+  how-llms-work:
+    build:
+      context: .
+    env_file:
+      - ${ENV_FILE:-.env}
+    environment:
+      PORT: 8080
+    volumes:
+      - /app/data
