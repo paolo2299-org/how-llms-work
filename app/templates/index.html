@@ -91,6 +91,98 @@
         font-size: 0.9em;
         min-height: 1.4em;
       }
+
+      /* Self-Attention Demo */
+      .attention-demo {
+        margin-top: 20px;
+      }
+      .attention-controls {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+      }
+      .attention-controls-label {
+        font-weight: bold;
+        min-width: 70px;
+        padding-top: 6px;
+        font-size: 0.9em;
+      }
+      .attention-btn-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .attention-btn-group button {
+        font-size: 0.85em;
+        padding: 4px 12px;
+        margin: 0;
+        width: auto;
+      }
+      .attention-btn-group button[aria-pressed="true"] {
+        background: var(--pico-primary);
+        color: var(--pico-primary-inverse);
+        border-color: var(--pico-primary);
+      }
+      #attention-sentence {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 20px 0 16px;
+        padding: 16px;
+        border: 1px solid var(--pico-muted-border-color);
+        border-radius: var(--pico-border-radius);
+        background: var(--pico-card-background-color);
+      }
+      .attn-token {
+        display: inline-block;
+        padding: 6px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1.05em;
+        font-family: inherit;
+        border: 1.5px solid transparent;
+        user-select: none;
+        transition: background-color 0.15s ease, box-shadow 0.1s ease;
+        background-color: rgba(251, 188, 5, calc(var(--attn-weight, 0) * 0.88));
+      }
+      .attn-token:hover {
+        border-color: var(--pico-muted-border-color);
+      }
+      .attn-token:focus-visible {
+        outline: 2px solid var(--pico-primary);
+        outline-offset: 2px;
+      }
+      .attn-token.attn-query {
+        box-shadow: 0 0 0 2.5px var(--pico-primary);
+        background-color: transparent;
+        font-weight: bold;
+      }
+      .attention-explanation {
+        background: var(--pico-card-background-color);
+        border: 1px solid var(--pico-muted-border-color);
+        border-radius: var(--pico-border-radius);
+        padding: 12px 16px;
+        margin-bottom: 12px;
+        min-height: 58px;
+      }
+      .attention-explanation p {
+        margin: 0;
+        font-size: 0.95em;
+        line-height: 1.5;
+      }
+      .attention-weights-display {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 18px;
+        padding: 8px 0 4px;
+        font-size: 0.85em;
+        font-family: monospace;
+      }
+      .attn-weight-item {
+        min-width: 100px;
+      }
     </style>
   </head>
   <body>
@@ -125,6 +217,31 @@
     </div>
 
     <p>These are static word embeddings (GloVe). Modern LLMs use <em>contextual</em> embeddings — the same word gets a different vector depending on surrounding words — but the core idea of meaning as position in space is the same.</p>
+
+    <h2>Self-Attention</h2>
+    <p>Transformers use <em>self-attention</em> to let each token look at other tokens in the same sequence and decide which ones are most relevant. Each token acts as a <em>query</em>, searching through the other tokens for useful information. Different <em>attention heads</em> can specialise in different kinds of relationships — some track grammar, some track meaning, some track position.</p>
+    <p>Click a word to select it as the query token. The amber highlight shows which tokens it attends to. Darker means stronger attention.</p>
+
+    <div class="attention-demo">
+      <div class="attention-controls">
+        <span class="attention-controls-label">Example:</span>
+        <div id="attention-example-btns" class="attention-btn-group" role="group" aria-label="Choose example sentence"></div>
+      </div>
+      <div class="attention-controls">
+        <span class="attention-controls-label">Head:</span>
+        <div id="attention-head-btns" class="attention-btn-group" role="group" aria-label="Choose attention head"></div>
+      </div>
+      <div id="attention-sentence" role="group" aria-label="Sentence tokens — click a word to select it"></div>
+      <div class="attention-explanation" aria-live="polite">
+        <p id="attention-explanation-text"></p>
+      </div>
+      <details>
+        <summary>Show raw weights</summary>
+        <div id="attention-weights-display" class="attention-weights-display"></div>
+      </details>
+    </div>
+
+    <p>This is a simplified toy model — the attention weights are hand-designed to illustrate the concept, not learned by a real transformer. Real attention heads learn their patterns from data and usually produce more diffuse, harder-to-interpret distributions.</p>
 
     <p class="back"><a href="https://pdlawson.com">← Back to home</a></p>
     </main>
