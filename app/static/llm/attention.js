@@ -3,16 +3,19 @@ const HEADS = [
     id: 'pronoun',
     label: 'Pronoun Resolution',
     description: 'Tracks which noun a pronoun like "it" refers to.',
+    defaultToken: 9, // 'it'
   },
   {
     id: 'syntax',
     label: 'Syntax',
     description: 'Tracks grammatical relationships, like verb → subject.',
+    defaultToken: 4, // 'fit'
   },
   {
     id: 'local',
     label: 'Local Attention',
     description: 'Mostly attends to nearby tokens, regardless of meaning.',
+    defaultToken: 9, // 'it' — same token as pronoun head for easy comparison
   },
 ];
 
@@ -136,6 +139,7 @@ export function initAttention({ doc = document } = {}) {
     btn.dataset.headId = head.id;
     btn.addEventListener('click', () => {
       state.headId = head.id;
+      state.tokenIdx = head.defaultToken;
       render();
     });
     headBtnsEl.appendChild(btn);
