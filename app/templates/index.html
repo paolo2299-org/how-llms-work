@@ -220,13 +220,9 @@
 
     <h2>Self-Attention</h2>
     <p>Transformers use <em>self-attention</em> to let each token look at other tokens in the same sequence and decide which ones are most relevant. Each token acts as a <em>query</em>, searching through the other tokens for useful information. Different <em>attention heads</em> can specialise in different kinds of relationships — some track grammar, some track meaning, some track position.</p>
-    <p>Click a word to select it as the query token. The amber highlight shows which tokens it attends to. Darker means stronger attention.</p>
+    <p>Click a word to select it as the query token. The amber highlight shows what it attends to. Try selecting <em>it</em> or <em>fit</em>, and switch between heads to see how the pattern changes.</p>
 
     <div class="attention-demo">
-      <div class="attention-controls">
-        <span class="attention-controls-label">Example:</span>
-        <div id="attention-example-btns" class="attention-btn-group" role="group" aria-label="Choose example sentence"></div>
-      </div>
       <div class="attention-controls">
         <span class="attention-controls-label">Head:</span>
         <div id="attention-head-btns" class="attention-btn-group" role="group" aria-label="Choose attention head"></div>
