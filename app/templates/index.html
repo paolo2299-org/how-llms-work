@@ -145,11 +145,19 @@
         padding: 4px 12px;
         margin: 0;
         width: auto;
+        background: transparent;
+        color: #1a0dab;
+        border: 1px solid #1a0dab;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .attention-btn-group button:hover {
+        background: rgba(26, 13, 171, 0.06);
       }
       .attention-btn-group button[aria-pressed="true"] {
-        background: var(--pico-primary);
-        color: var(--pico-primary-inverse);
-        border-color: var(--pico-primary);
+        background: #1a0dab;
+        color: #fff;
+        border-color: #1a0dab;
       }
       #attention-sentence {
         display: flex;
@@ -157,9 +165,9 @@
         gap: 6px;
         margin: 20px 0 16px;
         padding: 16px;
-        border: 1px solid var(--pico-muted-border-color);
-        border-radius: var(--pico-border-radius);
-        background: var(--pico-card-background-color);
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: #fff;
       }
       .attn-token {
         display: inline-block;
@@ -174,21 +182,21 @@
         background-color: rgba(251, 188, 5, calc(var(--attn-weight, 0) * 0.88));
       }
       .attn-token:hover {
-        border-color: var(--pico-muted-border-color);
+        border-color: #ddd;
       }
       .attn-token:focus-visible {
-        outline: 2px solid var(--pico-primary);
+        outline: 2px solid #1a0dab;
         outline-offset: 2px;
       }
       .attn-token.attn-query {
-        box-shadow: 0 0 0 2.5px var(--pico-primary);
+        box-shadow: 0 0 0 2.5px #1a0dab;
         background-color: transparent;
         font-weight: bold;
       }
       .attention-explanation {
-        background: var(--pico-card-background-color);
-        border: 1px solid var(--pico-muted-border-color);
-        border-radius: var(--pico-border-radius);
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 4px;
         padding: 12px 16px;
         margin-bottom: 12px;
         min-height: 58px;
@@ -213,11 +221,13 @@
   </head>
   <body>
     <h1>How LLMs Work</h1>
-    <p>[TODO: Intro sentence — what this page is and who it's for]</p>
-    <p>[TODO: Overview of structure — mention basic concepts, training, and inference as the three areas covered]</p>
+    <p>This site gives a behind the scenes look at how LLMs work under the hood.</p>
+    <p>We'll start by covering the few core concepts that underpin the tech behind LLMs, with simple interactive demos to get an intuition for how they work.</p>
+    <p>Once that's done, we'll see the full structure of an LLM, and how they are trained.</p>
 
     <h2>Tokenisation</h2>
-    <p>[TODO: Explain what tokenisation is and why LLMs use tokens rather than characters or words]</p>
+    <p>When we provide a prompt to an LLM, the first thing that happens is that the prompt is broken down into <em>tokens</em>.</p>
+    <p>Much of the time, this just means breaking down the prompt into individual words and punctuation characters, but sometimes, particularly for more obscure words, longer words, or proper nouns, they are broken down into sub-word chunks. This is mainly to allow the LLM to better handle unknown or rare words, as well keeping the vocabulary size (i.e. the number of tokens the LLM needs to know) down to a manageable size.</p>
 
     <div class="tokeniser">
       <textarea id="token-input" placeholder="Enter some text…"></textarea>
@@ -228,7 +238,12 @@
     </div>
 
     <h2>Token Embeddings</h2>
-    <p>Each word is represented as a point in a high-dimensional space — its position encodes meaning. Words with similar meanings end up nearby. Below we show a 3D projection of 50-dimensional GloVe vectors, so some distance relationships are approximate.</p>
+    <p>Once a prompt has been converted to tokens, each token is then represented as a point in a high-dimensional geometrical space. This is because LLMs are neural networks, and neural networks need mathematical objects to work with instead of text data.</p>
+    <p>This process is called <em>token embedding</em>.</p>
+    <p>In theory, you could just assign any old point in space randomly to each token, and it would be a valid token embedding. But the interesting thing about LLM token embeddings, is that as a result of the LLM training,
+      words with similar meanings end up with nearby to each other in space. So, for example, king, queen, and prince would end up next to each other, and cat, dog, and fish would end up close to one another, but the two groups of points would be far apart.
+    </p>
+    <p>Try it out below. Here we embed tokens in 3D space to illustrate the concept. Real LLMs use much higher dimensional spaces, but the principle is the same.</p>
 
     <div class="embedder">
       <div class="embedder-input">
@@ -241,11 +256,11 @@
       <div id="embed-status" aria-live="polite"></div>
     </div>
 
-    <p>These are static word embeddings (GloVe). Modern LLMs use <em>contextual</em> embeddings — the same word gets a different vector depending on surrounding words — but the core idea of meaning as position in space is the same.</p>
-
     <h2>Self-Attention</h2>
-    <p>Transformers use <em>self-attention</em> to let each token look at other tokens in the same sequence and decide which ones are most relevant. Each token acts as a <em>query</em>, searching through the other tokens for useful information. Different <em>attention heads</em> can specialise in different kinds of relationships — some track grammar, some track meaning, some track position.</p>
-    <p>Click a word to select it as the query token. The amber highlight shows what it attends to. Try selecting <em>it</em> or <em>fit</em>, and switch between heads to see how the pattern changes.</p>
+    <p>Once a prompt has been tokenised and embedded, the next key step is <em>self-attention</em>. This is the mechanism that allows each token to look at all the other tokens in the sequence and decide which ones are most relevant to it.</p>
+    <p>Each token acts as a <em>query</em>, searching through the other tokens for useful context. The result is a set of attention weights — a number for each token in the sequence — indicating how much attention the query token pays to each other token.</p>
+    <p>A transformer has many <em>attention heads</em> running in parallel, each learning to track a different kind of relationship — some focus on grammar, some on meaning, some on position.</p>
+    <p>Click a word below to select it as the query token. The amber highlight shows what it attends to. Try selecting <em>it</em> or <em>fit</em>, then switch between heads to see how the pattern changes.</p>
 
     <div class="attention-demo">
       <div class="attention-controls">
@@ -262,7 +277,7 @@
       </details>
     </div>
 
-    <p>This is a simplified toy model — the attention weights are hand-designed to illustrate the concept, not learned by a real transformer. Real attention heads learn their patterns from data and usually produce more diffuse, harder-to-interpret distributions.</p>
+    <p>This is a simplified toy model — the attention weights are hand-designed to illustrate the concept, not learned by a real transformer. Real attention heads learn their patterns from training data and usually produce more diffuse, harder-to-interpret distributions.</p>
 
     <p class="back"><a href="https://pdlawson.com">← Back to home</a></p>
 

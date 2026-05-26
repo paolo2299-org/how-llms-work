@@ -40,7 +40,12 @@ export async function fetchEmbeddings(fetchImpl, words, apiUrl = API_URL) {
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
+    let message = `HTTP ${response.status}`;
+    try {
+      const body = await response.json();
+      if (body.error) message = body.error;
+    } catch (_) {}
+    throw new Error(message);
   }
 
   const data = await response.json();

@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 import tiktoken
 
-from app.glove import ensure_glove_vectors_loaded, glove_vectors
+from app.glove import ensure_glove_vectors_loaded, glove_vectors, glove_load_error
 
 api_bp = Blueprint("api", __name__)
 
@@ -30,6 +30,9 @@ def embed():
     words = body.get("words", [])
 
     ensure_glove_vectors_loaded()
+
+    if glove_load_error:
+        return jsonify({"error": glove_load_error}), 503
 
     known, unknown, vectors = [], [], []
     for word in words:
