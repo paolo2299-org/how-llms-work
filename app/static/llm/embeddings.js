@@ -16,6 +16,15 @@ const SPHERE_COLORS = [
 
 const ANIM_DURATION = 500; // ms
 
+const INITIAL_POINTS = [
+  { word: 'cat', x: -2.420820, y: 0.171304, z: 0.180879 },
+  { word: 'dog', x: -2.657447, y: 0.583137, z: 1.250342 },
+  { word: 'rabbit', x: -2.733580, y: -0.954397, z: -1.183831 },
+  { word: 'king', x: 2.646009, y: -1.377361, z: -0.099398 },
+  { word: 'queen', x: 2.009423, y: 1.725140, z: -1.093846 },
+  { word: 'prince', x: 3.156416, y: -0.147823, z: 0.945853 },
+];
+
 function createEmbeddingScene(container, doc = document) {
   const words = [];
   const spheres = new Map();
@@ -171,14 +180,19 @@ function initEmbeddings({
   const container = doc.getElementById('embed-canvas-container');
   const input = doc.getElementById('embed-input');
   const button = doc.getElementById('embed-btn');
+  const resetButton = doc.getElementById('embed-reset-btn');
   const status = doc.getElementById('embed-status');
   const list = doc.getElementById('embed-words');
 
-  if (!container || !input || !button || !status || !list) {
+  if (!container || !input || !button || !resetButton || !status || !list) {
     return null;
   }
 
   const scene = createEmbeddingScene(container, doc);
+
+  scene.words.push(...INITIAL_POINTS.map(p => p.word));
+  scene.updateScene(INITIAL_POINTS);
+  updateWordList(doc, list, scene.words);
 
   async function handleAddWord() {
     const submission = prepareWordSubmission(scene.words, input.value);
@@ -219,14 +233,21 @@ function initEmbeddings({
     }
   }
 
+  function handleReset() {
+    scene.words.splice(0).forEach(word => scene.removeWord(word));
+    updateWordList(doc, list, scene.words);
+    clearContent(status);
+  }
+
   button.addEventListener('click', handleAddWord);
+  resetButton.addEventListener('click', handleReset);
   input.addEventListener('keydown', event => {
     if (event.key === 'Enter') {
       handleAddWord();
     }
   });
 
-  return { handleAddWord };
+  return { handleAddWord, handleReset };
 }
 
 initEmbeddings();

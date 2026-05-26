@@ -230,7 +230,7 @@
     <p>Once a prompt has been converted to tokens, each token is then represented as a point in a high-dimensional geometrical space. This is because LLMs are neural networks, and neural networks need mathematical objects to work with instead of text data.</p>
     <p>This process is called <em>token embedding</em>.</p>
     <p>In theory, you could just assign any old point in space randomly to each token, and it would be a valid token embedding. But the interesting thing about LLM token embeddings, is that as a result of the LLM training,
-      words with similar meanings end up with nearby to each other in space. So, for example, king, queen, and prince would end up next to each other, and cat, dog, and fish would end up close to one another, but the two groups of points would be far apart.
+      words with similar meanings end up with nearby to each other in space. So, for example, king, queen, and prince would end up next to each other, and cat, dog, and rabbit would end up close to one another, but the two groups of points would be far apart.
     </p>
     <p>Try it out below. Here we embed tokens in 3D space to illustrate the concept. Real LLMs use much higher dimensional spaces, but the principle is the same.</p>
 
@@ -238,8 +238,9 @@
       <div class="embedder-input">
         <input type="text" id="embed-input" placeholder="Enter a word…" autocomplete="off">
         <button id="embed-btn" type="button">Add word</button>
+        <button id="embed-reset-btn" type="button">Reset</button>
       </div>
-      <p class="embedder-hint">Try: <em>cat, dog, fish</em> — or <em>king, queen, prince</em></p>
+      <p class="embedder-hint">Try adding words, or click and drag to rotate the chart.</p>
       <div id="embed-canvas-container"></div>
       <div id="embed-words"></div>
       <div id="embed-status" aria-live="polite"></div>
@@ -253,7 +254,7 @@
     <p><em>The book was useful</em></p>
     <p>Self-attention is a way to model this within the neural network; as the model undergoes training, we allow token embeddings to be <em>enriched</em> by other token embeddings which are important to understanding the given token. We do this using a <em>self-attention module</em></p>
     <p>A self-attention module has many <em>attention heads</em> running in parallel, each learning to track a different kind of relationship — some focus on grammar, some on meaning, some on position.</p>
-    <p>Click a word below to select it. The amber highlight shows what it attends to, and you can switch between different attention heads to see different relationships.</p>
+    <p>Switch between the attention heads below to see how each one tracks a different kind of relationship. You can also click a word to select it and see how the amber highlight — showing what it attends to — shifts.</p>
 
     <div class="attention-demo">
       <div class="attention-controls">
