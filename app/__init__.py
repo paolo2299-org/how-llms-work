@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def create_app():
+def create_app(load_glove=True):
     app = Flask(__name__)
 
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
@@ -18,6 +18,15 @@ def create_app():
     else:
         from app.config import DevelopmentConfig
         app.config.from_object(DevelopmentConfig)
+
+    if load_glove:
+        from app.glove import load_glove_vectors
+        path = app.config["GLOVE_PATH"]
+        try:
+            load_glove_vectors(path)
+        except FileNotFoundError as e:
+            raise RuntimeError(f"GloVe data file not found: {path}") from e
+        app.logger.info(f"Loaded GloVe vectors from {path}")
 
     from app.routes.pages import pages_bp
     from app.routes.api import api_bp
