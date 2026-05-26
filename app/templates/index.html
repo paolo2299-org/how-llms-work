@@ -206,17 +206,6 @@
         font-size: 0.95em;
         line-height: 1.5;
       }
-      .attention-weights-display {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px 18px;
-        padding: 8px 0 4px;
-        font-size: 0.85em;
-        font-family: monospace;
-      }
-      .attn-weight-item {
-        min-width: 100px;
-      }
     </style>
   </head>
   <body>
@@ -258,9 +247,13 @@
 
     <h2>Self-Attention</h2>
     <p>Once a prompt has been tokenised and embedded, the next key step is <em>self-attention</em>. This is the mechanism that allows each token to look at all the other tokens in the sequence and decide which ones are most relevant to it.</p>
-    <p>Each token acts as a <em>query</em>, searching through the other tokens for useful context. The result is a set of attention weights — a number for each token in the sequence — indicating how much attention the query token pays to each other token.</p>
-    <p>A transformer has many <em>attention heads</em> running in parallel, each learning to track a different kind of relationship — some focus on grammar, some on meaning, some on position.</p>
-    <p>Click a word below to select it as the query token. The amber highlight shows what it attends to. Try selecting <em>it</em> or <em>fit</em>, then switch between heads to see how the pattern changes.</p>
+    <p>The point of this is that, without self attention, a neural network struggles to relate tokens that are far away from each other, but important to add context. Imagine the example:</p>
+    <p><em>The book that I borrowed from the library last week, despite its damaged cover and missing index, was surprisingly useful.</em></p>
+    <p>The words <em>book</em> and <em>useful</em> are far away, but they need to be considered together to understand the core meaning of the sentence:</p>
+    <p><em>The book was useful</em></p>
+    <p>Self-attention is a way to model this within the neural network; as the model undergoes training, we allow token embeddings to be <em>enriched</em> by other token embeddings which are important to understanding the given token. We do this using a <em>self-attention module</em></p>
+    <p>A self-attention module has many <em>attention heads</em> running in parallel, each learning to track a different kind of relationship — some focus on grammar, some on meaning, some on position.</p>
+    <p>Click a word below to select it. The amber highlight shows what it attends to, and you can switch between different attention heads to see different relationships.</p>
 
     <div class="attention-demo">
       <div class="attention-controls">
@@ -271,13 +264,7 @@
       <div class="attention-explanation" aria-live="polite">
         <p id="attention-explanation-text"></p>
       </div>
-      <details>
-        <summary>Show raw weights</summary>
-        <div id="attention-weights-display" class="attention-weights-display"></div>
-      </details>
     </div>
-
-    <p>This is a simplified toy model — the attention weights are hand-designed to illustrate the concept, not learned by a real transformer. Real attention heads learn their patterns from training data and usually produce more diffuse, harder-to-interpret distributions.</p>
 
     <p class="back"><a href="https://pdlawson.com">← Back to home</a></p>
 

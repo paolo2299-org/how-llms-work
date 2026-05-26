@@ -130,7 +130,6 @@ export function initAttention({ doc = document } = {}) {
   const headBtnsEl = doc.getElementById('attention-head-btns');
   const sentenceEl = doc.getElementById('attention-sentence');
   const explanationEl = doc.getElementById('attention-explanation-text');
-  const weightsDisplay = doc.getElementById('attention-weights-display');
 
   if (!headBtnsEl || !sentenceEl || !explanationEl) return null;
 
@@ -152,19 +151,6 @@ export function initAttention({ doc = document } = {}) {
     });
 
     explanationEl.textContent = EXPLANATIONS[`${state.headId}:${state.tokenIdx}`] ?? '';
-
-    if (weightsDisplay) {
-      weightsDisplay.innerHTML = '';
-      weights.forEach((w, i) => {
-        const item = doc.createElement('span');
-        item.className = 'attn-weight-item';
-        const strong = doc.createElement('strong');
-        strong.textContent = SENTENCE[i];
-        item.appendChild(strong);
-        item.appendChild(doc.createTextNode(` ${w.toFixed(2)}`));
-        weightsDisplay.appendChild(item);
-      });
-    }
   }
 
   SENTENCE.forEach((word, i) => {
