@@ -37,7 +37,7 @@ function createEmbeddingScene(container, doc = document) {
   scene.background = new THREE.Color(0xfafafa);
 
   const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 100);
-  camera.position.set(0, 0, 8.57);
+  camera.position.set(0, 0, 10);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(window.devicePixelRatio);
