@@ -141,7 +141,7 @@ function buildSVG(doc) {
     svg.appendChild(t);
   }
   header(COL_INPUT_X,  'Input (post-attention)');
-  header(COL_HIDDEN_X, 'Hidden layer (24 units)');
+  header(COL_HIDDEN_X, 'Hidden layer');
   header(COL_OUTPUT_X, 'Output');
 
   // Non-linearity annotation under the hidden column
@@ -150,7 +150,7 @@ function buildSVG(doc) {
   nl.setAttribute('y', String(H - 25));
   nl.setAttribute('text-anchor', 'middle');
   nl.setAttribute('class', 'ffn-nl-label');
-  nl.textContent = '+ GELU non-linearity';
+  nl.textContent = '+ activation function';
   svg.appendChild(nl);
 
   // Hidden-unit labels with leader lines to the right
