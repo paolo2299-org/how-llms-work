@@ -468,10 +468,11 @@
     </div>
 
     <h2>Feed-Forward Layer</h2>
-    <!-- TODO intro prose: what the FFN does inside a transformer block (sits after attention, runs per-token, no cross-token mixing). -->
-    <!-- TODO intro prose: architecture sketch — linear up to a wider hidden dim, non-linearity, linear back down. Mention the ~4× expansion. -->
-    <!-- TODO intro prose: the "knowledge / feature lookup" framing — hidden neurons that fire on specific concepts. This is where the demo lives. -->
-    <!-- TODO intro prose: bridge from attention demo — "attention decided *which* tokens matter; FFN decides *what about them* matters." Set up the trophy/it punchline. -->
+
+    <p>After the self-attention module comes the <em>feed-forward layer</em>. Once self attention
+    has enriched each token with information from other tokens in the input, the feed-forward layer then
+    re-interprets each token in terms of learned features, some of which may correspond to
+    higher level concepts or abstractions.</p>
     <p><em>[intro prose goes here — see TODOs above]</em></p>
 
     <div class="ffn-diagram-container">
