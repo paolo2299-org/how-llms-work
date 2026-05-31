@@ -257,6 +257,24 @@
         stroke: rgba(211, 32, 32, calc(0.25 + var(--activation, 0) * 0.75));
         stroke-width: calc(0.8px + var(--activation, 0) * 3px);
       }
+      .ffn-token-chip {
+        fill: #eef0ff;
+        stroke: #1a0dab;
+        stroke-width: 1.2;
+      }
+      .ffn-token-chip-text {
+        font-size: 14px;
+        font-weight: bold;
+        fill: #1a0dab;
+        font-family: inherit;
+      }
+      .ffn-token-arrow {
+        stroke: #1a0dab;
+        stroke-width: 1.6;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
       .ffn-col-header {
         font-size: 13px;
         font-weight: bold;
@@ -318,25 +336,6 @@
         background: #1a0dab;
         color: #fff;
         border-color: #1a0dab;
-      }
-      .ffn-diagram-controls {
-        margin-top: 10px;
-      }
-      .ffn-diagram-controls button {
-        font-size: 0.9em;
-        padding: 6px 14px;
-        background: transparent;
-        color: #1a0dab;
-        border: 1px solid #1a0dab;
-        border-radius: 4px;
-        cursor: pointer;
-      }
-      .ffn-diagram-controls button:hover {
-        background: rgba(26, 13, 171, 0.06);
-      }
-      .ffn-diagram-controls button:disabled {
-        opacity: 0.5;
-        cursor: default;
       }
       .ffn-diagram-caption {
         margin-top: 10px;
@@ -424,9 +423,6 @@
         <div id="ffn-token-btns" class="ffn-token-btn-group" role="group" aria-label="Choose an input token"></div>
       </div>
       <div id="ffn-diagram"></div>
-      <div class="ffn-diagram-controls">
-        <button id="ffn-diagram-play" type="button">▶ Replay forward pass</button>
-      </div>
     </div>
 
     <p class="back"><a href="https://pdlawson.com">← Back to home</a></p>

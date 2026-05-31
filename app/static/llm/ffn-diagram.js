@@ -175,22 +175,46 @@ function buildSVG(doc) {
     svg.appendChild(t);
   });
 
-  return { svg, inputNodes, hiddenNodes, outputNodes, edgesL1, edgesL2 };
+  // Input token chip + arrow — makes explicit that one token's vector is fed in,
+  // and that the 8 input nodes are that token's dimensions (not 8 separate tokens).
+  const chipCY = (TOP_Y + BOTTOM_Y) / 2;
+  const chip = doc.createElementNS(SVG_NS, 'rect');
+  chip.setAttribute('x', '12');
+  chip.setAttribute('y', String(chipCY - 16));
+  chip.setAttribute('width', '66');
+  chip.setAttribute('height', '32');
+  chip.setAttribute('rx', '16');
+  chip.setAttribute('class', 'ffn-token-chip');
+  svg.appendChild(chip);
+
+  const chipText = doc.createElementNS(SVG_NS, 'text');
+  chipText.setAttribute('x', '45');
+  chipText.setAttribute('y', String(chipCY + 5));
+  chipText.setAttribute('text-anchor', 'middle');
+  chipText.setAttribute('class', 'ffn-token-chip-text');
+  svg.appendChild(chipText);
+
+  const arrow = doc.createElementNS(SVG_NS, 'path');
+  arrow.setAttribute('d', `M82 ${chipCY} H100 M100 ${chipCY} l-6 -4 M100 ${chipCY} l-6 4`);
+  arrow.setAttribute('class', 'ffn-token-arrow');
+  svg.appendChild(arrow);
+
+  return { svg, inputNodes, hiddenNodes, outputNodes, edgesL1, edgesL2, chipText };
 }
 
 export function initFFNDiagram({ doc = document } = {}) {
   const containerEl = doc.getElementById('ffn-diagram');
-  const playBtnEl = doc.getElementById('ffn-diagram-play');
   const tokenBtnsEl = doc.getElementById('ffn-token-btns');
-  if (!containerEl || !playBtnEl) return null;
+  if (!containerEl) return null;
 
-  const { svg, inputNodes, hiddenNodes, outputNodes, edgesL1, edgesL2 } = buildSVG(doc);
+  const { svg, inputNodes, hiddenNodes, outputNodes, edgesL1, edgesL2, chipText } = buildSVG(doc);
   containerEl.appendChild(svg);
 
   let activeToken = TOKENS[0];
 
   function applyActivations(tokenDef) {
     activeToken = tokenDef;
+    chipText.textContent = tokenDef.token;
     tokenDef.input.forEach((v, i)  => inputNodes[i].style.setProperty('--activation', String(v)));
     tokenDef.hidden.forEach((v, i) => hiddenNodes[i].style.setProperty('--activation', String(v)));
     tokenDef.output.forEach((v, i) => outputNodes[i].style.setProperty('--activation', String(v)));
@@ -220,15 +244,12 @@ export function initFFNDiagram({ doc = document } = {}) {
 
   const PHASES = ['svg-phase-input', 'svg-phase-edges1', 'svg-phase-hidden', 'svg-phase-edges2', 'svg-phase-output'];
   let timers = [];
-  let playing = false;
 
   function resetPhases() {
     PHASES.forEach(p => svg.classList.remove(p));
   }
 
   function play() {
-    playing = true;
-    playBtnEl.disabled = true;
     timers.forEach(clearTimeout);
     timers = [];
     resetPhases();
@@ -238,13 +259,7 @@ export function initFFNDiagram({ doc = document } = {}) {
     timers.push(setTimeout(() => svg.classList.add('svg-phase-hidden'),  850));
     timers.push(setTimeout(() => svg.classList.add('svg-phase-edges2'), 1450));
     timers.push(setTimeout(() => svg.classList.add('svg-phase-output'), 1800));
-    timers.push(setTimeout(() => {
-      playing = false;
-      playBtnEl.disabled = false;
-    }, 2500));
   }
-
-  playBtnEl.addEventListener('click', play);
 
   // Auto-play once when the diagram first scrolls into view.
   if (typeof IntersectionObserver !== 'undefined') {
