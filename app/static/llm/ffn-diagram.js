@@ -12,25 +12,57 @@ const COL_OUTPUT_X = 610;
 const TOP_Y = 70;
 const BOTTOM_Y = 400;
 
-// Hand-picked activations for an illustrative forward pass.
-// Not tied to any specific token in the heatmap below — just one plausible pattern.
-const INPUT_ACTIVATIONS  = [0.70, 0.20, 0.90, 0.40, 0.10, 0.60, 0.30, 0.80];
-const OUTPUT_ACTIVATIONS = [0.40, 0.30, 0.70, 0.50, 0.20, 0.60, 0.40, 0.50];
-const HIDDEN_ACTIVATIONS = [
-  0.10, 0.15, 0.25, 0.10,
-  0.85,                  // idx 4 = Physical Object — the bright one
-  0.20, 0.15, 0.10, 0.45, 0.10, 0.10, 0.10,
-  0.15,                  // idx 12 = Negation — dim (this input isn't a negation token)
-  0.10, 0.15, 0.55, 0.10, 0.10,
-  0.20,                  // idx 18 = Determiner — dim (this input isn't a determiner)
-  0.10, 0.20, 0.10, 0.10, 0.30,
-];
-
+// The three interpretable hidden units we annotate with leader lines.
 const HIDDEN_LABELS = {
   4:  'Physical Object',
   12: 'Negation',
   18: 'Determiner',
 };
+const CONCEPT_IDXS = Object.keys(HIDDEN_LABELS).map(Number);
+
+// A plausible background of (mostly uninterpreted) hidden activations, shared
+// across tokens. A few mid-bright units (idx 8, 15) reinforce that not every
+// active feature maps to a human-readable concept.
+const HIDDEN_BG = [
+  0.10, 0.15, 0.25, 0.10, 0.16, 0.20, 0.15, 0.10,
+  0.45, 0.10, 0.10, 0.10, 0.16, 0.10, 0.15, 0.55,
+  0.10, 0.10, 0.16, 0.10, 0.20, 0.10, 0.10, 0.30,
+];
+
+// Build a 24-unit hidden vector where the token's concept unit fires bright and
+// the other two labelled units stay dim. Tokens that share a concept therefore
+// share an identical hidden pattern — the point being that the layer has learned
+// one detector that several different tokens trigger.
+function hiddenFor(conceptIdx) {
+  const h = HIDDEN_BG.slice();
+  CONCEPT_IDXS.forEach(i => { h[i] = 0.16; });
+  h[conceptIdx] = 0.88;
+  return h;
+}
+
+// Hand-picked illustrative activations per input token. Inputs/outputs vary per
+// token (they are different tokens); the hidden layer collapses same-concept
+// tokens onto the same learned feature.
+const TOKENS = [
+  { token: 'cat',   concept: 4,
+    input:  [0.70, 0.20, 0.90, 0.40, 0.10, 0.60, 0.30, 0.80],
+    output: [0.40, 0.30, 0.70, 0.50, 0.20, 0.60, 0.40, 0.50] },
+  { token: 'dog',   concept: 4,
+    input:  [0.65, 0.25, 0.85, 0.30, 0.15, 0.55, 0.35, 0.75],
+    output: [0.45, 0.25, 0.72, 0.48, 0.18, 0.62, 0.38, 0.55] },
+  { token: 'the',   concept: 18,
+    input:  [0.30, 0.80, 0.20, 0.75, 0.40, 0.25, 0.70, 0.20],
+    output: [0.20, 0.65, 0.30, 0.25, 0.60, 0.35, 0.55, 0.30] },
+  { token: 'a',     concept: 18,
+    input:  [0.35, 0.75, 0.25, 0.70, 0.45, 0.20, 0.72, 0.25],
+    output: [0.25, 0.62, 0.28, 0.30, 0.58, 0.32, 0.58, 0.28] },
+  { token: 'not',   concept: 12,
+    input:  [0.50, 0.40, 0.30, 0.20, 0.85, 0.30, 0.40, 0.60],
+    output: [0.55, 0.35, 0.40, 0.30, 0.50, 0.45, 0.35, 0.40] },
+  { token: 'never', concept: 12,
+    input:  [0.55, 0.35, 0.35, 0.25, 0.80, 0.35, 0.45, 0.55],
+    output: [0.50, 0.38, 0.42, 0.28, 0.52, 0.48, 0.38, 0.42] },
+].map(t => ({ ...t, hidden: hiddenFor(t.concept) }));
 
 function nodeY(idx, count) {
   if (count === 1) return (TOP_Y + BOTTOM_Y) / 2;
@@ -45,7 +77,11 @@ function buildSVG(doc) {
   svg.setAttribute('aria-label',
     'Feed-forward network architecture: 8 input neurons connected to 24 hidden neurons connected to 8 output neurons, fully connected.');
 
-  // Edges first (so they sit behind the nodes)
+  // Edges first (so they sit behind the nodes). Each edge remembers the index of
+  // its destination node so its red intensity can track that node's activation —
+  // edges converging on a strongly-fired node glow brightest.
+  const edgesL1 = [];
+  const edgesL2 = [];
   for (let i = 0; i < INPUT_DIM; i++) {
     const y1 = nodeY(i, INPUT_DIM);
     for (let j = 0; j < HIDDEN_DIM; j++) {
@@ -57,6 +93,7 @@ function buildSVG(doc) {
       line.setAttribute('y2', String(y2));
       line.setAttribute('class', 'ffn-edge ffn-edge-l1');
       svg.appendChild(line);
+      edgesL1.push({ el: line, dest: j });
     }
   }
   for (let i = 0; i < HIDDEN_DIM; i++) {
@@ -70,24 +107,28 @@ function buildSVG(doc) {
       line.setAttribute('y2', String(y2));
       line.setAttribute('class', 'ffn-edge ffn-edge-l2');
       svg.appendChild(line);
+      edgesL2.push({ el: line, dest: j });
     }
   }
 
   // Nodes
-  function addNodes(count, x, activations, cls, radius) {
+  function addNodes(count, x, cls, radius) {
+    const nodes = [];
     for (let i = 0; i < count; i++) {
       const node = doc.createElementNS(SVG_NS, 'circle');
       node.setAttribute('cx', String(x));
       node.setAttribute('cy', String(nodeY(i, count)));
       node.setAttribute('r', String(radius));
       node.setAttribute('class', `ffn-node ${cls}`);
-      node.style.setProperty('--activation', String(activations[i]));
+      node.style.setProperty('--activation', '0');
       svg.appendChild(node);
+      nodes.push(node);
     }
+    return nodes;
   }
-  addNodes(INPUT_DIM,  COL_INPUT_X,  INPUT_ACTIVATIONS,  'ffn-node-input',  7);
-  addNodes(HIDDEN_DIM, COL_HIDDEN_X, HIDDEN_ACTIVATIONS, 'ffn-node-hidden', 5);
-  addNodes(OUTPUT_DIM, COL_OUTPUT_X, OUTPUT_ACTIVATIONS, 'ffn-node-output', 7);
+  const inputNodes  = addNodes(INPUT_DIM,  COL_INPUT_X,  'ffn-node-input',  7);
+  const hiddenNodes = addNodes(HIDDEN_DIM, COL_HIDDEN_X, 'ffn-node-hidden', 5);
+  const outputNodes = addNodes(OUTPUT_DIM, COL_OUTPUT_X, 'ffn-node-output', 7);
 
   // Column headers
   function header(x, text) {
@@ -134,16 +175,48 @@ function buildSVG(doc) {
     svg.appendChild(t);
   });
 
-  return svg;
+  return { svg, inputNodes, hiddenNodes, outputNodes, edgesL1, edgesL2 };
 }
 
 export function initFFNDiagram({ doc = document } = {}) {
   const containerEl = doc.getElementById('ffn-diagram');
   const playBtnEl = doc.getElementById('ffn-diagram-play');
+  const tokenBtnsEl = doc.getElementById('ffn-token-btns');
   if (!containerEl || !playBtnEl) return null;
 
-  const svg = buildSVG(doc);
+  const { svg, inputNodes, hiddenNodes, outputNodes, edgesL1, edgesL2 } = buildSVG(doc);
   containerEl.appendChild(svg);
+
+  let activeToken = TOKENS[0];
+
+  function applyActivations(tokenDef) {
+    activeToken = tokenDef;
+    tokenDef.input.forEach((v, i)  => inputNodes[i].style.setProperty('--activation', String(v)));
+    tokenDef.hidden.forEach((v, i) => hiddenNodes[i].style.setProperty('--activation', String(v)));
+    tokenDef.output.forEach((v, i) => outputNodes[i].style.setProperty('--activation', String(v)));
+    // Edge intensity tracks the activation of the node it feeds into.
+    edgesL1.forEach(({ el, dest }) => el.style.setProperty('--activation', String(tokenDef.hidden[dest])));
+    edgesL2.forEach(({ el, dest }) => el.style.setProperty('--activation', String(tokenDef.output[dest])));
+  }
+  applyActivations(activeToken);
+
+  // Token picker buttons
+  const tokenButtons = [];
+  if (tokenBtnsEl) {
+    TOKENS.forEach(tokenDef => {
+      const btn = doc.createElement('button');
+      btn.type = 'button';
+      btn.textContent = tokenDef.token;
+      btn.setAttribute('aria-pressed', String(tokenDef === activeToken));
+      btn.addEventListener('click', () => {
+        applyActivations(tokenDef);
+        tokenButtons.forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+        play();
+      });
+      tokenBtnsEl.appendChild(btn);
+      tokenButtons.push(btn);
+    });
+  }
 
   const PHASES = ['svg-phase-input', 'svg-phase-edges1', 'svg-phase-hidden', 'svg-phase-edges2', 'svg-phase-output'];
   let timers = [];
@@ -154,7 +227,6 @@ export function initFFNDiagram({ doc = document } = {}) {
   }
 
   function play() {
-    if (playing) return;
     playing = true;
     playBtnEl.disabled = true;
     timers.forEach(clearTimeout);
