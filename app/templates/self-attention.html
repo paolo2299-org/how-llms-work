@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Self-Attention, Step by Step — How LLMs Work</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+      h2 { margin-top: 52px; }
+      h3 { margin-top: 32px; margin-bottom: 8px; }
+      .sa-top-link { font-size: 0.9em; margin-bottom: 8px; }
+
+      /* Inline code + code blocks */
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.9em;
+        background: rgba(27, 31, 35, 0.06);
+        padding: 1px 5px;
+        border-radius: 4px;
+      }
+      pre.sa-code {
+        background: #f6f8fa;
+        border: 1px solid #e1e4e8;
+        border-radius: 6px;
+        padding: 14px 16px;
+        overflow-x: auto;
+        line-height: 1.5;
+        margin: 16px 0;
+      }
+      pre.sa-code code {
+        background: none;
+        padding: 0;
+        font-size: 0.84em;
+        color: #24292e;
+      }
+      .sa-comment { color: #6a737d; }
+      .sa-kw { color: #d73a49; }
+      .sa-fn { color: #6f42c1; }
+
+      /* Token chips */
+      .sa-tokens {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 16px 0;
+      }
+      .sa-chip {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.95em;
+        padding: 4px 10px;
+        border-radius: 6px;
+        background: #eef0ff;
+        border: 1px solid #c9cffa;
+        color: #1a0dab;
+      }
+      .sa-chip.q { background: #1a0dab; color: #fff; border-color: #1a0dab; }
+      .sa-chip.hot { background: rgba(251, 188, 5, 0.45); border-color: #e0a500; color: #6b4e00; }
+
+      /* Figures */
+      .sa-figure {
+        margin: 22px 0;
+        padding: 16px;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+      }
+      .sa-figure-title {
+        font-size: 0.82em;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #666;
+        margin-bottom: 12px;
+      }
+      .sa-caption {
+        margin-top: 10px;
+        font-size: 0.88em;
+        color: #555;
+        font-style: italic;
+      }
+      .sa-scroll { overflow-x: auto; }
+
+      /* Numeric matrices / tables */
+      table.sa-matrix {
+        border-collapse: collapse;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.88em;
+        margin: 0 auto;
+      }
+      table.sa-matrix th,
+      table.sa-matrix td {
+        border: 1px solid #e3e3e3;
+        padding: 5px 12px;
+        text-align: right;
+        white-space: nowrap;
+      }
+      table.sa-matrix thead th { color: #777; font-weight: normal; font-size: 0.9em; }
+      table.sa-matrix .sa-rowlabel {
+        text-align: left;
+        font-weight: bold;
+        color: #1a0dab;
+        background: #fafbff;
+      }
+      table.sa-matrix .sa-corner { border: none; background: none; }
+      table.sa-matrix tr.is-query .sa-rowlabel {
+        background: #1a0dab;
+        color: #fff;
+      }
+      table.sa-matrix tr.is-query td { background: rgba(26, 13, 171, 0.06); }
+      table.sa-matrix td.is-hot {
+        background: rgba(251, 188, 5, 0.42);
+        font-weight: bold;
+        color: #5c4300;
+      }
+      table.sa-matrix tr.is-referent .sa-rowlabel {
+        background: rgba(251, 188, 5, 0.28);
+        color: #6b4e00;
+      }
+
+      /* Weight bars */
+      .sa-weights {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 6px 12px;
+        align-items: center;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.9em;
+      }
+      .sa-weights .wlabel { text-align: right; color: #333; }
+      .sa-weights .wlabel.q { color: #1a0dab; font-weight: bold; }
+      .sa-weights .wlabel.hot { color: #6b4e00; font-weight: bold; }
+      .sa-bar-track {
+        display: block;
+        background: #f0f0f0;
+        border-radius: 3px;
+        height: 18px;
+        width: 100%;
+        overflow: hidden;
+      }
+      .sa-bar-fill {
+        display: block;
+        background: rgba(251, 188, 5, 0.9);
+        height: 100%;
+        border-radius: 3px;
+        min-width: 1px;
+      }
+      .sa-weights .wval { text-align: right; color: #555; }
+
+      /* Advertisement diagrams */
+      .sa-adv-caption {
+        text-align: center;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.9em;
+        color: #1a0dab;
+        margin-bottom: 12px;
+      }
+      table.sa-adv {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 0.92em;
+      }
+      table.sa-adv td {
+        border: 1px solid #eee;
+        padding: 6px 12px;
+        vertical-align: middle;
+      }
+      table.sa-adv .sa-adv-tok {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-weight: bold;
+        color: #1a0dab;
+        width: 90px;
+        white-space: nowrap;
+      }
+      table.sa-adv .sa-adv-msg { color: #999; }
+      table.sa-adv tr.filled .sa-adv-msg { color: #222; font-style: italic; }
+      table.sa-adv tr.filled { background: rgba(251, 188, 5, 0.14); }
+      table.sa-adv tr.filled.q { background: rgba(26, 13, 171, 0.06); }
+
+      /* Callout note */
+      .sa-note {
+        border-left: 3px solid #1a0dab;
+        background: #f6f7ff;
+        padding: 10px 16px;
+        margin: 18px 0;
+        border-radius: 0 4px 4px 0;
+        font-size: 0.95em;
+      }
+      .sa-note p { margin: 6px 0; }
+
+      .sa-next { line-height: 2; }
+    </style>
+  </head>
+  <body>
+    <p class="sa-top-link"><a href="/#self-attention">← Back to How LLMs Work</a></p>
+    <h1>Self-Attention, Step by Step</h1>
+
+    <p>To understand how self-attention works, let's use a simplified example.</p>
+
+    <p>Suppose we have a sequence of tokens, and that our embedding dimension is 2; in real LLMs
+    the embedding dimension is many thousands of dimensions, but here we will use 2 so that we
+    can see what is going on.</p>
+
+    <h2>Our example sequence</h2>
+
+    <p>Let's say our sequence of tokens is:</p>
+
+    <div class="sa-tokens">
+      <span class="sa-chip">the</span>
+      <span class="sa-chip hot">dog</span>
+      <span class="sa-chip">fetched</span>
+      <span class="sa-chip">the</span>
+      <span class="sa-chip hot">ball</span>
+      <span class="sa-chip">and</span>
+      <span class="sa-chip q">she</span>
+      <span class="sa-chip">was</span>
+      <span class="sa-chip">happy</span>
+    </div>
+
+    <p>and that, after embedding, our sequence of tokens is:</p>
+
+    <div class="sa-figure">
+      <div class="sa-figure-title">Token embeddings (2D)</div>
+      <div class="sa-scroll">
+        <table class="sa-matrix">
+          <thead>
+            <tr><th class="sa-corner"></th><th>dim&nbsp;0</th><th>dim&nbsp;1</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="sa-rowlabel">the</td><td>0.10</td><td>0.00</td></tr>
+            <tr class="is-referent"><td class="sa-rowlabel">dog</td><td>0.90</td><td>0.90</td></tr>
+            <tr><td class="sa-rowlabel">fetched</td><td>0.20</td><td>0.10</td></tr>
+            <tr><td class="sa-rowlabel">the</td><td>0.10</td><td>0.00</td></tr>
+            <tr class="is-referent"><td class="sa-rowlabel">ball</td><td>0.90</td><td>0.15</td></tr>
+            <tr><td class="sa-rowlabel">and</td><td>0.05</td><td>0.05</td></tr>
+            <tr class="is-query"><td class="sa-rowlabel">she</td><td>0.25</td><td>0.90</td></tr>
+            <tr><td class="sa-rowlabel">was</td><td>0.20</td><td>0.10</td></tr>
+            <tr><td class="sa-rowlabel">happy</td><td>0.30</td><td>0.35</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="sa-caption">These specific values are hand-picked for this example. Notice the
+        two <code>the</code> tokens get identical embeddings — same token, same vector.</p>
+    </div>
+
+    <div class="sa-note">
+      <p>As explained on the previous page, the idea behind self-attention is that we want to
+      <em>enrich</em> each of these embedded tokens with information from the other tokens, so
+      that we can capture the interactions between tokens. In this simple case, understanding the
+      meaning of the token <code>she</code> relies on capturing information from the token
+      <code>dog</code>.</p>
+    </div>
+
+    <h2>Three projections</h2>
+
+    <p>To implement self-attention, we project each token 3 times, using 3 linear projections,
+    called <code>W_query</code>, <code>W_key</code>, and <code>W_value</code>.</p>
+
+    <p>These projections are linear neural network layers, and, again for simplification, let's
+    suppose they take our 2 dimensional token embeddings, and project into 3 dimensional
+    space:</p>
+
+    <pre class="sa-code"><code><span class="sa-kw">import</span> torch.nn <span class="sa-kw">as</span> nn
+
+W_query = nn.<span class="sa-fn">Linear</span>(2, 3, bias=False)   <span class="sa-comment"># initialised with random weights</span>
+W_key   = nn.<span class="sa-fn">Linear</span>(2, 3, bias=False)   <span class="sa-comment"># initialised with random weights</span>
+W_value = nn.<span class="sa-fn">Linear</span>(2, 3, bias=False)   <span class="sa-comment"># initialised with random weights</span></code></pre>
+
+    <p>Note that these are initialised with random weight parameters, which will be optimised
+    during training. For the purposes of this toy example, we'll construct some specific
+    projections that mimic where the weights might end up after training, so that we can
+    illustrate the concepts involved:</p>
+
+    <div class="sa-figure">
+      <div class="sa-figure-title">Hand-picked projection weights</div>
+      <div class="sa-scroll" style="display:flex; gap:22px; flex-wrap:wrap; justify-content:center;">
+        <table class="sa-matrix">
+          <thead>
+            <tr><th class="sa-corner">W_query</th><th>0</th><th>1</th><th>2</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="sa-rowlabel">dim&nbsp;0</td><td>1.2</td><td>-0.3</td><td>0.5</td></tr>
+            <tr><td class="sa-rowlabel">dim&nbsp;1</td><td>2.6</td><td>1.7</td><td>0.9</td></tr>
+          </tbody>
+        </table>
+        <table class="sa-matrix">
+          <thead>
+            <tr><th class="sa-corner">W_key</th><th>0</th><th>1</th><th>2</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="sa-rowlabel">dim&nbsp;0</td><td>3.0</td><td>0.4</td><td>1.6</td></tr>
+            <tr><td class="sa-rowlabel">dim&nbsp;1</td><td>0.2</td><td>3.0</td><td>0.5</td></tr>
+          </tbody>
+        </table>
+        <table class="sa-matrix">
+          <thead>
+            <tr><th class="sa-corner">W_value</th><th>0</th><th>1</th><th>2</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="sa-rowlabel">dim&nbsp;0</td><td>0.9</td><td>-0.4</td><td>0.6</td></tr>
+            <tr><td class="sa-rowlabel">dim&nbsp;1</td><td>0.3</td><td>1.1</td><td>0.5</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <h2>The intuition behind the projections</h2>
+
+    <p>To understand the intuition behind the function of these three projections, we can think
+    of the attention process as each token querying for specific information from the other
+    tokens. In our toy example, after training, our token <code>she</code> might make the
+    following query:</p>
+
+    <div class="sa-figure">
+      <div class="sa-adv-caption">tokens&nbsp;&nbsp;&rarr;&nbsp;&nbsp;W_query&nbsp;&nbsp;&rarr;</div>
+      <table class="sa-adv">
+        <tbody>
+          <tr><td class="sa-adv-tok">the</td><td class="sa-adv-msg">…</td></tr>
+          <tr><td class="sa-adv-tok">dog</td><td class="sa-adv-msg">…</td></tr>
+          <tr><td class="sa-adv-tok">fetched</td><td class="sa-adv-msg">…</td></tr>
+          <tr><td class="sa-adv-tok">the</td><td class="sa-adv-msg">…</td></tr>
+          <tr><td class="sa-adv-tok">ball</td><td class="sa-adv-msg">…</td></tr>
+          <tr><td class="sa-adv-tok">and</td><td class="sa-adv-msg">…</td></tr>
+          <tr class="filled q"><td class="sa-adv-tok">she</td><td class="sa-adv-msg">"I'm a pronoun, looking for my referent"</td></tr>
+          <tr><td class="sa-adv-tok">was</td><td class="sa-adv-msg">…</td></tr>
+          <tr><td class="sa-adv-tok">happy</td><td class="sa-adv-msg">…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Here every token makes a query, but we are just focussing on the one token of interest,
+    <code>she</code>. The <code>W_query</code> projection is responsible for this; it projects to
+    a representation which "advertises" the desire to find a she-matching referent.</p>
+
+    <p>The <code>W_key</code> is the counterpart to this; it projects to a representation which
+    "advertises" features that may want to be matched again. In this example, it could take the
+    form:</p>
+
+    <div class="sa-figure">
+      <div class="sa-adv-caption">tokens&nbsp;&nbsp;&rarr;&nbsp;&nbsp;W_key&nbsp;&nbsp;&rarr;</div>
+      <table class="sa-adv">
+        <tbody>
+          <tr><td class="sa-adv-tok">the</td><td class="sa-adv-msg">…</td></tr>
+          <tr class="filled"><td class="sa-adv-tok">dog</td><td class="sa-adv-msg">"I am a potential referent"</td></tr>
+          <tr><td class="sa-adv-tok">fetched</td><td class="sa-adv-msg">…</td></tr>
+          <tr><td class="sa-adv-tok">the</td><td class="sa-adv-msg">…</td></tr>
+          <tr class="filled"><td class="sa-adv-tok">ball</td><td class="sa-adv-msg">"I am a potential referent"</td></tr>
+          <tr><td class="sa-adv-tok">and</td><td class="sa-adv-msg">…</td></tr>
+          <tr><td class="sa-adv-tok">she</td><td class="sa-adv-msg">…</td></tr>
+          <tr><td class="sa-adv-tok">was</td><td class="sa-adv-msg">…</td></tr>
+          <tr><td class="sa-adv-tok">happy</td><td class="sa-adv-msg">…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>Computing attention scores</h2>
+
+    <p>We use these two projections to compute <em>attention scores</em> as follows:</p>
+
+    <pre class="sa-code"><code>attention_scores = W_query(x) @ W_key(x).T</code></pre>
+
+    <p>First we project every token with <code>W_query</code> and <code>W_key</code> to get its
+    query and key vectors:</p>
+
+    <div class="sa-figure">
+      <div class="sa-figure-title">queries = X @ W_query &nbsp;·&nbsp; keys = X @ W_key</div>
+      <div class="sa-scroll" style="display:flex; gap:22px; flex-wrap:wrap; justify-content:center;">
+        <table class="sa-matrix">
+          <thead>
+            <tr><th class="sa-corner">query</th><th>0</th><th>1</th><th>2</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="sa-rowlabel">the</td><td>0.12</td><td>-0.03</td><td>0.05</td></tr>
+            <tr><td class="sa-rowlabel">dog</td><td>3.42</td><td>1.26</td><td>1.26</td></tr>
+            <tr><td class="sa-rowlabel">fetched</td><td>0.50</td><td>0.11</td><td>0.19</td></tr>
+            <tr><td class="sa-rowlabel">the</td><td>0.12</td><td>-0.03</td><td>0.05</td></tr>
+            <tr><td class="sa-rowlabel">ball</td><td>1.47</td><td>-0.02</td><td>0.58</td></tr>
+            <tr><td class="sa-rowlabel">and</td><td>0.19</td><td>0.07</td><td>0.07</td></tr>
+            <tr class="is-query"><td class="sa-rowlabel">she</td><td>2.64</td><td>1.46</td><td>0.94</td></tr>
+            <tr><td class="sa-rowlabel">was</td><td>0.50</td><td>0.11</td><td>0.19</td></tr>
+            <tr><td class="sa-rowlabel">happy</td><td>1.27</td><td>0.51</td><td>0.46</td></tr>
+          </tbody>
+        </table>
+        <table class="sa-matrix">
+          <thead>
+            <tr><th class="sa-corner">key</th><th>0</th><th>1</th><th>2</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="sa-rowlabel">the</td><td>0.30</td><td>0.04</td><td>0.16</td></tr>
+            <tr class="is-referent"><td class="sa-rowlabel">dog</td><td>2.88</td><td>3.06</td><td>1.89</td></tr>
+            <tr><td class="sa-rowlabel">fetched</td><td>0.62</td><td>0.38</td><td>0.37</td></tr>
+            <tr><td class="sa-rowlabel">the</td><td>0.30</td><td>0.04</td><td>0.16</td></tr>
+            <tr class="is-referent"><td class="sa-rowlabel">ball</td><td>2.73</td><td>0.81</td><td>1.52</td></tr>
+            <tr><td class="sa-rowlabel">and</td><td>0.16</td><td>0.17</td><td>0.11</td></tr>
+            <tr><td class="sa-rowlabel">she</td><td>0.93</td><td>2.80</td><td>0.85</td></tr>
+            <tr><td class="sa-rowlabel">was</td><td>0.62</td><td>0.38</td><td>0.37</td></tr>
+            <tr><td class="sa-rowlabel">happy</td><td>0.97</td><td>1.17</td><td>0.66</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <p>Taking <code>she</code>'s query and its dot product with every token's key — for example
+    against <code>dog</code> and <code>ball</code>:</p>
+
+    <pre class="sa-code"><code>score(she, dog)  = [2.64, 1.46, 0.94] · [2.88, 3.06, 1.89]
+                 = 2.64&times;2.88 + 1.46&times;3.06 + 0.94&times;1.89  =  13.8
+
+score(she, ball) = [2.64, 1.46, 0.94] · [2.73, 0.81, 1.52]
+                 = 2.64&times;2.73 + 1.46&times;0.81 + 0.94&times;1.52  =   9.8</code></pre>
+
+    <p>Doing that for all nine keys gives the score row for <code>she</code>:</p>
+
+    <div class="sa-figure">
+      <div class="sa-figure-title">Attention scores for query = "she"</div>
+      <div class="sa-scroll">
+        <table class="sa-matrix">
+          <thead>
+            <tr>
+              <th class="sa-corner"></th>
+              <th>the</th><th>dog</th><th>fetch</th><th>the</th><th>ball</th><th>and</th><th>she</th><th>was</th><th>happy</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="is-query">
+              <td class="sa-rowlabel">she</td>
+              <td>1.0</td>
+              <td class="is-hot">13.8</td>
+              <td>2.5</td>
+              <td>1.0</td>
+              <td class="is-hot">9.8</td>
+              <td>0.8</td>
+              <td>7.3</td>
+              <td>2.5</td>
+              <td>4.9</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="sa-caption">The scores for <code>dog</code> (13.8) and <code>ball</code> (9.8)
+        are both well above the rest, with <code>dog</code> highest.</p>
+    </div>
+
+    <div class="sa-note">
+      <p>Note that, because <code>dog</code> and <code>ball</code> are potential referents to the
+      pronoun <code>she</code>, the attention scores for these two tokens are high for the input
+      token <code>she</code>. In this case, the reason for this is because we hand-picked our
+      projections that way, but in a real LLM, this type of relationship can be expected to be
+      discovered during training.</p>
+    </div>
+
+    <h2>From scores to attention weights</h2>
+
+    <p>Next we scale these scores so that they all add up to 1, and call these the
+    <em>attention weights</em>. Doing this is needed to stabilise training and increase
+    likelihood of convergence to a good model:</p>
+
+    <pre class="sa-code"><code>attention_weights = torch.<span class="sa-fn">softmax</span>(attention_scores / 3**0.5, dim=-1)</code></pre>
+
+    <p>Here,
+    <a href="https://en.wikipedia.org/wiki/Softmax_function" target="_blank" rel="noopener">softmax</a>
+    is a widely used scaling function in machine learning. Note that we also scale the scores
+    before applying softmax, by dividing them by the
+    <a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener">square root of the
+    dimension of the space</a>. This is a measure that helps to avoid outlying weights being
+    boosted too much by softmax. Applied to <code>she</code>'s score row, we get:</p>
+
+    <div class="sa-figure">
+      <div class="sa-figure-title">Attention weights for query = "she"</div>
+      <div class="sa-weights">
+        <span class="wlabel">the</span>
+        <span class="sa-bar-track"><span class="sa-bar-fill" style="width:0.1%"></span></span>
+        <span class="wval">0.001</span>
+
+        <span class="wlabel hot">dog</span>
+        <span class="sa-bar-track"><span class="sa-bar-fill" style="width:88.3%"></span></span>
+        <span class="wval">0.883</span>
+
+        <span class="wlabel">fetched</span>
+        <span class="sa-bar-track"><span class="sa-bar-fill" style="width:0.1%"></span></span>
+        <span class="wval">0.001</span>
+
+        <span class="wlabel">the</span>
+        <span class="sa-bar-track"><span class="sa-bar-fill" style="width:0.1%"></span></span>
+        <span class="wval">0.001</span>
+
+        <span class="wlabel hot">ball</span>
+        <span class="sa-bar-track"><span class="sa-bar-fill" style="width:8.7%"></span></span>
+        <span class="wval">0.087</span>
+
+        <span class="wlabel">and</span>
+        <span class="sa-bar-track"><span class="sa-bar-fill" style="width:0.05%"></span></span>
+        <span class="wval">0.000</span>
+
+        <span class="wlabel q">she</span>
+        <span class="sa-bar-track"><span class="sa-bar-fill" style="width:2.1%"></span></span>
+        <span class="wval">0.021</span>
+
+        <span class="wlabel">was</span>
+        <span class="sa-bar-track"><span class="sa-bar-fill" style="width:0.1%"></span></span>
+        <span class="wval">0.001</span>
+
+        <span class="wlabel">happy</span>
+        <span class="sa-bar-track"><span class="sa-bar-fill" style="width:0.5%"></span></span>
+        <span class="wval">0.005</span>
+      </div>
+      <p class="sa-caption">Softmax concentrates almost all of the weight
+        (<strong>0.883</strong>) onto <code>dog</code>, with <code>ball</code> a distant second
+        (0.087). The weights sum to 1.</p>
+    </div>
+
+    <h2>The W_value projection</h2>
+
+    <p>Finally, we come to the <code>W_value</code> projection. We use <code>W_value</code> to
+    project the input, and sum over it using the attention weights we just calculated:</p>
+
+    <pre class="sa-code"><code>result = attention_weights @ W_value(x)</code></pre>
+
+    <p>Here are the value vectors, and the output for <code>she</code> — a weighted sum that is
+    <strong>0.883 &times; dog + 0.087 &times; ball + …</strong>:</p>
+
+    <div class="sa-figure">
+      <div class="sa-figure-title">values = X @ W_value, and the output for "she"</div>
+      <div class="sa-scroll" style="display:flex; gap:22px; flex-wrap:wrap; justify-content:center; align-items:flex-start;">
+        <table class="sa-matrix">
+          <thead>
+            <tr><th class="sa-corner">value</th><th>0</th><th>1</th><th>2</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="sa-rowlabel">the</td><td>0.09</td><td>-0.04</td><td>0.06</td></tr>
+            <tr class="is-referent"><td class="sa-rowlabel">dog</td><td>1.08</td><td>0.63</td><td>0.99</td></tr>
+            <tr><td class="sa-rowlabel">fetched</td><td>0.21</td><td>0.03</td><td>0.17</td></tr>
+            <tr><td class="sa-rowlabel">the</td><td>0.09</td><td>-0.04</td><td>0.06</td></tr>
+            <tr class="is-referent"><td class="sa-rowlabel">ball</td><td>0.86</td><td>-0.20</td><td>0.61</td></tr>
+            <tr><td class="sa-rowlabel">and</td><td>0.06</td><td>0.04</td><td>0.06</td></tr>
+            <tr><td class="sa-rowlabel">she</td><td>0.49</td><td>0.89</td><td>0.60</td></tr>
+            <tr><td class="sa-rowlabel">was</td><td>0.21</td><td>0.03</td><td>0.17</td></tr>
+            <tr><td class="sa-rowlabel">happy</td><td>0.38</td><td>0.27</td><td>0.35</td></tr>
+          </tbody>
+        </table>
+        <table class="sa-matrix">
+          <thead>
+            <tr><th class="sa-corner">output</th><th>0</th><th>1</th><th>2</th></tr>
+          </thead>
+          <tbody>
+            <tr class="is-query"><td class="sa-rowlabel">she</td><td>1.04</td><td>0.56</td><td>0.94</td></tr>
+            <tr class="is-referent"><td class="sa-rowlabel">dog</td><td>1.08</td><td>0.63</td><td>0.99</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="sa-caption">The output for <code>she</code> lands almost exactly on
+        <code>dog</code>'s value vector — <code>she</code> has been enriched with the meaning of
+        <code>dog</code>.</p>
+    </div>
+
+    <div class="sa-note">
+      <p>So we used <code>W_query</code> and <code>W_key</code> to understand how important each
+      input token is to each other, then we use <code>W_value</code> to extract the meaning of
+      the result in accordance to the weights.</p>
+    </div>
+
+    <h2>In plain English</h2>
+
+    <p>In plain English, we can think of the whole process as follows. Our input:</p>
+
+    <p><em>"The dog fetched the ball and she was happy"</em></p>
+
+    <ul>
+      <li><code>she</code> emits a query: <em>"I'm a pronoun, I need my referent."</em></li>
+      <li><code>dog</code> and <code>ball</code> each emit keys advertising what they are.</li>
+      <li>The query·key dot products score <code>dog</code> much higher than <code>ball</code>.</li>
+      <li>Softmax turns that into weights like <strong>~0.9 on <code>dog</code></strong>.</li>
+      <li>The output for <code>she</code> becomes mostly <code>dog</code>'s value — so
+        <code>she</code> is enriched with the meaning of <code>dog</code>.</li>
+    </ul>
+
+    <h2>A simple implementation</h2>
+
+    <p>Below we can see what we've learned so far in a simple implementation that could be
+    plugged into a neural network like an LLM:</p>
+
+    <pre class="sa-code"><code><span class="sa-kw">import</span> torch
+<span class="sa-kw">import</span> torch.nn <span class="sa-kw">as</span> nn
+
+
+<span class="sa-kw">class</span> <span class="sa-fn">SelfAttention</span>(nn.Module):
+
+    <span class="sa-kw">def</span> <span class="sa-fn">__init__</span>(self, input_dimension, output_dimension):  <span class="sa-comment"># in our example the dimensions were 2 and 3</span>
+        super().<span class="sa-fn">__init__</span>()
+        self.W_query = nn.<span class="sa-fn">Linear</span>(input_dimension, output_dimension, bias=False)
+        self.W_key   = nn.<span class="sa-fn">Linear</span>(input_dimension, output_dimension, bias=False)
+        self.W_value = nn.<span class="sa-fn">Linear</span>(input_dimension, output_dimension, bias=False)
+
+    <span class="sa-kw">def</span> <span class="sa-fn">forward</span>(self, x):
+        keys    = self.<span class="sa-fn">W_key</span>(x)
+        queries = self.<span class="sa-fn">W_query</span>(x)
+        values  = self.<span class="sa-fn">W_value</span>(x)
+
+        attention_scores  = queries @ keys.T
+        attention_weights = torch.<span class="sa-fn">softmax</span>(
+            attention_scores / keys.shape[-1] ** 0.5, dim=-1
+        )
+
+        result = attention_weights @ values
+        <span class="sa-kw">return</span> result</code></pre>
+
+    <h2>What's next</h2>
+
+    <p>The above example covers the main concept behind self-attention, but it is a slightly
+    simplified version. In the next sections we will look at the final pieces which will give us
+    fully-fledged self attention:</p>
+
+    <ul class="sa-next">
+      <li>Causal attention</li>
+      <li>Dropout</li>
+      <li>Multi-head attention</li>
+    </ul>
+
+    <p class="back"><a href="/#self-attention">← Back to How LLMs Work</a></p>
+  </body>
+</html>

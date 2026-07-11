@@ -385,7 +385,7 @@
       <div id="embed-status" aria-live="polite"></div>
     </div>
 
-    <h2>Self-Attention</h2>
+    <h2 id="self-attention">Self-Attention</h2>
     <p>Once a prompt has been tokenised and embedded, the next key step is <em>self-attention</em>. This is the mechanism that allows each token to look at all the other tokens in the sequence and decide which ones are most relevant to it.</p>
     <p>The point of this is that, without self attention, a neural network struggles to relate tokens that are far away from each other, but important to add context. Imagine the example:</p>
     <p><em>The book that I borrowed from the library last week, despite its damaged cover and missing index, was surprisingly useful.</em></p>
@@ -405,6 +405,8 @@
         <p id="attention-explanation-text"></p>
       </div>
     </div>
+
+    <p>Want to see the actual mechanism? <a href="/self-attention">Walk through self-attention step by step →</a> — a small worked example that takes a sentence all the way from token embeddings to an enriched output, with every number visible.</p>
 
     <h2>Feed-Forward Layer</h2>
 
