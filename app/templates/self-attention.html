@@ -176,6 +176,30 @@
       table.sa-adv tr.filled { background: rgba(251, 188, 5, 0.14); }
       table.sa-adv tr.filled.q { background: rgba(26, 13, 171, 0.06); }
 
+      /* Causal mask grid */
+      table.sa-mask {
+        border-collapse: collapse;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.8em;
+        margin: 0 auto;
+      }
+      table.sa-mask th,
+      table.sa-mask td {
+        border: 1px solid #e3e3e3;
+        padding: 6px 9px;
+        text-align: center;
+      }
+      table.sa-mask thead th { color: #777; font-weight: normal; }
+      table.sa-mask .sa-rowlabel {
+        text-align: right;
+        font-weight: bold;
+        color: #1a0dab;
+        background: #fafbff;
+      }
+      table.sa-mask .sa-corner { border: none; background: none; }
+      table.sa-mask td.mask-ok { background: rgba(251, 188, 5, 0.5); }
+      table.sa-mask td.mask-x { background: #f2f2f2; color: #c4c4c4; }
+
       /* Callout note */
       .sa-note {
         border-left: 3px solid #1a0dab;
@@ -508,6 +532,56 @@ score(she, ball) = [2.64, 1.46, 0.94] · [2.73, 0.81, 1.52]
         (0.087). The weights sum to 1.</p>
     </div>
 
+    <h2>Causal attention</h2>
+
+    <p>In the example so far, every token attends to every other token — including ones that come
+    later in the sentence. But an LLM generates text one token at a time, from left to right: when
+    it is processing a given token, the tokens that come after it don't exist yet. So each token
+    must only attend to itself and the tokens <em>before</em> it.</p>
+
+    <p>We enforce this with a <em>causal mask</em>. Laying the attention weights out as a grid —
+    one row per query token, one column per key token — we block out every cell above the
+    diagonal, so no token can attend to a later one:</p>
+
+    <div class="sa-figure">
+      <div class="sa-figure-title">Causal mask — each row attends only up to the diagonal</div>
+      <div class="sa-scroll">
+        <table class="sa-mask">
+          <thead>
+            <tr>
+              <th class="sa-corner"></th>
+              <th>the</th><th>dog</th><th>fetch</th><th>the</th><th>ball</th><th>and</th><th>she</th><th>was</th><th>happy</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="sa-rowlabel">the</td><td class="mask-ok"></td><td class="mask-x">×</td><td class="mask-x">×</td><td class="mask-x">×</td><td class="mask-x">×</td><td class="mask-x">×</td><td class="mask-x">×</td><td class="mask-x">×</td><td class="mask-x">×</td></tr>
+            <tr><td class="sa-rowlabel">dog</td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-x">×</td><td class="mask-x">×</td><td class="mask-x">×</td><td class="mask-x">×</td><td class="mask-x">×</td><td class="mask-x">×</td><td class="mask-x">×</td></tr>
+            <tr><td class="sa-rowlabel">fetched</td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-x">×</td><td class="mask-x">×</td><td class="mask-x">×</td><td class="mask-x">×</td><td class="mask-x">×</td><td class="mask-x">×</td></tr>
+            <tr><td class="sa-rowlabel">the</td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-x">×</td><td class="mask-x">×</td><td class="mask-x">×</td><td class="mask-x">×</td><td class="mask-x">×</td></tr>
+            <tr><td class="sa-rowlabel">ball</td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-x">×</td><td class="mask-x">×</td><td class="mask-x">×</td><td class="mask-x">×</td></tr>
+            <tr><td class="sa-rowlabel">and</td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-x">×</td><td class="mask-x">×</td><td class="mask-x">×</td></tr>
+            <tr><td class="sa-rowlabel">she</td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-x">×</td><td class="mask-x">×</td></tr>
+            <tr><td class="sa-rowlabel">was</td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-x">×</td></tr>
+            <tr><td class="sa-rowlabel">happy</td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td><td class="mask-ok"></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="sa-caption">Amber cells are allowed — a token may attend to itself and to earlier
+        tokens. Grey (×) cells are masked out, so no token can attend to one that comes after it.</p>
+    </div>
+
+    <p>In practice we apply the mask to the scores just before the softmax, setting every masked
+    position to <code>-inf</code> so that softmax sends its weight to 0 (and the surviving weights
+    still sum to 1):</p>
+
+    <pre class="sa-code"><code><span class="sa-comment"># block attention to future tokens (everything above the diagonal)</span>
+mask = torch.<span class="sa-fn">triu</span>(torch.<span class="sa-fn">ones</span>(seq_len, seq_len), diagonal=1).<span class="sa-fn">bool</span>()
+attention_scores = attention_scores.<span class="sa-fn">masked_fill</span>(mask, <span class="sa-fn">float</span>('-inf'))</code></pre>
+
+    <p>For our query <code>she</code>, this zeroes out the (already tiny) weights on the later
+    tokens <code>was</code> and <code>happy</code>; for a token near the start, like the first
+    <code>the</code>, it leaves nothing to attend to but itself.</p>
+
     <h2>The W_value projection</h2>
 
     <p>Finally, we come to the <code>W_value</code> projection. We use <code>W_value</code> to
@@ -593,7 +667,13 @@ score(she, ball) = [2.64, 1.46, 0.94] · [2.73, 0.81, 1.52]
         queries = self.<span class="sa-fn">W_query</span>(x)
         values  = self.<span class="sa-fn">W_value</span>(x)
 
-        attention_scores  = queries @ keys.T
+        attention_scores = queries @ keys.T
+
+        <span class="sa-comment"># causal mask: a token can only attend to itself and earlier tokens</span>
+        seq_len = x.shape[0]
+        mask = torch.<span class="sa-fn">triu</span>(torch.<span class="sa-fn">ones</span>(seq_len, seq_len), diagonal=1).<span class="sa-fn">bool</span>()
+        attention_scores = attention_scores.<span class="sa-fn">masked_fill</span>(mask, <span class="sa-fn">float</span>('-inf'))
+
         attention_weights = torch.<span class="sa-fn">softmax</span>(
             attention_scores / keys.shape[-1] ** 0.5, dim=-1
         )
@@ -608,7 +688,6 @@ score(she, ball) = [2.64, 1.46, 0.94] · [2.73, 0.81, 1.52]
     fully-fledged self attention:</p>
 
     <ul class="sa-next">
-      <li>Causal attention</li>
       <li>Dropout</li>
       <li>Multi-head attention</li>
     </ul>
