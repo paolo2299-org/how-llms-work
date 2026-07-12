@@ -650,7 +650,7 @@ attention_scores = attention_scores.<span class="sa-fn">masked_fill</span>(mask,
     <p>Below we can see what we've learned so far in a simple implementation that could be
     plugged into a neural network like an LLM:</p>
 
-    <pre class="sa-code"><code><span class="sa-kw">import</span> torch
+    <pre class="sa-code" id="self-attention-class"><code><span class="sa-kw">import</span> torch
 <span class="sa-kw">import</span> torch.nn <span class="sa-kw">as</span> nn
 
 
@@ -688,7 +688,7 @@ attention_scores = attention_scores.<span class="sa-fn">masked_fill</span>(mask,
     fully-fledged self attention:</p>
 
     <ul class="sa-next">
-      <li>Multi-head attention</li>
+      <li><a href="/multi-head-attention">Multi-head attention</a></li>
     </ul>
 
     <p class="back"><a href="/#self-attention">← Back to How LLMs Work</a></p>

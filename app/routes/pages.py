@@ -11,3 +11,8 @@ def index():
 @pages_bp.route("/self-attention")
 def self_attention():
     return render_template("self-attention.html")
+
+
+@pages_bp.route("/multi-head-attention")
+def multi_head_attention():
+    return render_template("multi-head-attention.html")

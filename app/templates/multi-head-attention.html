@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Multi-Head Attention — How LLMs Work</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+      h2 { margin-top: 52px; }
+      h3 { margin-top: 32px; margin-bottom: 8px; }
+      .sa-top-link { font-size: 0.9em; margin-bottom: 8px; }
+
+      /* Inline code + code blocks */
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.9em;
+        background: rgba(27, 31, 35, 0.06);
+        padding: 1px 5px;
+        border-radius: 4px;
+      }
+      pre.sa-code {
+        background: #f6f8fa;
+        border: 1px solid #e1e4e8;
+        border-radius: 6px;
+        padding: 14px 16px;
+        overflow-x: auto;
+        line-height: 1.5;
+        margin: 16px 0;
+      }
+      pre.sa-code code {
+        background: none;
+        padding: 0;
+        font-size: 0.84em;
+        color: #24292e;
+      }
+      .sa-comment { color: #6a737d; }
+      .sa-kw { color: #d73a49; }
+      .sa-fn { color: #6f42c1; }
+
+      /* Figures */
+      .sa-figure {
+        margin: 22px 0;
+        padding: 16px;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+      }
+      .sa-figure-title {
+        font-size: 0.82em;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #666;
+        margin-bottom: 12px;
+      }
+      .sa-caption {
+        margin-top: 10px;
+        font-size: 0.88em;
+        color: #555;
+        font-style: italic;
+      }
+      .sa-scroll { overflow-x: auto; }
+
+      /* Numeric matrices / tables */
+      table.sa-matrix {
+        border-collapse: collapse;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.82em;
+        margin: 0 auto;
+      }
+      table.sa-matrix th,
+      table.sa-matrix td {
+        border: 1px solid #e3e3e3;
+        padding: 4px 9px;
+        text-align: right;
+        white-space: nowrap;
+      }
+      table.sa-matrix thead th { color: #777; font-weight: normal; font-size: 0.95em; text-align: center; }
+      table.sa-matrix .sa-rowlabel {
+        text-align: left;
+        font-weight: bold;
+        color: #1a0dab;
+        background: #fafbff;
+      }
+      table.sa-matrix .sa-corner { border: none; background: none; }
+      table.sa-matrix .zero { color: #cacaca; }
+      table.sa-matrix .neg-inf { color: #b9b9b9; background: #f5f5f5; text-align: center; }
+
+      /* Callout note */
+      .sa-note {
+        border-left: 3px solid #1a0dab;
+        background: #f6f7ff;
+        padding: 10px 16px;
+        margin: 18px 0;
+        border-radius: 0 4px 4px 0;
+        font-size: 0.95em;
+      }
+      .sa-note p { margin: 6px 0; }
+
+      /* ---- Multi-head specifics ---- */
+      /* Two head colours: head 1 = blue (#1a0dab), head 2 = teal (#0f766e) */
+      .mha-diagram svg { display: block; width: 100%; height: auto; max-height: 260px; }
+      .mha-box { fill: #fff; stroke: #bbb; stroke-width: 1.5; }
+      .mha-box.h0 { stroke: #1a0dab; }
+      .mha-box.h1 { stroke: #0f766e; }
+      .mha-lbl { font-family: sans-serif; font-size: 14px; fill: #222; }
+      .mha-sub { font-family: sans-serif; font-size: 11px; fill: #666; }
+      .mha-arrow { stroke: #999; stroke-width: 1.6; fill: none; }
+
+      .mha-badge {
+        display: inline-block;
+        font-size: 0.74em;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 3px 10px;
+        border-radius: 4px;
+        color: #fff;
+      }
+      .mha-badge.h0 { background: #1a0dab; }
+      .mha-badge.h1 { background: #0f766e; }
+
+      .mha-steplabel {
+        font-size: 0.82em;
+        color: #555;
+        font-style: italic;
+        text-align: center;
+        margin: 14px 0 5px;
+      }
+
+      /* Side-by-side per-head columns */
+      .mha-cols { display: flex; gap: 26px; flex-wrap: wrap; justify-content: center; }
+      .mha-col { display: flex; flex-direction: column; align-items: center; }
+
+      /* Head-split column tinting on the 6-wide tables */
+      col.colh0 { background: rgba(26, 13, 171, 0.05); }
+      col.colh1 { background: rgba(15, 118, 110, 0.07); }
+      table.sa-matrix thead th.grp-h0 { color: #1a0dab; font-weight: bold; }
+      table.sa-matrix thead th.grp-h1 { color: #0f766e; font-weight: bold; }
+
+      /* Per-head attention tables: recolour the row labels for head 2 */
+      table.sa-matrix.tbl-h1 .sa-rowlabel { color: #0f766e; }
+    </style>
+  </head>
+  <body>
+    <p class="sa-top-link"><a href="/self-attention">← Back to Self-Attention</a></p>
+    <h1>Multi-Head Attention</h1>
+
+    <p>The self-attention mechanism we have looked at so far is complete and LLM-ready, but is a
+    special case called <em>single-head</em> attention.</p>
+
+    <p>Modern LLMs instead use <em>multi-head</em> self-attention. This sounds fancy, but all it
+    really means is that we take the exact same mechanism we have just learned about, and run
+    multiple instances of it in parallel. Conceptually this looks like the following:</p>
+
+    <div class="sa-figure">
+      <div class="mha-diagram">
+        <svg viewBox="0 0 760 250" role="img" aria-label="An input is sent to two self-attention heads in parallel; their results are concatenated and passed through a linear layer to produce the output.">
+          <defs>
+            <marker id="mhaArrow" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#999"></path>
+            </marker>
+          </defs>
+
+          <!-- input -->
+          <rect class="mha-box" x="14" y="101" width="82" height="48" rx="6"></rect>
+          <text class="mha-lbl" x="55" y="130" text-anchor="middle">input x</text>
+
+          <!-- heads -->
+          <rect class="mha-box h0" x="200" y="40" width="156" height="54" rx="6"></rect>
+          <text class="mha-lbl" x="278" y="62" text-anchor="middle" style="fill:#1a0dab;font-weight:bold">Head 1</text>
+          <text class="mha-sub" x="278" y="80" text-anchor="middle">self-attention</text>
+
+          <rect class="mha-box h1" x="200" y="156" width="156" height="54" rx="6"></rect>
+          <text class="mha-lbl" x="278" y="178" text-anchor="middle" style="fill:#0f766e;font-weight:bold">Head 2</text>
+          <text class="mha-sub" x="278" y="196" text-anchor="middle">self-attention</text>
+
+          <!-- concat -->
+          <rect class="mha-box" x="418" y="98" width="92" height="54" rx="6"></rect>
+          <text class="mha-lbl" x="464" y="130" text-anchor="middle">concat</text>
+
+          <!-- linear -->
+          <rect class="mha-box" x="560" y="98" width="130" height="54" rx="6"></rect>
+          <text class="mha-lbl" x="625" y="122" text-anchor="middle">linear layer</text>
+          <text class="mha-sub" x="625" y="140" text-anchor="middle">(W_out)</text>
+
+          <!-- arrows -->
+          <path class="mha-arrow" d="M96,120 L198,70" marker-end="url(#mhaArrow)"></path>
+          <path class="mha-arrow" d="M96,130 L198,182" marker-end="url(#mhaArrow)"></path>
+          <path class="mha-arrow" d="M356,70 L416,118" marker-end="url(#mhaArrow)"></path>
+          <path class="mha-arrow" d="M356,182 L416,132" marker-end="url(#mhaArrow)"></path>
+          <path class="mha-arrow" d="M510,125 L558,125" marker-end="url(#mhaArrow)"></path>
+          <path class="mha-arrow" d="M690,125 L742,125" marker-end="url(#mhaArrow)"></path>
+          <text class="mha-sub" x="726" y="116" text-anchor="middle">output</text>
+        </svg>
+      </div>
+      <p class="sa-caption">The same input is fed to each head, each head runs the self-attention
+        we already built, and their results are joined and passed through one more linear layer.</p>
+    </div>
+
+    <p>Throughout this page we will show multi-head attention with just two heads, but it works
+    exactly the same for any number of heads.</p>
+
+    <p>The reason we do this is because it allows the LLM to learn multiple different types of
+    attention at the same time. For example, in our previous toy example we showed self-attention
+    learning how to associate pronouns with their referents (<code>she</code> was referring to
+    <code>dog</code>). But there could be many other types of relationships that self-attention
+    can discover — for example tracking which verb belongs to which subject, linking an adjective
+    to the noun it describes, or simply focusing on the words physically nearest to each token.
+    (The interactive demo on the <a href="/#self-attention">overview page</a> shows three such
+    heads: pronoun resolution, syntax, and local attention.)</p>
+
+    <h2>Simple implementation</h2>
+
+    <p>Given our previous implementation of
+    <a href="/self-attention#self-attention-class">single-head attention</a>, we can write a
+    multi-head attention mechanism as follows: keep a list of independent attention heads, run
+    each one on the input, and concatenate their results side by side.</p>
+
+    <pre class="sa-code"><code><span class="sa-kw">import</span> torch
+<span class="sa-kw">import</span> torch.nn <span class="sa-kw">as</span> nn
+
+
+<span class="sa-kw">class</span> <span class="sa-fn">MultiHeadAttentionWrapper</span>(nn.Module):
+
+    <span class="sa-kw">def</span> <span class="sa-fn">__init__</span>(self, input_dim, head_dim, num_heads):
+        super().<span class="sa-fn">__init__</span>()
+        self.heads = nn.<span class="sa-fn">ModuleList</span>(
+            [<span class="sa-fn">SelfAttention</span>(input_dim, head_dim) <span class="sa-kw">for</span> _ <span class="sa-kw">in</span> <span class="sa-fn">range</span>(num_heads)]
+        )
+
+    <span class="sa-kw">def</span> <span class="sa-fn">forward</span>(self, x):
+        <span class="sa-comment"># run every head, then join their results side by side</span>
+        <span class="sa-kw">return</span> torch.<span class="sa-fn">cat</span>([<span class="sa-fn">head</span>(x) <span class="sa-kw">for</span> head <span class="sa-kw">in</span> self.heads], dim=-1)</code></pre>
+
+    <p>We also add another linear layer after joining the two result vectors
+    (<code>self.out_proj = nn.Linear(num_heads * head_dim, num_heads * head_dim)</code>).</p>
+
+    <p>The reason for this last layer is that the heads work completely independently, so just
+    concatenating two sets of enriched input vectors together, by itself, is not very meaningful
+    to an LLM. Adding a final linear layer allows the LLM to take the combined learnings from its
+    multiple attention heads, and form a representation that encapsulates the combined learnings
+    in a meaningful way.</p>
+
+    <p>Our full multi-head attention class (extended to handle any number of heads) now looks as
+    follows:</p>
+
+    <pre class="sa-code"><code><span class="sa-kw">class</span> <span class="sa-fn">MultiHeadAttentionWrapper</span>(nn.Module):
+
+    <span class="sa-kw">def</span> <span class="sa-fn">__init__</span>(self, input_dim, head_dim, num_heads):
+        super().<span class="sa-fn">__init__</span>()
+        self.heads = nn.<span class="sa-fn">ModuleList</span>(
+            [<span class="sa-fn">SelfAttention</span>(input_dim, head_dim) <span class="sa-kw">for</span> _ <span class="sa-kw">in</span> <span class="sa-fn">range</span>(num_heads)]
+        )
+        self.out_proj = nn.<span class="sa-fn">Linear</span>(num_heads * head_dim, num_heads * head_dim, bias=False)
+
+    <span class="sa-kw">def</span> <span class="sa-fn">forward</span>(self, x):
+        combined = torch.<span class="sa-fn">cat</span>([<span class="sa-fn">head</span>(x) <span class="sa-kw">for</span> head <span class="sa-kw">in</span> self.heads], dim=-1)
+        <span class="sa-kw">return</span> self.<span class="sa-fn">out_proj</span>(combined)</code></pre>
+
+    <h2>Full implementation</h2>
+
+    <p>The multi-head attention implementation above is fully functional and would work fine, but
+    running all of our heads in series and concatenating the results is not very efficient for
+    running at scale. We'll now show a method which produces the same results, but uses PyTorch's
+    functionality much more efficiently.</p>
+
+    <p>We'll show the calculation step by step, showing the full results for a worked example at
+    each step. The purpose of this is so that you can see the shape of the various matrices at
+    each step, and see that we really are achieving the exact same results as in the simple
+    version in our <em>Simple implementation</em> above.</p>
+
+    <p>For simplicity, we'll use two heads, each with a head dimension of 3. In a real transformer,
+    a multi-head attention block keeps its output the same width as its input — so the blocks can be
+    stacked, each one adding its result back onto what came before. That means the embedding
+    dimension is exactly <code>num_heads × head_dim</code>: the heads <em>partition</em> the
+    embedding rather than widening it. With two heads of dimension 3, that gives an embedding
+    dimension of 6. (The single-head example on the previous page used an embedding dimension of 2
+    just to keep the vectors small enough to read; here we use the realistic setup.)</p>
+
+    <pre class="sa-code"><code>num_tokens = 5
+num_heads  = 2
+head_dim   = 3
+embed_dim  = num_heads * head_dim   <span class="sa-comment"># = 6</span></code></pre>
+
+    <p>We'll reuse the start of our sentence from the previous page,
+    <em>"the dog fetched the ball"</em>, giving us five input tokens, each embedded into 6
+    dimensions:</p>
+
+    <div class="sa-figure">
+      <div class="sa-figure-title">input x — shape (5, 6)</div>
+      <div class="sa-scroll">
+        <table class="sa-matrix">
+          <thead>
+            <tr><th class="sa-corner"></th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="sa-rowlabel">the</td><td>0.20</td><td>0.70</td><td>0.50</td><td>-0.50</td><td>-0.40</td><td>0.70</td></tr>
+            <tr><td class="sa-rowlabel">dog</td><td>-0.90</td><td>0.60</td><td>0.50</td><td>-0.10</td><td>-0.40</td><td>-0.40</td></tr>
+            <tr><td class="sa-rowlabel">fetched</td><td>-0.40</td><td>-0.10</td><td>0.00</td><td>0.10</td><td>0.90</td><td>0.50</td></tr>
+            <tr><td class="sa-rowlabel">the</td><td>0.20</td><td>0.70</td><td>0.50</td><td>-0.50</td><td>-0.40</td><td>0.70</td></tr>
+            <tr><td class="sa-rowlabel">ball</td><td>-0.80</td><td>0.00</td><td>-0.10</td><td>0.80</td><td>0.20</td><td>0.00</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <h3>Step 1 — project to queries, keys and values</h3>
+
+    <p>Exactly as before, we project the input to get queries, keys and values — but now each
+    projection outputs <code>num_heads × head_dim = 6</code> numbers per token:</p>
+
+    <pre class="sa-code"><code>queries = self.<span class="sa-fn">W_query</span>(x)   <span class="sa-comment"># each is shape (5, 6)</span>
+keys    = self.<span class="sa-fn">W_key</span>(x)
+values  = self.<span class="sa-fn">W_value</span>(x)</code></pre>
+
+    <p>The trick is that those 6 numbers are really <strong>two heads stitched together</strong>:
+    the first three columns (blue) belong to head 1, the last three (teal) to head 2.</p>
+
+    <div class="sa-figure">
+      <div class="sa-figure-title">queries · keys · values — each shape (5, 6)</div>
+      <div class="sa-scroll">
+        <table class="sa-matrix" style="margin-bottom:14px">
+          <colgroup><col><col class="colh0"><col class="colh0"><col class="colh0"><col class="colh1"><col class="colh1"><col class="colh1"></colgroup>
+          <thead>
+            <tr><th class="sa-corner" rowspan="2">queries</th><th class="grp-h0" colspan="3">Head 1</th><th class="grp-h1" colspan="3">Head 2</th></tr>
+            <tr><th class="grp-h0">0</th><th class="grp-h0">1</th><th class="grp-h0">2</th><th class="grp-h1">0</th><th class="grp-h1">1</th><th class="grp-h1">2</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="sa-rowlabel">the</td><td>0.03</td><td>-0.58</td><td>-0.53</td><td>-0.30</td><td>-0.92</td><td>-0.25</td></tr>
+            <tr><td class="sa-rowlabel">dog</td><td>-0.42</td><td>0.16</td><td>0.37</td><td>0.09</td><td>-0.96</td><td>0.35</td></tr>
+            <tr><td class="sa-rowlabel">fetched</td><td>0.15</td><td>0.18</td><td>0.51</td><td>-0.13</td><td>0.08</td><td>0.13</td></tr>
+            <tr><td class="sa-rowlabel">the</td><td>0.03</td><td>-0.58</td><td>-0.53</td><td>-0.30</td><td>-0.92</td><td>-0.25</td></tr>
+            <tr><td class="sa-rowlabel">ball</td><td>-0.30</td><td>0.14</td><td>0.88</td><td>-0.04</td><td>0.24</td><td>0.24</td></tr>
+          </tbody>
+        </table>
+        <table class="sa-matrix" style="margin-bottom:14px">
+          <colgroup><col><col class="colh0"><col class="colh0"><col class="colh0"><col class="colh1"><col class="colh1"><col class="colh1"></colgroup>
+          <thead>
+            <tr><th class="sa-corner" rowspan="2">keys</th><th class="grp-h0" colspan="3">Head 1</th><th class="grp-h1" colspan="3">Head 2</th></tr>
+            <tr><th class="grp-h0">0</th><th class="grp-h0">1</th><th class="grp-h0">2</th><th class="grp-h1">0</th><th class="grp-h1">1</th><th class="grp-h1">2</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="sa-rowlabel">the</td><td>0.08</td><td>0.12</td><td>-0.59</td><td>-0.43</td><td>0.82</td><td>0.04</td></tr>
+            <tr><td class="sa-rowlabel">dog</td><td>-0.17</td><td>0.74</td><td>-0.59</td><td>-0.38</td><td>-0.13</td><td>-0.14</td></tr>
+            <tr><td class="sa-rowlabel">fetched</td><td>0.45</td><td>-0.08</td><td>-0.73</td><td>-0.97</td><td>0.03</td><td>-0.42</td></tr>
+            <tr><td class="sa-rowlabel">the</td><td>0.08</td><td>0.12</td><td>-0.59</td><td>-0.43</td><td>0.82</td><td>0.04</td></tr>
+            <tr><td class="sa-rowlabel">ball</td><td>0.38</td><td>0.70</td><td>-0.12</td><td>-0.38</td><td>-0.41</td><td>0.04</td></tr>
+          </tbody>
+        </table>
+        <table class="sa-matrix">
+          <colgroup><col><col class="colh0"><col class="colh0"><col class="colh0"><col class="colh1"><col class="colh1"><col class="colh1"></colgroup>
+          <thead>
+            <tr><th class="sa-corner" rowspan="2">values</th><th class="grp-h0" colspan="3">Head 1</th><th class="grp-h1" colspan="3">Head 2</th></tr>
+            <tr><th class="grp-h0">0</th><th class="grp-h0">1</th><th class="grp-h0">2</th><th class="grp-h1">0</th><th class="grp-h1">1</th><th class="grp-h1">2</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="sa-rowlabel">the</td><td>-0.55</td><td>0.08</td><td>0.24</td><td>-0.21</td><td>0.44</td><td>-0.58</td></tr>
+            <tr><td class="sa-rowlabel">dog</td><td>0.22</td><td>0.02</td><td>-0.46</td><td>0.48</td><td>-0.27</td><td>-0.95</td></tr>
+            <tr><td class="sa-rowlabel">fetched</td><td>-0.63</td><td>0.17</td><td>0.43</td><td>-0.01</td><td>-0.03</td><td>0.33</td></tr>
+            <tr><td class="sa-rowlabel">the</td><td>-0.55</td><td>0.08</td><td>0.24</td><td>-0.21</td><td>0.44</td><td>-0.58</td></tr>
+            <tr><td class="sa-rowlabel">ball</td><td>0.38</td><td>-0.26</td><td>0.13</td><td>0.32</td><td>0.20</td><td>-0.10</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <h3>Step 2 — split into heads</h3>
+
+    <p>We make that grouping explicit with a reshape, then move the head axis to the front so the
+    two heads can be processed as an independent batch:</p>
+
+    <pre class="sa-code"><code>queries = queries.<span class="sa-fn">view</span>(num_tokens, num_heads, head_dim).<span class="sa-fn">transpose</span>(0, 1)
+keys    = keys.<span class="sa-fn">view</span>(num_tokens, num_heads, head_dim).<span class="sa-fn">transpose</span>(0, 1)
+values  = values.<span class="sa-fn">view</span>(num_tokens, num_heads, head_dim).<span class="sa-fn">transpose</span>(0, 1)
+<span class="sa-comment"># each is now shape (num_heads, num_tokens, head_dim) = (2, 5, 3)</span></code></pre>
+
+    <p>No numbers change here — <code>.view(...)</code> just regroups the 6 columns above into
+    (2 heads × 3 dims), and <code>.transpose(...)</code> reorders the axes so that head 1's slice
+    (the blue columns) and head 2's slice (the teal columns) each peel apart into their own
+    <code>(5, 3)</code> block:</p>
+
+    <div class="sa-figure">
+      <div class="sa-figure-title">Each (5, 6) tensor splits into two (5, 3) per-head blocks</div>
+      <div class="mha-cols">
+        <div class="mha-col">
+          <span class="mha-badge h0">Head 1 — columns 0–2</span>
+          <div class="mha-steplabel">queries · (5, 3)</div>
+          <table class="sa-matrix tbl-h0">
+            <thead><tr><th class="sa-corner"></th><th>0</th><th>1</th><th>2</th></tr></thead>
+            <tbody>
+              <tr><td class="sa-rowlabel">the</td><td>0.03</td><td>-0.58</td><td>-0.53</td></tr>
+              <tr><td class="sa-rowlabel">dog</td><td>-0.42</td><td>0.16</td><td>0.37</td></tr>
+              <tr><td class="sa-rowlabel">fetched</td><td>0.15</td><td>0.18</td><td>0.51</td></tr>
+              <tr><td class="sa-rowlabel">the</td><td>0.03</td><td>-0.58</td><td>-0.53</td></tr>
+              <tr><td class="sa-rowlabel">ball</td><td>-0.30</td><td>0.14</td><td>0.88</td></tr>
+            </tbody>
+          </table>
+          <div class="mha-steplabel">keys · (5, 3)</div>
+          <table class="sa-matrix tbl-h0">
+            <thead><tr><th class="sa-corner"></th><th>0</th><th>1</th><th>2</th></tr></thead>
+            <tbody>
+              <tr><td class="sa-rowlabel">the</td><td>0.08</td><td>0.12</td><td>-0.59</td></tr>
+              <tr><td class="sa-rowlabel">dog</td><td>-0.17</td><td>0.74</td><td>-0.59</td></tr>
+              <tr><td class="sa-rowlabel">fetched</td><td>0.45</td><td>-0.08</td><td>-0.73</td></tr>
+              <tr><td class="sa-rowlabel">the</td><td>0.08</td><td>0.12</td><td>-0.59</td></tr>
+              <tr><td class="sa-rowlabel">ball</td><td>0.38</td><td>0.70</td><td>-0.12</td></tr>
+            </tbody>
+          </table>
+          <div class="mha-steplabel">values · (5, 3)</div>
+          <table class="sa-matrix tbl-h0">
+            <thead><tr><th class="sa-corner"></th><th>0</th><th>1</th><th>2</th></tr></thead>
+            <tbody>
+              <tr><td class="sa-rowlabel">the</td><td>-0.55</td><td>0.08</td><td>0.24</td></tr>
+              <tr><td class="sa-rowlabel">dog</td><td>0.22</td><td>0.02</td><td>-0.46</td></tr>
+              <tr><td class="sa-rowlabel">fetched</td><td>-0.63</td><td>0.17</td><td>0.43</td></tr>
+              <tr><td class="sa-rowlabel">the</td><td>-0.55</td><td>0.08</td><td>0.24</td></tr>
+              <tr><td class="sa-rowlabel">ball</td><td>0.38</td><td>-0.26</td><td>0.13</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="mha-col">
+          <span class="mha-badge h1">Head 2 — columns 3–5</span>
+          <div class="mha-steplabel">queries · (5, 3)</div>
+          <table class="sa-matrix tbl-h1">
+            <thead><tr><th class="sa-corner"></th><th>0</th><th>1</th><th>2</th></tr></thead>
+            <tbody>
+              <tr><td class="sa-rowlabel">the</td><td>-0.30</td><td>-0.92</td><td>-0.25</td></tr>
+              <tr><td class="sa-rowlabel">dog</td><td>0.09</td><td>-0.96</td><td>0.35</td></tr>
+              <tr><td class="sa-rowlabel">fetched</td><td>-0.13</td><td>0.08</td><td>0.13</td></tr>
+              <tr><td class="sa-rowlabel">the</td><td>-0.30</td><td>-0.92</td><td>-0.25</td></tr>
+              <tr><td class="sa-rowlabel">ball</td><td>-0.04</td><td>0.24</td><td>0.24</td></tr>
+            </tbody>
+          </table>
+          <div class="mha-steplabel">keys · (5, 3)</div>
+          <table class="sa-matrix tbl-h1">
+            <thead><tr><th class="sa-corner"></th><th>0</th><th>1</th><th>2</th></tr></thead>
+            <tbody>
+              <tr><td class="sa-rowlabel">the</td><td>-0.43</td><td>0.82</td><td>0.04</td></tr>
+              <tr><td class="sa-rowlabel">dog</td><td>-0.38</td><td>-0.13</td><td>-0.14</td></tr>
+              <tr><td class="sa-rowlabel">fetched</td><td>-0.97</td><td>0.03</td><td>-0.42</td></tr>
+              <tr><td class="sa-rowlabel">the</td><td>-0.43</td><td>0.82</td><td>0.04</td></tr>
+              <tr><td class="sa-rowlabel">ball</td><td>-0.38</td><td>-0.41</td><td>0.04</td></tr>
+            </tbody>
+          </table>
+          <div class="mha-steplabel">values · (5, 3)</div>
+          <table class="sa-matrix tbl-h1">
+            <thead><tr><th class="sa-corner"></th><th>0</th><th>1</th><th>2</th></tr></thead>
+            <tbody>
+              <tr><td class="sa-rowlabel">the</td><td>-0.21</td><td>0.44</td><td>-0.58</td></tr>
+              <tr><td class="sa-rowlabel">dog</td><td>0.48</td><td>-0.27</td><td>-0.95</td></tr>
+              <tr><td class="sa-rowlabel">fetched</td><td>-0.01</td><td>-0.03</td><td>0.33</td></tr>
+              <tr><td class="sa-rowlabel">the</td><td>-0.21</td><td>0.44</td><td>-0.58</td></tr>
+              <tr><td class="sa-rowlabel">ball</td><td>0.32</td><td>0.20</td><td>-0.10</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <p class="sa-caption">These are just the blue and teal columns from Step 1, lifted out into a
+        separate set of queries, keys and values per head. Each head now has its own complete
+        <code>(5, 3)</code> query/key/value set and attends completely independently.</p>
+    </div>
+
+    <p>From here, every head is just the single-head attention we already know, run independently
+    on its own block.</p>
+
+    <h3>Step 3 — attention within each head</h3>
+
+    <p>Each head now runs the familiar scaled dot-product attention — scores, causal mask,
+    softmax, then a weighted sum of its values — on its own <code>(5, 3)</code> query, key and
+    value blocks. Because the two heads hold different numbers, they attend differently:</p>
+
+    <pre class="sa-code"><code>attention_scores = queries @ keys.<span class="sa-fn">transpose</span>(-2, -1)   <span class="sa-comment"># shape (2, 5, 5)</span>
+
+mask = torch.<span class="sa-fn">triu</span>(torch.<span class="sa-fn">ones</span>(num_tokens, num_tokens), diagonal=1).<span class="sa-fn">bool</span>()
+attention_scores = attention_scores.<span class="sa-fn">masked_fill</span>(mask, <span class="sa-fn">float</span>('-inf'))
+
+attention_weights = torch.<span class="sa-fn">softmax</span>(attention_scores / head_dim ** 0.5, dim=-1)
+
+context = attention_weights @ values   <span class="sa-comment"># shape (2, 5, 3)</span></code></pre>
+
+    <p>Running that on our two heads gives:</p>
+
+    <div class="sa-figure">
+      <span class="mha-badge h0">Head 1</span>
+      <div class="mha-steplabel">attention scores (scaled, causal-masked) — shape (5, 5)</div>
+      <div class="sa-scroll">
+        <table class="sa-matrix tbl-h0">
+          <thead><tr><th class="sa-corner">scores</th><th>the</th><th>dog</th><th>fetch</th><th>the</th><th>ball</th></tr></thead>
+          <tbody>
+            <tr><td class="sa-rowlabel">the</td><td>0.25</td><td class="neg-inf">−∞</td><td class="neg-inf">−∞</td><td class="neg-inf">−∞</td><td class="neg-inf">−∞</td></tr>
+            <tr><td class="sa-rowlabel">dog</td><td>-0.23</td><td>-0.03</td><td class="neg-inf">−∞</td><td class="neg-inf">−∞</td><td class="neg-inf">−∞</td></tr>
+            <tr><td class="sa-rowlabel">fetched</td><td>-0.27</td><td>-0.19</td><td>-0.32</td><td class="neg-inf">−∞</td><td class="neg-inf">−∞</td></tr>
+            <tr><td class="sa-rowlabel">the</td><td>0.25</td><td>-0.12</td><td>0.45</td><td>0.25</td><td class="neg-inf">−∞</td></tr>
+            <tr><td class="sa-rowlabel">ball</td><td>-0.53</td><td>-0.36</td><td>-0.79</td><td>-0.53</td><td>-0.12</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mha-steplabel">attention weights (softmax of each row) — shape (5, 5)</div>
+      <div class="sa-scroll">
+        <table class="sa-matrix tbl-h0">
+          <thead><tr><th class="sa-corner">weights</th><th>the</th><th>dog</th><th>fetch</th><th>the</th><th>ball</th></tr></thead>
+          <tbody>
+            <tr><td class="sa-rowlabel">the</td><td>1.00</td><td class="zero">0.00</td><td class="zero">0.00</td><td class="zero">0.00</td><td class="zero">0.00</td></tr>
+            <tr><td class="sa-rowlabel">dog</td><td>0.47</td><td>0.53</td><td class="zero">0.00</td><td class="zero">0.00</td><td class="zero">0.00</td></tr>
+            <tr><td class="sa-rowlabel">fetched</td><td>0.33</td><td>0.35</td><td>0.32</td><td class="zero">0.00</td><td class="zero">0.00</td></tr>
+            <tr><td class="sa-rowlabel">the</td><td>0.25</td><td>0.21</td><td>0.29</td><td>0.25</td><td class="zero">0.00</td></tr>
+            <tr><td class="sa-rowlabel">ball</td><td>0.19</td><td>0.21</td><td>0.16</td><td>0.19</td><td>0.24</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mha-steplabel">context = weights @ values — shape (5, 3)</div>
+      <div class="sa-scroll">
+        <table class="sa-matrix tbl-h0">
+          <thead><tr><th class="sa-corner">context</th><th>0</th><th>1</th><th>2</th></tr></thead>
+          <tbody>
+            <tr><td class="sa-rowlabel">the</td><td>-0.55</td><td>0.08</td><td>0.24</td></tr>
+            <tr><td class="sa-rowlabel">dog</td><td>-0.14</td><td>0.05</td><td>-0.13</td></tr>
+            <tr><td class="sa-rowlabel">fetched</td><td>-0.31</td><td>0.09</td><td>0.06</td></tr>
+            <tr><td class="sa-rowlabel">the</td><td>-0.41</td><td>0.09</td><td>0.15</td></tr>
+            <tr><td class="sa-rowlabel">ball</td><td>-0.18</td><td>0.00</td><td>0.10</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="sa-figure">
+      <span class="mha-badge h1">Head 2</span>
+      <div class="mha-steplabel">attention scores (scaled, causal-masked) — shape (5, 5)</div>
+      <div class="sa-scroll">
+        <table class="sa-matrix tbl-h1">
+          <thead><tr><th class="sa-corner">scores</th><th>the</th><th>dog</th><th>fetch</th><th>the</th><th>ball</th></tr></thead>
+          <tbody>
+            <tr><td class="sa-rowlabel">the</td><td>-0.64</td><td class="neg-inf">−∞</td><td class="neg-inf">−∞</td><td class="neg-inf">−∞</td><td class="neg-inf">−∞</td></tr>
+            <tr><td class="sa-rowlabel">dog</td><td>-0.81</td><td>0.04</td><td class="neg-inf">−∞</td><td class="neg-inf">−∞</td><td class="neg-inf">−∞</td></tr>
+            <tr><td class="sa-rowlabel">fetched</td><td>0.13</td><td>0.02</td><td>0.07</td><td class="neg-inf">−∞</td><td class="neg-inf">−∞</td></tr>
+            <tr><td class="sa-rowlabel">the</td><td>-0.64</td><td>0.27</td><td>0.37</td><td>-0.64</td><td class="neg-inf">−∞</td></tr>
+            <tr><td class="sa-rowlabel">ball</td><td>0.22</td><td>-0.05</td><td>-0.05</td><td>0.22</td><td>-0.07</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mha-steplabel">attention weights (softmax of each row) — shape (5, 5)</div>
+      <div class="sa-scroll">
+        <table class="sa-matrix tbl-h1">
+          <thead><tr><th class="sa-corner">weights</th><th>the</th><th>dog</th><th>fetch</th><th>the</th><th>ball</th></tr></thead>
+          <tbody>
+            <tr><td class="sa-rowlabel">the</td><td>1.00</td><td class="zero">0.00</td><td class="zero">0.00</td><td class="zero">0.00</td><td class="zero">0.00</td></tr>
+            <tr><td class="sa-rowlabel">dog</td><td>0.38</td><td>0.62</td><td class="zero">0.00</td><td class="zero">0.00</td><td class="zero">0.00</td></tr>
+            <tr><td class="sa-rowlabel">fetched</td><td>0.34</td><td>0.32</td><td>0.33</td><td class="zero">0.00</td><td class="zero">0.00</td></tr>
+            <tr><td class="sa-rowlabel">the</td><td>0.18</td><td>0.31</td><td>0.33</td><td>0.18</td><td class="zero">0.00</td></tr>
+            <tr><td class="sa-rowlabel">ball</td><td>0.22</td><td>0.19</td><td>0.19</td><td>0.22</td><td>0.19</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mha-steplabel">context = weights @ values — shape (5, 3)</div>
+      <div class="sa-scroll">
+        <table class="sa-matrix tbl-h1">
+          <thead><tr><th class="sa-corner">context</th><th>0</th><th>1</th><th>2</th></tr></thead>
+          <tbody>
+            <tr><td class="sa-rowlabel">the</td><td>-0.21</td><td>0.44</td><td>-0.58</td></tr>
+            <tr><td class="sa-rowlabel">dog</td><td>0.22</td><td>0.00</td><td>-0.81</td></tr>
+            <tr><td class="sa-rowlabel">fetched</td><td>0.08</td><td>0.05</td><td>-0.40</td></tr>
+            <tr><td class="sa-rowlabel">the</td><td>0.07</td><td>0.07</td><td>-0.40</td></tr>
+            <tr><td class="sa-rowlabel">ball</td><td>0.06</td><td>0.17</td><td>-0.39</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="sa-note">
+      <p>Notice the two <code>the</code> tokens: they have identical embeddings, and so identical
+      queries, keys and values — but their context vectors differ. The first <code>the</code> can
+      only attend to itself, while the second <code>the</code> attends back over
+      <code>the dog fetched</code> as well. Same token, different enrichment, because of position
+      and the causal mask.</p>
+    </div>
+
+    <h3>Step 4 — recombine the heads</h3>
+
+    <p>Finally we stitch the heads back together — transpose the head axis back and flatten to one
+    vector per token — and pass the result through the output projection:</p>
+
+    <pre class="sa-code"><code>context = context.<span class="sa-fn">transpose</span>(0, 1).<span class="sa-fn">reshape</span>(num_tokens, num_heads * head_dim)
+output  = self.<span class="sa-fn">out_proj</span>(context)   <span class="sa-comment"># shape (5, 6)</span></code></pre>
+
+    <div class="sa-figure">
+      <div class="sa-figure-title">concatenated context — shape (5, 6)</div>
+      <div class="sa-scroll">
+        <table class="sa-matrix">
+          <colgroup><col><col class="colh0"><col class="colh0"><col class="colh0"><col class="colh1"><col class="colh1"><col class="colh1"></colgroup>
+          <thead>
+            <tr><th class="sa-corner" rowspan="2">token</th><th class="grp-h0" colspan="3">Head 1</th><th class="grp-h1" colspan="3">Head 2</th></tr>
+            <tr><th class="grp-h0">0</th><th class="grp-h0">1</th><th class="grp-h0">2</th><th class="grp-h1">0</th><th class="grp-h1">1</th><th class="grp-h1">2</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="sa-rowlabel">the</td><td>-0.55</td><td>0.08</td><td>0.24</td><td>-0.21</td><td>0.44</td><td>-0.58</td></tr>
+            <tr><td class="sa-rowlabel">dog</td><td>-0.14</td><td>0.05</td><td>-0.13</td><td>0.22</td><td>0.00</td><td>-0.81</td></tr>
+            <tr><td class="sa-rowlabel">fetched</td><td>-0.31</td><td>0.09</td><td>0.06</td><td>0.08</td><td>0.05</td><td>-0.40</td></tr>
+            <tr><td class="sa-rowlabel">the</td><td>-0.41</td><td>0.09</td><td>0.15</td><td>0.07</td><td>0.07</td><td>-0.40</td></tr>
+            <tr><td class="sa-rowlabel">ball</td><td>-0.18</td><td>0.00</td><td>0.10</td><td>0.06</td><td>0.17</td><td>-0.39</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mha-steplabel">↓ output projection (linear layer, 6 → 6)</div>
+      <div class="sa-scroll">
+        <table class="sa-matrix">
+          <thead><tr><th class="sa-corner">output</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr></thead>
+          <tbody>
+            <tr><td class="sa-rowlabel">the</td><td>0.25</td><td>-0.69</td><td>-0.03</td><td>0.00</td><td>0.09</td><td>0.12</td></tr>
+            <tr><td class="sa-rowlabel">dog</td><td>0.15</td><td>-0.61</td><td>-0.18</td><td>-0.33</td><td>-0.24</td><td>0.31</td></tr>
+            <tr><td class="sa-rowlabel">fetched</td><td>0.06</td><td>-0.36</td><td>-0.15</td><td>-0.14</td><td>-0.06</td><td>0.13</td></tr>
+            <tr><td class="sa-rowlabel">the</td><td>0.04</td><td>-0.38</td><td>-0.16</td><td>-0.12</td><td>-0.02</td><td>0.14</td></tr>
+            <tr><td class="sa-rowlabel">ball</td><td>0.11</td><td>-0.38</td><td>-0.04</td><td>-0.09</td><td>-0.04</td><td>0.19</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="sa-caption">This <code>(5, 6)</code> output is exactly what the simple looped
+        version produces — same numbers, computed with two big batched matrix multiplies instead
+        of a Python loop over heads.</p>
+    </div>
+
+    <p>This leaves us with our final self-attention class:</p>
+
+    <pre class="sa-code"><code><span class="sa-kw">import</span> torch
+<span class="sa-kw">import</span> torch.nn <span class="sa-kw">as</span> nn
+
+
+<span class="sa-kw">class</span> <span class="sa-fn">MultiHeadAttention</span>(nn.Module):
+
+    <span class="sa-kw">def</span> <span class="sa-fn">__init__</span>(self, input_dim, head_dim, num_heads):
+        super().<span class="sa-fn">__init__</span>()
+        self.num_heads = num_heads
+        self.head_dim = head_dim
+        out_dim = num_heads * head_dim
+
+        self.W_query = nn.<span class="sa-fn">Linear</span>(input_dim, out_dim, bias=False)
+        self.W_key   = nn.<span class="sa-fn">Linear</span>(input_dim, out_dim, bias=False)
+        self.W_value = nn.<span class="sa-fn">Linear</span>(input_dim, out_dim, bias=False)
+        self.out_proj = nn.<span class="sa-fn">Linear</span>(out_dim, out_dim, bias=False)
+
+    <span class="sa-kw">def</span> <span class="sa-fn">forward</span>(self, x):
+        num_tokens = x.shape[0]
+
+        queries = self.<span class="sa-fn">W_query</span>(x)
+        keys    = self.<span class="sa-fn">W_key</span>(x)
+        values  = self.<span class="sa-fn">W_value</span>(x)
+
+        <span class="sa-comment"># split each token's vector into (num_heads, head_dim), then</span>
+        <span class="sa-comment"># move the head axis to the front so each head is a batch</span>
+        queries = queries.<span class="sa-fn">view</span>(num_tokens, self.num_heads, self.head_dim).<span class="sa-fn">transpose</span>(0, 1)
+        keys    = keys.<span class="sa-fn">view</span>(num_tokens, self.num_heads, self.head_dim).<span class="sa-fn">transpose</span>(0, 1)
+        values  = values.<span class="sa-fn">view</span>(num_tokens, self.num_heads, self.head_dim).<span class="sa-fn">transpose</span>(0, 1)
+
+        attention_scores = queries @ keys.<span class="sa-fn">transpose</span>(-2, -1)
+
+        mask = torch.<span class="sa-fn">triu</span>(torch.<span class="sa-fn">ones</span>(num_tokens, num_tokens), diagonal=1).<span class="sa-fn">bool</span>()
+        attention_scores = attention_scores.<span class="sa-fn">masked_fill</span>(mask, <span class="sa-fn">float</span>('-inf'))
+
+        attention_weights = torch.<span class="sa-fn">softmax</span>(
+            attention_scores / self.head_dim ** 0.5, dim=-1
+        )
+
+        context = attention_weights @ values
+        context = context.<span class="sa-fn">transpose</span>(0, 1).<span class="sa-fn">reshape</span>(num_tokens, self.num_heads * self.head_dim)
+
+        <span class="sa-kw">return</span> self.<span class="sa-fn">out_proj</span>(context)</code></pre>
+
+    <h2>A note on batches</h2>
+
+    <p>One final note — most LLM implementations allow you to input <em>batches</em> of inputs at
+    the same time, instead of a single input. The nice thing is that the magic of PyTorch means
+    the code works out almost exactly the same: the input gains a leading batch dimension, the
+    reshape becomes <code>.view(batch, num_tokens, num_heads, head_dim)</code> and the head axis
+    is moved with <code>.transpose(1, 2)</code>, but every other line stays the same. A full
+    batched implementation will follow.</p>
+
+    <p class="back"><a href="/self-attention">← Back to Self-Attention</a></p>
+  </body>
+</html>
