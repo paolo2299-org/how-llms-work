@@ -343,6 +343,95 @@
         color: #555;
         font-style: italic;
       }
+
+      /* Transformer and LLM architecture diagrams */
+      .architecture-figure {
+        margin: 22px 0 28px;
+        padding: 16px;
+        background: #fafafa;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+      }
+      .architecture-diagram {
+        display: block;
+        width: 100%;
+        height: auto;
+        margin: 0 auto;
+        font-family: sans-serif;
+      }
+      .architecture-box {
+        fill: #fff;
+        stroke: #aaa;
+        stroke-width: 1.5;
+      }
+      .architecture-box-attention {
+        fill: #eef0ff;
+        stroke: #1a0dab;
+      }
+      .architecture-box-ffn {
+        fill: #fff8df;
+        stroke: #c28a00;
+      }
+      .architecture-box-norm {
+        fill: #f3f3f3;
+        stroke: #888;
+      }
+      .architecture-box-output {
+        fill: #fff3c4;
+        stroke: #c28a00;
+      }
+      .architecture-box-head {
+        fill: #edf8f7;
+        stroke: #0f766e;
+      }
+      .architecture-stack {
+        fill: #f7f7fc;
+        stroke: #c9c9de;
+        stroke-width: 1.5;
+        stroke-dasharray: 5 4;
+      }
+      .architecture-arrow {
+        fill: none;
+        stroke: #777;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .architecture-shortcut {
+        fill: none;
+        stroke: #1a0dab;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .architecture-add {
+        fill: #fff;
+        stroke: #1a0dab;
+        stroke-width: 2;
+      }
+      .architecture-label {
+        fill: #222;
+        font-size: 17px;
+        font-weight: bold;
+      }
+      .architecture-sublabel {
+        fill: #555;
+        font-size: 13px;
+      }
+      .architecture-shortcut-label {
+        fill: #1a0dab;
+        font-size: 12px;
+        font-weight: bold;
+      }
+      .architecture-caption {
+        margin: 12px 0 0;
+        color: #555;
+        font-size: 0.9em;
+        font-style: italic;
+      }
+      @media (max-width: 480px) {
+        .architecture-figure { padding: 10px 6px; }
+      }
     </style>
   </head>
   <body>
@@ -431,6 +520,149 @@
       </div>
       <div id="ffn-diagram"></div>
     </div>
+
+    <h2 id="transformer-block">Inside a Transformer Block</h2>
+
+    <p>Self-attention and the feed-forward layer are the two main processing stages
+    inside a <em>transformer block</em>. Self-attention lets each token gather useful
+    information from the other tokens, then the feed-forward layer processes what
+    it has learned.</p>
+
+    <figure class="architecture-figure">
+      <svg class="architecture-diagram" viewBox="0 0 520 660" role="img"
+        aria-labelledby="transformer-block-diagram-title transformer-block-diagram-desc">
+        <title id="transformer-block-diagram-title">The parts of a transformer block</title>
+        <desc id="transformer-block-diagram-desc">An input passes through LayerNorm and self-attention, then is added back through a shortcut connection. It then passes through another LayerNorm and a feed-forward layer, followed by a second shortcut addition, before becoming the block output.</desc>
+        <defs>
+          <marker id="transformer-arrow" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+            <path d="M0,0 L7,3.5 L0,7 Z" fill="#777"></path>
+          </marker>
+          <marker id="transformer-shortcut-arrow" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+            <path d="M0,0 L7,3.5 L0,7 Z" fill="#1a0dab"></path>
+          </marker>
+        </defs>
+
+        <rect class="architecture-box" x="150" y="14" width="170" height="48" rx="7"></rect>
+        <text class="architecture-label" x="235" y="44" text-anchor="middle">Block input</text>
+
+        <path class="architecture-arrow" d="M235 62 V91" marker-end="url(#transformer-arrow)"></path>
+        <rect class="architecture-box architecture-box-norm" x="120" y="94" width="230" height="54" rx="7"></rect>
+        <text class="architecture-label" x="235" y="127" text-anchor="middle">LayerNorm</text>
+
+        <path class="architecture-arrow" d="M235 148 V177" marker-end="url(#transformer-arrow)"></path>
+        <rect class="architecture-box architecture-box-attention" x="100" y="180" width="270" height="66" rx="7"></rect>
+        <text class="architecture-label" x="235" y="209" text-anchor="middle">Self-attention</text>
+        <text class="architecture-sublabel" x="235" y="230" text-anchor="middle">shares information between tokens</text>
+
+        <path class="architecture-arrow" d="M235 246 V278" marker-end="url(#transformer-arrow)"></path>
+        <circle class="architecture-add" cx="235" cy="302" r="21"></circle>
+        <text class="architecture-label" x="235" y="308" text-anchor="middle">+</text>
+        <text class="architecture-sublabel" x="203" y="307" text-anchor="end">add</text>
+
+        <path class="architecture-shortcut" d="M235 76 H455 V302 H259" marker-end="url(#transformer-shortcut-arrow)"></path>
+        <text class="architecture-shortcut-label" x="445" y="190" text-anchor="middle" transform="rotate(90 445 190)">shortcut connection</text>
+
+        <path class="architecture-arrow" d="M235 323 V352" marker-end="url(#transformer-arrow)"></path>
+        <rect class="architecture-box architecture-box-norm" x="120" y="355" width="230" height="54" rx="7"></rect>
+        <text class="architecture-label" x="235" y="388" text-anchor="middle">LayerNorm</text>
+
+        <path class="architecture-arrow" d="M235 409 V438" marker-end="url(#transformer-arrow)"></path>
+        <rect class="architecture-box architecture-box-ffn" x="100" y="441" width="270" height="66" rx="7"></rect>
+        <text class="architecture-label" x="235" y="470" text-anchor="middle">Feed-forward layer</text>
+        <text class="architecture-sublabel" x="235" y="491" text-anchor="middle">processes each token</text>
+
+        <path class="architecture-arrow" d="M235 507 V539" marker-end="url(#transformer-arrow)"></path>
+        <circle class="architecture-add" cx="235" cy="563" r="21"></circle>
+        <text class="architecture-label" x="235" y="569" text-anchor="middle">+</text>
+        <text class="architecture-sublabel" x="203" y="568" text-anchor="end">add</text>
+
+        <path class="architecture-shortcut" d="M235 337 H455 V563 H259" marker-end="url(#transformer-shortcut-arrow)"></path>
+        <text class="architecture-shortcut-label" x="445" y="451" text-anchor="middle" transform="rotate(90 445 451)">shortcut connection</text>
+
+        <path class="architecture-arrow" d="M235 584 V613" marker-end="url(#transformer-arrow)"></path>
+        <rect class="architecture-box" x="135" y="616" width="200" height="38" rx="7"></rect>
+        <text class="architecture-label" x="235" y="641" text-anchor="middle">Output to next block</text>
+      </svg>
+    </figure>
+
+    <p>The calculations inside a neural network can make some values much larger or
+    smaller than others. Before each stage, <em>LayerNorm</em> brings those values
+    back to a consistent scale, giving the stage a steady input to work with.</p>
+
+    <p>After each stage, a <em>shortcut connection</em> carries the stage's input
+    around the side and adds it back to the result. This preserves useful existing
+    information while the stage adds what it has learned. During training, the same
+    shortcuts also give the learning signal (called the <em>gradient</em>) a clearer
+    route back through the model, helping even the earliest blocks learn effectively.</p>
+
+    <h2 id="llm-architecture">The Full LLM</h2>
+
+    <p>A full LLM is built by stacking many transformer blocks. The token embeddings
+    enter the first block, and the output from each block becomes the input to the next.</p>
+
+    <figure class="architecture-figure">
+      <svg class="architecture-diagram" viewBox="0 0 520 880" role="img"
+        aria-labelledby="llm-diagram-title llm-diagram-desc">
+        <title id="llm-diagram-title">A full LLM made from stacked transformer blocks</title>
+        <desc id="llm-diagram-desc">Input text is tokenised and converted to token embeddings. The embeddings pass through a series of transformer blocks, then an output head produces the next token.</desc>
+        <defs>
+          <marker id="llm-arrow" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+            <path d="M0,0 L7,3.5 L0,7 Z" fill="#777"></path>
+          </marker>
+        </defs>
+
+        <rect class="architecture-box" x="155" y="14" width="210" height="54" rx="7"></rect>
+        <text class="architecture-sublabel" x="260" y="35" text-anchor="middle">Input text</text>
+        <text class="architecture-label" x="260" y="57" text-anchor="middle">“The cat sat”</text>
+
+        <path class="architecture-arrow" d="M260 68 V97" marker-end="url(#llm-arrow)"></path>
+        <rect class="architecture-box" x="155" y="100" width="210" height="54" rx="7"></rect>
+        <text class="architecture-label" x="260" y="133" text-anchor="middle">Tokenisation</text>
+
+        <path class="architecture-arrow" d="M260 154 V183" marker-end="url(#llm-arrow)"></path>
+        <rect class="architecture-box architecture-box-attention" x="130" y="186" width="260" height="58" rx="7"></rect>
+        <text class="architecture-label" x="260" y="221" text-anchor="middle">Token embeddings</text>
+
+        <path class="architecture-arrow" d="M260 244 V279" marker-end="url(#llm-arrow)"></path>
+        <rect class="architecture-stack" x="78" y="282" width="364" height="386" rx="12"></rect>
+        <text class="architecture-sublabel" x="260" y="307" text-anchor="middle">Transformer stack</text>
+
+        <rect class="architecture-box architecture-box-attention" x="120" y="323" width="280" height="62" rx="7"></rect>
+        <text class="architecture-label" x="260" y="350" text-anchor="middle">Transformer block 1</text>
+        <text class="architecture-sublabel" x="260" y="371" text-anchor="middle">attention + feed-forward</text>
+
+        <path class="architecture-arrow" d="M260 385 V410" marker-end="url(#llm-arrow)"></path>
+        <rect class="architecture-box architecture-box-attention" x="120" y="413" width="280" height="62" rx="7"></rect>
+        <text class="architecture-label" x="260" y="440" text-anchor="middle">Transformer block 2</text>
+        <text class="architecture-sublabel" x="260" y="461" text-anchor="middle">attention + feed-forward</text>
+
+        <path class="architecture-arrow" d="M260 475 V500" marker-end="url(#llm-arrow)"></path>
+        <rect class="architecture-box architecture-box-attention" x="120" y="503" width="280" height="62" rx="7"></rect>
+        <text class="architecture-label" x="260" y="530" text-anchor="middle">Transformer block 3</text>
+        <text class="architecture-sublabel" x="260" y="551" text-anchor="middle">attention + feed-forward</text>
+
+        <path class="architecture-arrow" d="M260 565 V590" marker-end="url(#llm-arrow)"></path>
+        <rect class="architecture-box architecture-box-attention" x="120" y="593" width="280" height="62" rx="7"></rect>
+        <text class="architecture-label" x="260" y="620" text-anchor="middle">Transformer block N</text>
+        <text class="architecture-sublabel" x="260" y="641" text-anchor="middle">attention + feed-forward</text>
+
+        <path class="architecture-arrow" d="M260 668 V697" marker-end="url(#llm-arrow)"></path>
+        <rect class="architecture-box architecture-box-head" x="130" y="700" width="260" height="64" rx="7"></rect>
+        <text class="architecture-label" x="260" y="727" text-anchor="middle">Output head</text>
+        <text class="architecture-sublabel" x="260" y="748" text-anchor="middle">produces the model's output</text>
+
+        <path class="architecture-arrow" d="M260 764 V797" marker-end="url(#llm-arrow)"></path>
+        <rect class="architecture-box architecture-box-output" x="150" y="800" width="220" height="68" rx="7"></rect>
+        <text class="architecture-sublabel" x="260" y="824" text-anchor="middle">Next token</text>
+        <text class="architecture-label" x="260" y="851" text-anchor="middle">“on”</text>
+      </svg>
+      <figcaption class="architecture-caption">After the transformer blocks have finished their work, the output head produces the model's output.</figcaption>
+    </figure>
+
+    <p>Each block progressively refines the token representations, building on the
+    work done by all the blocks before it. Once the final block has finished, its
+    result passes to the <em>output head</em>, which produces the model's output —
+    in this case, the next token.</p>
 
     <p class="back"><a href="https://pdlawson.com">← Back to home</a></p>
 
