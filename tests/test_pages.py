@@ -23,3 +23,26 @@ def test_index_contains_transformer_overviews(client):
     assert "Transformer block 1" in html
     assert "Output head" in html
     assert "Next token" in html
+
+
+def test_feed_forward_page_contains_worked_example(client):
+    response = client.get("/feed-forward")
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "Feed-Forward Layer, Step by Step" in html
+    assert "shape (5, 6)" in html
+    assert "shape (5, 12)" in html
+    assert "GELU" in html
+    assert 'id="feed-forward-class"' in html
+    assert "FeedForward" in html
+    assert "Feed-forward tensor shape flow" in html
+
+
+def test_feed_forward_navigation_links_are_present(client):
+    index_html = client.get("/").get_data(as_text=True)
+    attention_html = client.get("/multi-head-attention").get_data(as_text=True)
+
+    assert 'id="feed-forward"' in index_html
+    assert 'href="/feed-forward"' in index_html
+    assert 'href="/feed-forward"' in attention_html

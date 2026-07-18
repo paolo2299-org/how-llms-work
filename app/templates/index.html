@@ -497,7 +497,7 @@
 
     <p>Want to see the actual mechanism? <a href="/self-attention">Walk through self-attention step by step →</a> — a small worked example that takes a sentence all the way from token embeddings to an enriched output, with every number visible.</p>
 
-    <h2>Feed-Forward Layer</h2>
+    <h2 id="feed-forward">Feed-Forward Layer</h2>
 
     <p>After the self-attention module comes the <em>feed-forward layer</em>. Once self attention
     has enriched each token with information from other tokens in the input, the feed-forward layer then
@@ -520,6 +520,8 @@
       </div>
       <div id="ffn-diagram"></div>
     </div>
+
+    <p>Want to follow the numbers? <a href="/feed-forward">Walk through the feed-forward layer step by step →</a> — see one sequence expand into learned features, pass through GELU, and return to its original width, with every tensor shape visible.</p>
 
     <h2 id="transformer-block">Inside a Transformer Block</h2>
 

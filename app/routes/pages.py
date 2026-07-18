@@ -16,3 +16,8 @@ def self_attention():
 @pages_bp.route("/multi-head-attention")
 def multi_head_attention():
     return render_template("multi-head-attention.html")
+
+
+@pages_bp.route("/feed-forward")
+def feed_forward():
+    return render_template("feed-forward.html")

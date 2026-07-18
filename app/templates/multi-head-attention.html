@@ -674,6 +674,15 @@ output  = self.<span class="sa-fn">out_proj</span>(context)   <span class="sa-co
     is moved with <code>.transpose(1, 2)</code>, but every other line stays the same. A full
     batched implementation will follow.</p>
 
+    <h2>What's next</h2>
+
+    <p>Self-attention has now shared information between the tokens. The next stage in a
+    transformer block processes each enriched token independently:</p>
+
+    <ul>
+      <li><a href="/feed-forward">Feed-forward layer</a></li>
+    </ul>
+
     <p class="back"><a href="/self-attention">← Back to Self-Attention</a></p>
   </body>
 </html>
