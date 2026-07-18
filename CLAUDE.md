@@ -1,6 +1,6 @@
 # how-llms-work
 
-Interactive educational web app demonstrating tokenization, word embeddings, and self-attention in LLMs. Flask backend, vanilla JS frontend, Three.js for 3D visualization.
+Interactive educational web app demonstrating key in LLM concepts and how LLMs work. Flask backend, vanilla JS frontend, Three.js for 3D visualization.
 
 See [agents.md](agents.md) for architecture details, API contracts, testing patterns, and deployment notes.
 

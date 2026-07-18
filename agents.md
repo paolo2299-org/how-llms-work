@@ -1,6 +1,6 @@
 # Agent Guide: how-llms-work
 
-An interactive educational Flask app that demonstrates three core LLM concepts — tokenization, word embeddings, and self-attention — through live visualizations in the browser.
+An interactive educational Flask app that demonstrates core LLM concepts. Where relevant these concepts are demonstrated through live visualizations in the browser.
 
 ## Architecture
 
@@ -73,6 +73,4 @@ Production uses gunicorn with 4 workers × 2 threads. Secrets live in GitHub Act
 ## Key Constraints
 
 - **No frontend build step** — JS files are loaded directly as ES modules via importmap in `index.html`. Do not introduce a bundler without updating the template.
-- **GloVe lookup is case-insensitive** — `api.py` lowercases every word before lookup; the original casing is preserved in the response.
-- **Single-page app** — all three demos live in `index.html`; there are no separate routes for them.
 - **Python 3.12** — specified in the Dockerfile base image.
