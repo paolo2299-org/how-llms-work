@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tokenisation, Step by Step — How LLMs Work</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+      h2 { margin-top: 52px; }
+      h3 { margin-top: 32px; margin-bottom: 8px; }
+      .tok-top-link { font-size: 0.9em; margin-bottom: 8px; }
+      code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; background: rgba(27, 31, 35, 0.06); padding: 1px 5px; border-radius: 4px; }
+      pre.tok-code, pre.tok-calculation { background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; margin: 16px 0; }
+      pre.tok-code code, pre.tok-calculation code { background: none; padding: 0; font-size: 0.84em; color: #24292e; }
+      .tok-comment { color: #6a737d; }
+      .tok-kw { color: #d73a49; }
+      .tok-fn { color: #6f42c1; }
+      .tok-figure { margin: 22px 0; padding: 16px; background: #fff; border: 1px solid #ddd; border-radius: 6px; }
+      .tok-figure-title { font-size: 0.82em; font-weight: bold; text-transform: uppercase; letter-spacing: 0.04em; color: #666; margin-bottom: 12px; }
+      .tok-caption { margin-top: 10px; font-size: 0.88em; color: #555; font-style: italic; }
+      .tok-scroll { overflow-x: auto; }
+      table.tok-matrix { border-collapse: collapse; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.82em; margin: 0 auto; }
+      table.tok-matrix th, table.tok-matrix td { border: 1px solid #e3e3e3; padding: 5px 10px; text-align: right; white-space: nowrap; }
+      table.tok-matrix thead th { color: #777; font-weight: normal; text-align: center; }
+      table.tok-matrix .tok-rowlabel { text-align: left; font-weight: bold; color: #1a0dab; background: #fafbff; }
+      table.tok-matrix .tok-corner { border: none; background: none; }
+      .tok-chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+      .tok-chip { display: inline-block; padding: 5px 10px; border-radius: 6px; border: 1px solid #c9cffa; background: #eef0ff; color: #1a0dab; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .tok-chip.hot { background: rgba(251, 188, 5, 0.35); border-color: #c28a00; color: #5c4300; }
+      .tok-note { border-left: 3px solid #1a0dab; background: #f6f7ff; padding: 10px 16px; margin: 18px 0; border-radius: 0 4px 4px 0; font-size: 0.95em; }
+      .tok-note p { margin: 6px 0; }
+      .tok-flow svg { display: block; width: 100%; max-width: 600px; height: auto; margin: 0 auto; }
+      .tok-flow-box { fill: #fff; stroke: #aaa; stroke-width: 1.5; }
+      .tok-flow-vocab { fill: #eef0ff; stroke: #1a0dab; }
+      .tok-flow-merge { fill: #fff8df; stroke: #c28a00; }
+      .tok-flow-arrow { stroke: #777; stroke-width: 1.6; fill: none; }
+      .tok-flow-label { font-family: sans-serif; font-size: 15px; fill: #222; font-weight: bold; }
+      .tok-flow-sub { font-family: sans-serif; font-size: 12px; fill: #666; }
+    </style>
+  </head>
+  <body>
+    <p class="tok-top-link"><a href="/#tokenisation">← Back to How LLMs Work</a></p>
+    <h1>Tokenisation, Step by Step</h1>
+
+    <p>Tokenisation is the bridge between human text and the integer IDs a language model can process. It slices text into reusable pieces, then replaces each piece with an ID from a fixed vocabulary.</p>
+    <p>Modern LLM tokenizers are usually sub-word tokenizers. Common words can be single tokens, while uncommon words, names, code, and punctuation can be split into smaller chunks.</p>
+
+    <h2>The process at a glance</h2>
+    <figure class="tok-figure tok-flow">
+      <div class="tok-figure-title">Text to token IDs</div>
+      <svg viewBox="0 0 600 420" role="img" aria-labelledby="tok-flow-title tok-flow-desc">
+        <title id="tok-flow-title">Tokenisation flow</title>
+        <desc id="tok-flow-desc">Input text is normalised, split into candidate byte pieces, greedily merged into vocabulary tokens, then mapped to integer IDs.</desc>
+        <defs><marker id="tok-arrow" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#777"></path></marker></defs>
+        <rect class="tok-flow-box" x="175" y="14" width="250" height="50" rx="7"></rect><text class="tok-flow-label" x="300" y="45" text-anchor="middle">Raw text</text>
+        <path class="tok-flow-arrow" d="M300 64 V96" marker-end="url(#tok-arrow)"></path>
+        <rect class="tok-flow-box" x="145" y="99" width="310" height="58" rx="7"></rect><text class="tok-flow-label" x="300" y="124" text-anchor="middle">Pre-token split</text><text class="tok-flow-sub" x="300" y="144" text-anchor="middle">words, spaces, punctuation, bytes</text>
+        <path class="tok-flow-arrow" d="M300 157 V189" marker-end="url(#tok-arrow)"></path>
+        <rect class="tok-flow-box tok-flow-merge" x="135" y="192" width="330" height="64" rx="7"></rect><text class="tok-flow-label" x="300" y="218" text-anchor="middle">Byte Pair Encoding merges</text><text class="tok-flow-sub" x="300" y="238" text-anchor="middle">choose known chunks from the vocabulary</text>
+        <path class="tok-flow-arrow" d="M300 256 V288" marker-end="url(#tok-arrow)"></path>
+        <rect class="tok-flow-box tok-flow-vocab" x="145" y="291" width="310" height="58" rx="7"></rect><text class="tok-flow-label" x="300" y="316" text-anchor="middle">Token IDs</text><text class="tok-flow-sub" x="300" y="336" text-anchor="middle">integers passed to the embedding table</text>
+      </svg>
+      <figcaption class="tok-caption">The exact vocabulary is chosen before model training. The model later learns what each ID should mean through its embedding vector.</figcaption>
+    </figure>
+
+    <h2>Step 1 — split the text into rough pieces</h2>
+    <p>Suppose the prompt is <em>“The tokeniser re-tokenised pdlawson.com!”</em>. A tokenizer first separates broad patterns such as words, leading spaces, punctuation, and byte-level fallbacks.</p>
+    <div class="tok-chip-row"><span class="tok-chip">The</span><span class="tok-chip"> tokeniser</span><span class="tok-chip"> re</span><span class="tok-chip">-</span><span class="tok-chip">tokenised</span><span class="tok-chip"> pdlawson</span><span class="tok-chip">.</span><span class="tok-chip">com</span><span class="tok-chip">!</span></div>
+
+    <h2>Step 2 — use sub-word pieces for rare text</h2>
+    <p>Vocabulary space is limited. Instead of storing every possible word, a tokenizer stores frequent chunks that can be recombined. That is why <code>tokenisation</code>, <code>tokeniser</code>, and <code>re-tokenised</code> can share pieces.</p>
+    <div class="tok-figure"><div class="tok-figure-title">shared sub-word vocabulary</div><div class="tok-scroll"><table class="tok-matrix"><thead><tr><th class="tok-corner"></th><th>piece 1</th><th>piece 2</th><th>piece 3</th><th>piece 4</th></tr></thead><tbody><tr><td class="tok-rowlabel">tokenisation</td><td>token</td><td>isation</td><td></td><td></td></tr><tr><td class="tok-rowlabel">tokeniser</td><td>token</td><td>iser</td><td></td><td></td></tr><tr><td class="tok-rowlabel">re-tokenised</td><td>re</td><td>-</td><td>token</td><td>ised</td></tr></tbody></table></div><figcaption class="tok-caption">The real split depends on the model's tokenizer, but the principle is the same: common reusable chunks save vocabulary slots.</figcaption></div>
+
+    <h2>Step 3 — map each token to an ID</h2>
+    <p>After splitting, each token is just a vocabulary entry. The model receives IDs, not strings. Spaces often belong to the token that follows them, which lets the model distinguish <code>dog</code> from <code> dog</code>.</p>
+    <div class="tok-figure"><div class="tok-figure-title">token IDs — shape (9,)</div><div class="tok-scroll"><table class="tok-matrix"><thead><tr><th class="tok-corner"></th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th></tr></thead><tbody><tr><td class="tok-rowlabel">token</td><td>The</td><td> token</td><td>iser</td><td> re</td><td>-</td><td>token</td><td>ised</td><td> .com</td><td>!</td></tr><tr><td class="tok-rowlabel">id</td><td>791</td><td>4037</td><td>1082</td><td>312</td><td>12</td><td>5963</td><td>4147</td><td>916</td><td>0</td></tr></tbody></table></div><figcaption class="tok-caption">These IDs are illustrative. The live demo on the main page uses the app's configured tokenizer to show actual IDs.</figcaption></div>
+
+    <div class="tok-note"><p><strong>Why this matters:</strong> token count controls context length, latency, and cost. A sentence that looks short to a human can become many tokens if it contains unusual names, URLs, emojis, or code.</p></div>
+
+    <h2 id="tokeniser-function">Minimal implementation</h2>
+    <p>A tokenizer API used by the app only needs to return the pieces and IDs:</p>
+    <pre class="tok-code"><code><span class="tok-kw">def</span> <span class="tok-fn">tokenise</span>(text, encoding):
+    token_ids = encoding.encode(text)
+    tokens = [encoding.decode([token_id]) <span class="tok-kw">for</span> token_id <span class="tok-kw">in</span> token_ids]
+    <span class="tok-kw">return</span> {"tokens": tokens, "token_ids": token_ids}</code></pre>
+
+    <p class="tok-top-link"><a href="/token-embeddings">Next: token embeddings, step by step →</a></p>
+  </body>
+</html>

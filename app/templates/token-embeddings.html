@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Token Embeddings, Step by Step — How LLMs Work</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+      h2 { margin-top: 52px; } h3 { margin-top: 32px; margin-bottom: 8px; }
+      .emb-top-link { font-size: 0.9em; margin-bottom: 8px; }
+      code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; background: rgba(27, 31, 35, 0.06); padding: 1px 5px; border-radius: 4px; }
+      pre.emb-code, pre.emb-calculation { background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; margin: 16px 0; }
+      pre.emb-code code, pre.emb-calculation code { background: none; padding: 0; font-size: 0.84em; color: #24292e; }
+      .emb-comment { color: #6a737d; } .emb-kw { color: #d73a49; } .emb-fn { color: #6f42c1; }
+      .emb-figure { margin: 22px 0; padding: 16px; background: #fff; border: 1px solid #ddd; border-radius: 6px; }
+      .emb-figure-title { font-size: 0.82em; font-weight: bold; text-transform: uppercase; letter-spacing: 0.04em; color: #666; margin-bottom: 12px; }
+      .emb-caption { margin-top: 10px; font-size: 0.88em; color: #555; font-style: italic; }
+      .emb-scroll { overflow-x: auto; }
+      table.emb-matrix { border-collapse: collapse; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.82em; margin: 0 auto; }
+      table.emb-matrix th, table.emb-matrix td { border: 1px solid #e3e3e3; padding: 5px 10px; text-align: right; white-space: nowrap; }
+      table.emb-matrix thead th { color: #777; font-weight: normal; text-align: center; }
+      table.emb-matrix .emb-rowlabel { text-align: left; font-weight: bold; color: #1a0dab; background: #fafbff; }
+      table.emb-matrix .emb-corner { border: none; background: none; }
+      table.emb-matrix td.hot { background: rgba(251, 188, 5, 0.35); font-weight: bold; }
+      .emb-note { border-left: 3px solid #1a0dab; background: #f6f7ff; padding: 10px 16px; margin: 18px 0; border-radius: 0 4px 4px 0; font-size: 0.95em; }
+      .emb-note p { margin: 6px 0; }
+      .emb-flow svg { display: block; width: 100%; max-width: 620px; height: auto; margin: 0 auto; }
+      .emb-flow-box { fill: #fff; stroke: #aaa; stroke-width: 1.5; }
+      .emb-flow-table { fill: #eef0ff; stroke: #1a0dab; }
+      .emb-flow-pos { fill: #fff8df; stroke: #c28a00; }
+      .emb-flow-arrow { stroke: #777; stroke-width: 1.6; fill: none; }
+      .emb-flow-label { font-family: sans-serif; font-size: 15px; fill: #222; font-weight: bold; }
+      .emb-flow-sub { font-family: sans-serif; font-size: 12px; fill: #666; }
+      .emb-two-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+      .emb-mini-card { border: 1px solid #ddd; border-radius: 6px; padding: 14px; background: #fafafa; }
+      .emb-mini-card h3 { margin-top: 0; }
+    </style>
+  </head>
+  <body>
+    <p class="emb-top-link"><a href="/#token-embeddings">← Back to How LLMs Work</a></p>
+    <h1>Token Embeddings, Step by Step</h1>
+
+    <p>Token embeddings turn token IDs into vectors: lists of learned numbers that a neural network can transform. If tokenisation says <em>which vocabulary item</em> appeared, the embedding says <em>how that item starts its journey through the model</em>.</p>
+    <p>On this page we use six-dimensional vectors so the tables fit. Real LLMs often use thousands of dimensions.</p>
+
+    <h2>The lookup at a glance</h2>
+    <figure class="emb-figure emb-flow">
+      <div class="emb-figure-title">Token and position embedding lookup</div>
+      <svg viewBox="0 0 620 430" role="img" aria-labelledby="emb-flow-title emb-flow-desc">
+        <title id="emb-flow-title">Embedding lookup flow</title>
+        <desc id="emb-flow-desc">Token IDs select rows from a token embedding table. Position IDs select rows from a position table. The selected vectors are added to form the sequence tensor.</desc>
+        <defs><marker id="emb-arrow" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#777"></path></marker></defs>
+        <rect class="emb-flow-box" x="190" y="14" width="240" height="50" rx="7"></rect><text class="emb-flow-label" x="310" y="45" text-anchor="middle">Token IDs</text>
+        <path class="emb-flow-arrow" d="M310 64 V96" marker-end="url(#emb-arrow)"></path>
+        <rect class="emb-flow-box emb-flow-table" x="80" y="99" width="210" height="72" rx="7"></rect><text class="emb-flow-label" x="185" y="128" text-anchor="middle">Token table</text><text class="emb-flow-sub" x="185" y="150" text-anchor="middle">vocab_size × embed_dim</text>
+        <rect class="emb-flow-box emb-flow-pos" x="330" y="99" width="210" height="72" rx="7"></rect><text class="emb-flow-label" x="435" y="128" text-anchor="middle">Position table</text><text class="emb-flow-sub" x="435" y="150" text-anchor="middle">max_seq_len × embed_dim</text>
+        <path class="emb-flow-arrow" d="M185 171 V224 H286" marker-end="url(#emb-arrow)"></path><path class="emb-flow-arrow" d="M435 171 V224 H334" marker-end="url(#emb-arrow)"></path>
+        <circle class="emb-flow-box" cx="310" cy="224" r="24"></circle><text class="emb-flow-label" x="310" y="230" text-anchor="middle">+</text>
+        <path class="emb-flow-arrow" d="M310 248 V280" marker-end="url(#emb-arrow)"></path>
+        <rect class="emb-flow-box" x="170" y="283" width="280" height="58" rx="7"></rect><text class="emb-flow-label" x="310" y="309" text-anchor="middle">Input sequence tensor</text><text class="emb-flow-sub" x="310" y="329" text-anchor="middle">shape: sequence_length × embed_dim</text>
+      </svg>
+      <figcaption class="emb-caption">The embedding operation is a table lookup, not a calculation from the text itself. The table values are learned during training.</figcaption>
+    </figure>
+
+    <h2>Step 1 — start with token IDs</h2>
+    <p>Continuing the tiny example from the full LLM walkthrough, the prompt <em>“the dog fetched the ball”</em> has five token IDs.</p>
+    <div class="emb-figure"><div class="emb-figure-title">token IDs — shape (5,)</div><div class="emb-scroll"><table class="emb-matrix"><thead><tr><th class="emb-corner"></th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead><tbody><tr><td class="emb-rowlabel">token</td><td>the₁</td><td>dog</td><td>fetched</td><td>the₂</td><td>ball</td></tr><tr><td class="emb-rowlabel">id</td><td>791</td><td>5679</td><td>8732</td><td>279</td><td>5041</td></tr></tbody></table></div></div>
+
+    <h2>Step 2 — look up token vectors</h2>
+    <p>Each ID selects one row from the learned token embedding table. Tokens that appear in similar contexts are pushed toward useful geometric relationships during training.</p>
+    <div class="emb-figure"><div class="emb-figure-title">token embeddings — shape (5, 6)</div><div class="emb-scroll"><table class="emb-matrix"><thead><tr><th class="emb-corner"></th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr></thead><tbody><tr><td class="emb-rowlabel">the₁</td><td>0.08</td><td>-0.44</td><td>0.18</td><td>0.02</td><td>-0.11</td><td>0.31</td></tr><tr><td class="emb-rowlabel">dog</td><td>0.32</td><td>-0.18</td><td>0.41</td><td>-0.27</td><td>0.09</td><td>0.22</td></tr><tr><td class="emb-rowlabel">fetched</td><td>-0.12</td><td>0.27</td><td>0.33</td><td>-0.16</td><td>0.25</td><td>0.07</td></tr><tr><td class="emb-rowlabel">the₂</td><td>0.08</td><td>-0.44</td><td>0.18</td><td>0.02</td><td>-0.11</td><td>0.31</td></tr><tr><td class="emb-rowlabel">ball</td><td>0.25</td><td>-0.09</td><td>0.36</td><td>-0.22</td><td>0.18</td><td>0.14</td></tr></tbody></table></div><figcaption class="emb-caption">Repeated token IDs select the same token vector. Here both “the” tokens begin with the same embedding.</figcaption></div>
+
+    <h2>Step 3 — add position embeddings</h2>
+    <p>The same token can appear in different places. A position embedding tells the model where each token sits in the sequence. The model adds token and position vectors element by element.</p>
+    <pre class="emb-calculation"><code>x[position] = token_embedding[token_id] + position_embedding[position]
+<span class="emb-comment"># for five tokens and six features, x has shape (5, 6)</span></code></pre>
+    <div class="emb-figure"><div class="emb-figure-title">combined input — shape (5, 6)</div><div class="emb-scroll"><table class="emb-matrix"><thead><tr><th class="emb-corner"></th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr></thead><tbody><tr><td class="emb-rowlabel">the₁</td><td>0.25</td><td>-0.69</td><td>-0.03</td><td>0.00</td><td>0.09</td><td>0.12</td></tr><tr><td class="emb-rowlabel">dog</td><td>0.15</td><td>-0.61</td><td>-0.18</td><td>-0.33</td><td>-0.24</td><td>0.31</td></tr><tr><td class="emb-rowlabel">fetched</td><td>0.06</td><td>-0.36</td><td>-0.15</td><td>-0.14</td><td>-0.06</td><td>0.13</td></tr><tr><td class="emb-rowlabel">the₂</td><td>0.04</td><td>-0.38</td><td>-0.16</td><td>-0.12</td><td>-0.02</td><td>0.14</td></tr><tr><td class="emb-rowlabel">ball</td><td>0.11</td><td>-0.38</td><td>-0.04</td><td>-0.09</td><td>-0.04</td><td>0.19</td></tr></tbody></table></div><figcaption class="emb-caption">This is the sequence tensor passed into the first transformer block in the other deep dives.</figcaption></div>
+
+    <div class="emb-note"><p><strong>Important distinction:</strong> the simple 3D demo on the main page visualises semantic word embeddings. LLM token embeddings are learned as part of the language model itself and may encode syntax, position-sensitive usage, and model-internal features as well as meaning.</p></div>
+
+    <h2 id="embedding-layer-class">Minimal implementation</h2>
+    <p>In a neural-network library, token embeddings and position embeddings are usually two learned lookup tables:</p>
+    <pre class="emb-code"><code><span class="emb-kw">class</span> <span class="emb-fn">TokenAndPositionEmbeddings</span>(nn.Module):
+    <span class="emb-kw">def</span> <span class="emb-fn">__init__</span>(self, vocab_size, max_seq_len, embed_dim):
+        super().<span class="emb-fn">__init__</span>()
+        self.token_embedding = nn.<span class="emb-fn">Embedding</span>(vocab_size, embed_dim)
+        self.position_embedding = nn.<span class="emb-fn">Embedding</span>(max_seq_len, embed_dim)
+
+    <span class="emb-kw">def</span> <span class="emb-fn">forward</span>(self, token_ids):
+        positions = torch.arange(token_ids.shape[-1], device=token_ids.device)
+        <span class="emb-kw">return</span> self.token_embedding(token_ids) + self.position_embedding(positions)</code></pre>
+
+    <p class="emb-top-link"><a href="/self-attention">Next: self-attention, step by step →</a></p>
+  </body>
+</html>
