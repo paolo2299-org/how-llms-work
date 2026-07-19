@@ -26,6 +26,26 @@ def test_index_contains_transformer_overviews(client):
     assert 'href="/full-llm"' in html
 
 
+def test_index_table_of_contents_links_overviews_and_detail_pages(client):
+    html = client.get("/").get_data(as_text=True)
+
+    assert 'id="toc-heading"' in html
+    assert 'href="#tokenisation"' in html
+    assert 'href="/tokenisation"' in html
+    assert html.index('href="#tokenisation"') < html.index('href="/tokenisation"')
+    assert 'href="#token-embeddings"' in html
+    assert 'href="/token-embeddings"' in html
+    assert 'href="#self-attention"' in html
+    assert 'href="/self-attention"' in html
+    assert 'href="/multi-head-attention"' in html
+    assert 'href="#feed-forward"' in html
+    assert 'href="/feed-forward"' in html
+    assert 'href="#transformer-block"' in html
+    assert 'href="/transformer-block"' in html
+    assert 'href="#llm-architecture"' in html
+    assert 'href="/full-llm"' in html
+
+
 def test_feed_forward_page_contains_worked_example(client):
     response = client.get("/feed-forward")
     html = response.get_data(as_text=True)

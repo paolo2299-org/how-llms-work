@@ -8,6 +8,30 @@
     <style>
       h2 { margin-top: 48px; }
 
+      /* Table of contents */
+      .toc {
+        margin: 28px 0 36px;
+        padding: 18px 22px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #f8f9ff;
+      }
+      .toc h2 {
+        margin: 0 0 12px;
+        font-size: 1.25em;
+      }
+      .toc ol {
+        margin: 0;
+        padding-left: 22px;
+      }
+      .toc li {
+        margin: 6px 0;
+      }
+      .toc-detail {
+        margin-top: 4px;
+        font-size: 0.95em;
+      }
+
       /* Tokeniser */
       .tokeniser textarea {
         width: 100%;
@@ -439,6 +463,49 @@
     <p>This site gives a behind the scenes look at how LLMs work under the hood.</p>
     <p>We'll start by covering the few core concepts that underpin the tech behind LLMs, with simple interactive demos to get an intuition for how they work.</p>
     <p>Once that's done, we'll see the full structure of an LLM, and how they are trained.</p>
+
+    <nav class="toc" aria-labelledby="toc-heading">
+      <h2 id="toc-heading">Table of contents</h2>
+      <ol>
+        <li>
+          <a href="#tokenisation">Tokenisation</a>
+          <ol class="toc-detail">
+            <li><a href="/tokenisation">Tokenisation, step by step</a></li>
+          </ol>
+        </li>
+        <li>
+          <a href="#token-embeddings">Token Embeddings</a>
+          <ol class="toc-detail">
+            <li><a href="/token-embeddings">Token embeddings, step by step</a></li>
+          </ol>
+        </li>
+        <li>
+          <a href="#self-attention">Self-Attention</a>
+          <ol class="toc-detail">
+            <li><a href="/self-attention">Self-attention, step by step</a></li>
+            <li><a href="/multi-head-attention">Multi-head attention, step by step</a></li>
+          </ol>
+        </li>
+        <li>
+          <a href="#feed-forward">Feed-Forward Layer</a>
+          <ol class="toc-detail">
+            <li><a href="/feed-forward">Feed-forward layer, step by step</a></li>
+          </ol>
+        </li>
+        <li>
+          <a href="#transformer-block">Inside a Transformer Block</a>
+          <ol class="toc-detail">
+            <li><a href="/transformer-block">Transformer block, step by step</a></li>
+          </ol>
+        </li>
+        <li>
+          <a href="#llm-architecture">The Full LLM</a>
+          <ol class="toc-detail">
+            <li><a href="/full-llm">Full LLM, step by step</a></li>
+          </ol>
+        </li>
+      </ol>
+    </nav>
 
     <h2 id="tokenisation">Tokenisation</h2>
     <p>When we provide a prompt to an LLM, the first thing that happens is that the prompt is broken down into <em>tokens</em>.</p>
