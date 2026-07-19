@@ -46,3 +46,23 @@ def test_feed_forward_navigation_links_are_present(client):
     assert 'id="feed-forward"' in index_html
     assert 'href="/feed-forward"' in index_html
     assert 'href="/feed-forward"' in attention_html
+
+
+def test_transformer_block_page_contains_worked_example(client):
+    response = client.get("/transformer-block")
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "Transformer Block, Step by Step" in html
+    assert "Pre-normalised transformer block" in html
+    assert "LayerNorm 1" in html
+    assert "first residual connection" in html
+    assert 'id="transformer-block-class"' in html
+    assert "TransformerBlock" in html
+
+
+def test_transformer_block_navigation_link_is_present(client):
+    html = client.get("/").get_data(as_text=True)
+
+    assert 'id="transformer-block"' in html
+    assert 'href="/transformer-block"' in html
