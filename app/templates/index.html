@@ -470,38 +470,38 @@
         <li>
           <a href="#tokenisation">Tokenisation</a>
           <ol class="toc-detail">
-            <li><a href="/tokenisation">Tokenisation, step by step</a></li>
+            <li><a href="/tokenisation">Tokenisation: in depth</a></li>
           </ol>
         </li>
         <li>
           <a href="#token-embeddings">Token Embeddings</a>
           <ol class="toc-detail">
-            <li><a href="/token-embeddings">Token embeddings, step by step</a></li>
+            <li><a href="/token-embeddings">Token embeddings: in depth</a></li>
           </ol>
         </li>
         <li>
           <a href="#self-attention">Self-Attention</a>
           <ol class="toc-detail">
-            <li><a href="/self-attention">Self-attention, step by step</a></li>
-            <li><a href="/multi-head-attention">Multi-head attention, step by step</a></li>
+            <li><a href="/self-attention">Self-attention: in depth</a></li>
+            <li><a href="/multi-head-attention">Multi-head attention: in depth</a></li>
           </ol>
         </li>
         <li>
           <a href="#feed-forward">Feed-Forward Layer</a>
           <ol class="toc-detail">
-            <li><a href="/feed-forward">Feed-forward layer, step by step</a></li>
+            <li><a href="/feed-forward">Feed-forward layer: in depth</a></li>
           </ol>
         </li>
         <li>
           <a href="#transformer-block">Inside a Transformer Block</a>
           <ol class="toc-detail">
-            <li><a href="/transformer-block">Transformer block, step by step</a></li>
+            <li><a href="/transformer-block">Transformer block: in depth</a></li>
           </ol>
         </li>
         <li>
           <a href="#llm-architecture">The Full LLM</a>
           <ol class="toc-detail">
-            <li><a href="/full-llm">Full LLM, step by step</a></li>
+            <li><a href="/full-llm">Full LLM: in depth</a></li>
           </ol>
         </li>
       </ol>
@@ -519,7 +519,7 @@
       <div id="token-count" aria-live="polite"></div>
     </div>
 
-    <p>Want to inspect the mechanism? <a href="/tokenisation">Walk through tokenisation step by step →</a> — see how text becomes reusable sub-word pieces and token IDs before the model sees it.</p>
+    <p>Want to inspect the mechanism? <a href="/tokenisation">Tokenisation: in depth →</a> — see how text becomes reusable sub-word pieces and token IDs before the model sees it.</p>
 
     <h2 id="token-embeddings">Token Embeddings</h2>
     <p>Once a prompt has been converted to tokens, each token is then represented as a point in a high-dimensional geometrical space. This is because LLMs are neural networks, and neural networks need mathematical objects to work with instead of text data.</p>
@@ -543,7 +543,7 @@
       <div id="embed-status" aria-live="polite"></div>
     </div>
 
-    <p>Want to follow the tensors? <a href="/token-embeddings">Walk through token embeddings step by step →</a> — see token IDs look up learned vectors, combine with position embeddings, and become the first sequence tensor.</p>
+    <p>Want to follow the tensors? <a href="/token-embeddings">Token embeddings: in depth →</a> — see token IDs look up learned vectors, combine with position embeddings, and become the first sequence tensor.</p>
 
     <h2 id="self-attention">Self-Attention</h2>
     <p>Once a prompt has been tokenised and embedded, the next key step is <em>self-attention</em>. This is the mechanism that allows each token to look at all the other tokens in the sequence and decide which ones are most relevant to it.</p>
@@ -566,7 +566,7 @@
       </div>
     </div>
 
-    <p>Want to see the actual mechanism? <a href="/self-attention">Walk through self-attention step by step →</a> — a small worked example that takes a sentence all the way from token embeddings to an enriched output, with every number visible.</p>
+    <p>Want to see the actual mechanism? <a href="/self-attention">Self-attention: in depth →</a> — a small worked example that takes a sentence all the way from token embeddings to an enriched output, with every number visible.</p>
 
     <h2 id="feed-forward">Feed-Forward Layer</h2>
 
@@ -592,7 +592,7 @@
       <div id="ffn-diagram"></div>
     </div>
 
-    <p>Want to follow the numbers? <a href="/feed-forward">Walk through the feed-forward layer step by step →</a> — see one sequence expand into learned features, pass through GELU, and return to its original width, with every tensor shape visible.</p>
+    <p>Want to follow the numbers? <a href="/feed-forward">Feed-forward layer: in depth →</a> — see one sequence expand into learned features, pass through GELU, and return to its original width, with every tensor shape visible.</p>
 
     <h2 id="transformer-block">Inside a Transformer Block</h2>
 
@@ -668,7 +668,7 @@
     shortcuts also give the learning signal (called the <em>gradient</em>) a clearer
     route back through the model, helping even the earliest blocks learn effectively.</p>
 
-    <p>Want to see how those wrappers fit around attention and the feed-forward layer? <a href="/transformer-block">Walk through a transformer block step by step →</a> — follow LayerNorm, residual connections, attention, and the feed-forward layer through a complete block.</p>
+    <p>Want to see how those wrappers fit around attention and the feed-forward layer? <a href="/transformer-block">Transformer block: in depth →</a> — follow LayerNorm, residual connections, attention, and the feed-forward layer through a complete block.</p>
 
     <h2 id="llm-architecture">The Full LLM</h2>
 
@@ -738,7 +738,7 @@
     result passes to the <em>output head</em>, which produces the model's output —
     in this case, the next token.</p>
 
-    <p>Want to connect all the parts? <a href="/full-llm">Walk through the full LLM step by step →</a> — follow token IDs through embeddings, repeated transformer blocks, logits, softmax, and next-token generation.</p>
+    <p>Want to connect all the parts? <a href="/full-llm">Full LLM: in depth →</a> — follow token IDs through embeddings, repeated transformer blocks, logits, softmax, and next-token generation.</p>
 
     <p class="back"><a href="https://pdlawson.com">← Back to home</a></p>
 
