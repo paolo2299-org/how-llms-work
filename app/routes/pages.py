@@ -8,6 +8,16 @@ def index():
     return render_template("index.html")
 
 
+@pages_bp.route("/tokenisation")
+def tokenisation():
+    return render_template("tokenisation.html")
+
+
+@pages_bp.route("/token-embeddings")
+def token_embeddings():
+    return render_template("token-embeddings.html")
+
+
 @pages_bp.route("/self-attention")
 def self_attention():
     return render_template("self-attention.html")

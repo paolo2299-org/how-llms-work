@@ -88,3 +88,43 @@ def test_full_llm_navigation_link_is_present(client):
 
     assert 'id="llm-architecture"' in html
     assert 'href="/full-llm"' in html
+
+
+def test_tokenisation_page_contains_worked_example(client):
+    response = client.get("/tokenisation")
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "Tokenisation, Step by Step" in html
+    assert "Text to token IDs" in html
+    assert "Byte Pair Encoding merges" in html
+    assert "shape (9,)" in html
+    assert 'id="tokeniser-function"' in html
+    assert "tokenise" in html
+
+
+def test_tokenisation_navigation_link_is_present(client):
+    html = client.get("/").get_data(as_text=True)
+
+    assert 'id="tokenisation"' in html
+    assert 'href="/tokenisation"' in html
+
+
+def test_token_embeddings_page_contains_worked_example(client):
+    response = client.get("/token-embeddings")
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "Token Embeddings, Step by Step" in html
+    assert "Token and position embedding lookup" in html
+    assert "shape (5, 6)" in html
+    assert "position embeddings" in html
+    assert 'id="embedding-layer-class"' in html
+    assert "TokenAndPositionEmbeddings" in html
+
+
+def test_token_embeddings_navigation_link_is_present(client):
+    html = client.get("/").get_data(as_text=True)
+
+    assert 'id="token-embeddings"' in html
+    assert 'href="/token-embeddings"' in html

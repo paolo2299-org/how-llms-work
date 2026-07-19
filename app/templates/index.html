@@ -440,7 +440,7 @@
     <p>We'll start by covering the few core concepts that underpin the tech behind LLMs, with simple interactive demos to get an intuition for how they work.</p>
     <p>Once that's done, we'll see the full structure of an LLM, and how they are trained.</p>
 
-    <h2>Tokenisation</h2>
+    <h2 id="tokenisation">Tokenisation</h2>
     <p>When we provide a prompt to an LLM, the first thing that happens is that the prompt is broken down into <em>tokens</em>.</p>
     <p>Much of the time, this just means breaking down the prompt into individual words and punctuation characters, but sometimes, particularly for more obscure words, longer words, or proper nouns, they are broken down into sub-word chunks. This is mainly to allow the LLM to better handle unknown or rare words, as well keeping the vocabulary size (i.e. the number of tokens the LLM needs to know) down to a manageable size.</p>
 
@@ -452,7 +452,9 @@
       <div id="token-count" aria-live="polite"></div>
     </div>
 
-    <h2>Token Embeddings</h2>
+    <p>Want to inspect the mechanism? <a href="/tokenisation">Walk through tokenisation step by step →</a> — see how text becomes reusable sub-word pieces and token IDs before the model sees it.</p>
+
+    <h2 id="token-embeddings">Token Embeddings</h2>
     <p>Once a prompt has been converted to tokens, each token is then represented as a point in a high-dimensional geometrical space. This is because LLMs are neural networks, and neural networks need mathematical objects to work with instead of text data.</p>
     <p>This process is called <em>token embedding</em>.</p>
     <p>In theory, you could just assign any old point in space randomly to each token, and it would be a valid token embedding. But the interesting thing about LLM token embeddings, is that as a result of the LLM training,
@@ -473,6 +475,8 @@
       <div id="embed-words"></div>
       <div id="embed-status" aria-live="polite"></div>
     </div>
+
+    <p>Want to follow the tensors? <a href="/token-embeddings">Walk through token embeddings step by step →</a> — see token IDs look up learned vectors, combine with position embeddings, and become the first sequence tensor.</p>
 
     <h2 id="self-attention">Self-Attention</h2>
     <p>Once a prompt has been tokenised and embedded, the next key step is <em>self-attention</em>. This is the mechanism that allows each token to look at all the other tokens in the sequence and decide which ones are most relevant to it.</p>
