@@ -26,3 +26,8 @@ def feed_forward():
 @pages_bp.route("/transformer-block")
 def transformer_block():
     return render_template("transformer-block.html")
+
+
+@pages_bp.route("/full-llm")
+def full_llm():
+    return render_template("full-llm.html")

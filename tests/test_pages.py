@@ -23,6 +23,7 @@ def test_index_contains_transformer_overviews(client):
     assert "Transformer block 1" in html
     assert "Output head" in html
     assert "Next token" in html
+    assert 'href="/full-llm"' in html
 
 
 def test_feed_forward_page_contains_worked_example(client):
@@ -66,3 +67,24 @@ def test_transformer_block_navigation_link_is_present(client):
 
     assert 'id="transformer-block"' in html
     assert 'href="/transformer-block"' in html
+
+
+def test_full_llm_page_contains_worked_example(client):
+    response = client.get("/full-llm")
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "Full LLM, Step by Step" in html
+    assert "Decoder-only LLM forward pass" in html
+    assert "Token + position embeddings" in html
+    assert "Transformer block 1" in html
+    assert "softmax" in html
+    assert 'id="full-llm-class"' in html
+    assert "TinyLanguageModel" in html
+
+
+def test_full_llm_navigation_link_is_present(client):
+    html = client.get("/").get_data(as_text=True)
+
+    assert 'id="llm-architecture"' in html
+    assert 'href="/full-llm"' in html
