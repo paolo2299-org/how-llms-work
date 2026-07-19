@@ -21,3 +21,8 @@ def multi_head_attention():
 @pages_bp.route("/feed-forward")
 def feed_forward():
     return render_template("feed-forward.html")
+
+
+@pages_bp.route("/transformer-block")
+def transformer_block():
+    return render_template("transformer-block.html")
