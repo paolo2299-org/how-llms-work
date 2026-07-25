@@ -17,7 +17,6 @@
       .tok-fn { color: #6f42c1; }
       .tok-str { color: #032f62; }
       .tok-figure { margin: 22px 0; padding: 16px; background: #fff; border: 1px solid #ddd; border-radius: 6px; }
-      .tok-figure-title { font-size: 0.82em; font-weight: bold; text-transform: uppercase; letter-spacing: 0.04em; color: #666; margin-bottom: 12px; }
       .tok-caption { margin-top: 10px; font-size: 0.88em; color: #555; font-style: italic; }
       .tok-scroll { overflow-x: auto; }
       table.tok-matrix { border-collapse: collapse; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.82em; margin: 0 auto; }
@@ -79,7 +78,6 @@
 <span class="tok-comment"># ['The', 'dog', 'fetched', 'the', 'ball', '!']</span></code></pre>
 
     <div class="tok-figure">
-      <div class="tok-figure-title">splitting a prompt into words and punctuation</div>
       <div class="tok-result">"The dog fetched the ball!"</div>
       <div class="tok-step-arrow">▼</div>
       <div class="tok-chip-row"><span class="tok-chip">The</span><span class="tok-chip">dog</span><span class="tok-chip">fetched</span><span class="tok-chip">the</span><span class="tok-chip">ball</span><span class="tok-chip">!</span></div>
@@ -89,7 +87,6 @@
     <p>In order to map these to token ids, before we start LLM training, we take a large corpus of text. This could be the corpus we intend to use for LLM training. Then we split this corpus using our tokeniser, and start assigning token ids to each word we encounter:</p>
 
     <div class="tok-figure">
-      <div class="tok-figure-title">scanning the corpus — first six tokens</div>
       <div class="tok-result">"The dog chased the cat. The cat ran away!"</div>
       <div class="tok-step-arrow">▼</div>
       <div class="tok-scroll">
@@ -107,7 +104,6 @@
     <p>If we encounter the same word twice, we ignore it:</p>
 
     <div class="tok-figure">
-      <div class="tok-figure-title">scanning the corpus — remaining five tokens</div>
       <div class="tok-scroll">
         <table class="tok-matrix">
           <thead><tr><th class="tok-corner"></th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th></tr></thead>
@@ -123,7 +119,6 @@
     <p>This way, we map every word in our text corpus to a unique token id.</p>
 
     <div class="tok-figure">
-      <div class="tok-figure-title">the finished vocabulary — 9 entries</div>
       <div class="tok-scroll">
         <table class="tok-matrix">
           <tbody>
@@ -138,7 +133,6 @@
     <p>Now, when we tokenise a prompt, we have a way to map it to token ids:</p>
 
     <div class="tok-figure">
-      <div class="tok-figure-title">encoding a prompt</div>
       <div class="tok-result">"The dog chased the cat!"</div>
       <div class="tok-step-arrow">▼</div>
       <div class="tok-pair-row">
@@ -157,7 +151,6 @@
     <p>When the LLM produces output token ids, we can now construct text from them using the reverse of this mapping:</p>
 
     <div class="tok-figure">
-      <div class="tok-figure-title">decoding the model's output</div>
       <div class="tok-result">[4, 6, 7, 8]</div>
       <div class="tok-step-arrow">▼</div>
       <div class="tok-pair-row">
@@ -174,7 +167,6 @@
     <p>This simple tokenisation scheme has some limitations. Firstly, if we encounter a word in our prompt that was not in our training corpus, we will not be able to map it to a token. Think, for example, of misspellings, or names of cities in fantasy books. With this tokeniser, our LLM will not be able to process these words.</p>
 
     <div class="tok-figure">
-      <div class="tok-figure-title">a prompt the vocabulary cannot handle</div>
       <div class="tok-result">"The dog fetched the ball!"</div>
       <div class="tok-step-arrow">▼</div>
       <div class="tok-pair-row">
@@ -197,7 +189,6 @@
     <p>There are various schemes for doing this, including Byte Pair Encoding (BPE), WordPiece, and Unigram. All of these break down text into words and sub-word parts, for example</p>
 
     <div class="tok-figure">
-      <div class="tok-figure-title">sub-word split — GPT-4's cl100k_base tokeniser</div>
       <div class="tok-result">"The tokeniser retokenised Winterfell!"</div>
       <div class="tok-step-arrow">▼</div>
       <div class="tok-pair-row">
@@ -217,7 +208,6 @@
     <p>Importantly, tokenisers implementing these schemes are able to uniquely tokenise any prompt they encounter. In a worst-case scenario, they can just break down a word into its constituent characters.<sup class="tok-fnref" id="fnref-bytes"><a href="#fn-bytes">1</a></sup></p>
 
     <div class="tok-figure">
-      <div class="tok-figure-title">falling back to single characters</div>
       <div class="tok-result">"The dog fetched the ball in Zxjyv!"</div>
       <div class="tok-step-arrow">▼</div>
       <div class="tok-pair-row">

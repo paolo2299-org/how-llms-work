@@ -119,7 +119,7 @@ def test_tokenisation_page_contains_worked_example(client):
     assert "Word-based tokeniser" in html
     assert "How LLMs actually do it" in html
     assert "Byte Pair Encoding (BPE)" in html
-    assert "the finished vocabulary" in html
+    assert "tok-figure-title" not in html
     assert 'id="tokeniser-function"' in html
     assert "tokenise" in html
 
