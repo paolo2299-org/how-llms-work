@@ -6,134 +6,247 @@
     <title>Transformer Block — How LLMs Work</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-      h2 { margin-top: 52px; }
-      h3 { margin-top: 32px; margin-bottom: 8px; }
-      .tf-top-link { font-size: 0.9em; margin-bottom: 8px; }
-      code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; background: rgba(27, 31, 35, 0.06); padding: 1px 5px; border-radius: 4px; }
-      pre.tf-code, pre.tf-calculation { background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; margin: 16px 0; }
-      pre.tf-code code, pre.tf-calculation code { background: none; padding: 0; font-size: 0.84em; color: #24292e; }
-      .tf-comment { color: #6a737d; }
+      h2 {
+        margin-top: 52px;
+      }
+
+      .tf-top-link {
+        margin-bottom: 8px;
+        font-size: 0.9em;
+      }
+
+      .tf-figure {
+        margin: 22px 0 28px;
+        padding: 16px;
+        background: #fafafa;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+      }
+
+      .tf-diagram {
+        display: block;
+        width: 100%;
+        height: auto;
+        margin: 0 auto;
+        font-family: sans-serif;
+      }
+
+      .tf-box {
+        fill: #fff;
+        stroke: #aaa;
+        stroke-width: 1.5;
+      }
+
+      .tf-box-attention {
+        fill: #eef0ff;
+        stroke: #1a0dab;
+      }
+
+      .tf-box-ffn {
+        fill: #fff8df;
+        stroke: #c28a00;
+      }
+
+      .tf-box-norm {
+        fill: #f3f3f3;
+        stroke: #888;
+      }
+
+      .tf-arrow {
+        fill: none;
+        stroke: #777;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .tf-shortcut {
+        fill: none;
+        stroke: #1a0dab;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .tf-add {
+        fill: #fff;
+        stroke: #1a0dab;
+        stroke-width: 2;
+      }
+
+      .tf-label {
+        fill: #222;
+        font-size: 17px;
+        font-weight: bold;
+      }
+
+      .tf-sublabel {
+        fill: #555;
+        font-size: 13px;
+      }
+
+      .tf-shortcut-label {
+        fill: #1a0dab;
+        font-size: 12px;
+        font-weight: bold;
+      }
+
+      code {
+        padding: 1px 5px;
+        background: rgba(27, 31, 35, 0.06);
+        border-radius: 4px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.9em;
+      }
+
+      pre.tf-code {
+        margin: 16px 0;
+        padding: 14px 16px;
+        overflow-x: auto;
+        background: #f6f8fa;
+        border: 1px solid #e1e4e8;
+        border-radius: 6px;
+        line-height: 1.5;
+      }
+
+      pre.tf-code code {
+        padding: 0;
+        color: #24292e;
+        background: none;
+        font-size: 0.84em;
+      }
+
       .tf-kw { color: #d73a49; }
       .tf-fn { color: #6f42c1; }
-      .tf-figure { margin: 22px 0; padding: 16px; background: #fff; border: 1px solid #ddd; border-radius: 6px; }
-      .tf-figure-title { font-size: 0.82em; font-weight: bold; text-transform: uppercase; letter-spacing: 0.04em; color: #666; margin-bottom: 12px; }
-      .tf-caption { margin-top: 10px; font-size: 0.88em; color: #555; font-style: italic; }
-      .tf-scroll { overflow-x: auto; }
-      table.tf-matrix { border-collapse: collapse; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.82em; margin: 0 auto; }
-      table.tf-matrix th, table.tf-matrix td { border: 1px solid #e3e3e3; padding: 5px 10px; text-align: right; white-space: nowrap; }
-      table.tf-matrix thead th { color: #777; font-weight: normal; text-align: center; }
-      table.tf-matrix .tf-rowlabel { text-align: left; font-weight: bold; color: #1a0dab; background: #fafbff; }
-      table.tf-matrix .tf-corner { border: none; background: none; }
-      .tf-note { border-left: 3px solid #1a0dab; background: #f6f7ff; padding: 10px 16px; margin: 18px 0; border-radius: 0 4px 4px 0; font-size: 0.95em; }
-      .tf-note p { margin: 6px 0; }
-      .tf-flow svg { display: block; width: 100%; max-width: 560px; height: auto; margin: 0 auto; }
-      .tf-flow-box { fill: #fff; stroke: #aaa; stroke-width: 1.5; }
-      .tf-flow-norm { fill: #f3f3f3; stroke: #888; }
-      .tf-flow-attn { fill: #eef0ff; stroke: #1a0dab; }
-      .tf-flow-ffn { fill: #fff8df; stroke: #c28a00; }
-      .tf-flow-add { fill: #fff; stroke: #1a0dab; stroke-width: 2; }
-      .tf-flow-arrow { stroke: #777; stroke-width: 1.6; fill: none; }
-      .tf-flow-skip { stroke: #1a0dab; stroke-width: 1.8; fill: none; }
-      .tf-flow-label { font-family: sans-serif; font-size: 15px; fill: #222; font-weight: bold; }
-      .tf-flow-sub { font-family: sans-serif; font-size: 12px; fill: #666; }
-      .tf-two-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
-      .tf-mini-card { border: 1px solid #ddd; border-radius: 6px; padding: 14px; background: #fafafa; }
-      .tf-mini-card h3 { margin-top: 0; }
+
+      @media (max-width: 480px) {
+        .tf-figure {
+          padding: 10px 6px;
+        }
+      }
     </style>
   </head>
   <body>
     <p class="tf-top-link"><a href="/#transformer-block">← Back to How LLMs Work</a></p>
-    <h1>Transformer Block</h1>
+    <main>
+      <h1>Transformer Block</h1>
 
-    <p>A transformer block is the reusable unit that makes the representations inside an LLM more useful. Each block takes a sequence of token vectors, lets the tokens communicate through attention, processes each token through a feed-forward layer, and returns a sequence with the same shape.</p>
+      <p>The core component of an LLM is the transformer block. We’ve already encountered all of the main components of a transformer block, namely <a href="/self-attention">self-attention</a> and the <a href="/feed-forward">feed-forward network</a>:</p>
 
-    <p>On this page we will use the same five-token, six-dimensional example from the <a href="/multi-head-attention">multi-head attention</a> and <a href="/feed-forward">feed-forward</a> walkthroughs. The important new pieces are <em>LayerNorm</em> and <em>residual connections</em>, which wrap those two processing stages.</p>
+      <figure class="tf-figure">
+        <svg class="tf-diagram" viewBox="0 0 520 660" role="img"
+          aria-labelledby="transformer-block-diagram-title transformer-block-diagram-desc">
+          <title id="transformer-block-diagram-title">The parts of a transformer block</title>
+          <desc id="transformer-block-diagram-desc">An input passes through LayerNorm and self-attention, then is added back through a residual connection. It then passes through another LayerNorm and a feed-forward layer, followed by a second shortcut addition, before becoming the block output.</desc>
+          <defs>
+            <marker id="transformer-arrow" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+              <path d="M0,0 L7,3.5 L0,7 Z" fill="#777"></path>
+            </marker>
+            <marker id="transformer-shortcut-arrow" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+              <path d="M0,0 L7,3.5 L0,7 Z" fill="#1a0dab"></path>
+            </marker>
+          </defs>
 
-    <h2>The whole block at a glance</h2>
-    <figure class="tf-figure tf-flow">
-      <div class="tf-figure-title">Pre-normalised transformer block</div>
-      <svg viewBox="0 0 560 720" role="img" aria-labelledby="tf-flow-title tf-flow-desc">
-        <title id="tf-flow-title">Transformer block flow</title>
-        <desc id="tf-flow-desc">An input sequence passes through LayerNorm, multi-head attention, residual addition, LayerNorm, feed-forward, and a second residual addition.</desc>
-        <defs>
-          <marker id="tf-arrow" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#777"></path></marker>
-          <marker id="tf-skip-arrow" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#1a0dab"></path></marker>
-        </defs>
-        <rect class="tf-flow-box" x="170" y="14" width="220" height="54" rx="7"></rect><text class="tf-flow-label" x="280" y="37" text-anchor="middle">Input x</text><text class="tf-flow-sub" x="280" y="56" text-anchor="middle">shape (5, 6)</text>
-        <path class="tf-flow-arrow" d="M280 68 V101" marker-end="url(#tf-arrow)"></path>
-        <rect class="tf-flow-box tf-flow-norm" x="150" y="104" width="260" height="54" rx="7"></rect><text class="tf-flow-label" x="280" y="137" text-anchor="middle">LayerNorm 1</text>
-        <path class="tf-flow-arrow" d="M280 158 V191" marker-end="url(#tf-arrow)"></path>
-        <rect class="tf-flow-box tf-flow-attn" x="130" y="194" width="300" height="66" rx="7"></rect><text class="tf-flow-label" x="280" y="222" text-anchor="middle">Multi-head self-attention</text><text class="tf-flow-sub" x="280" y="243" text-anchor="middle">mix information across tokens</text>
-        <path class="tf-flow-arrow" d="M280 260 V301" marker-end="url(#tf-arrow)"></path>
-        <circle class="tf-flow-add" cx="280" cy="326" r="22"></circle><text class="tf-flow-label" x="280" y="332" text-anchor="middle">+</text>
-        <path class="tf-flow-skip" d="M280 82 H500 V326 H306" marker-end="url(#tf-skip-arrow)"></path>
-        <text class="tf-flow-sub" x="490" y="202" text-anchor="middle" transform="rotate(90 490 202)">first residual connection</text>
-        <path class="tf-flow-arrow" d="M280 348 V381" marker-end="url(#tf-arrow)"></path>
-        <rect class="tf-flow-box tf-flow-norm" x="150" y="384" width="260" height="54" rx="7"></rect><text class="tf-flow-label" x="280" y="417" text-anchor="middle">LayerNorm 2</text>
-        <path class="tf-flow-arrow" d="M280 438 V471" marker-end="url(#tf-arrow)"></path>
-        <rect class="tf-flow-box tf-flow-ffn" x="130" y="474" width="300" height="66" rx="7"></rect><text class="tf-flow-label" x="280" y="502" text-anchor="middle">Feed-forward layer</text><text class="tf-flow-sub" x="280" y="523" text-anchor="middle">process each token independently</text>
-        <path class="tf-flow-arrow" d="M280 540 V581" marker-end="url(#tf-arrow)"></path>
-        <circle class="tf-flow-add" cx="280" cy="606" r="22"></circle><text class="tf-flow-label" x="280" y="612" text-anchor="middle">+</text>
-        <path class="tf-flow-skip" d="M280 362 H500 V606 H306" marker-end="url(#tf-skip-arrow)"></path>
-        <text class="tf-flow-sub" x="490" y="482" text-anchor="middle" transform="rotate(90 490 482)">second residual connection</text>
-        <path class="tf-flow-arrow" d="M280 628 V661" marker-end="url(#tf-arrow)"></path>
-        <rect class="tf-flow-box" x="170" y="664" width="220" height="42" rx="7"></rect><text class="tf-flow-label" x="280" y="691" text-anchor="middle">Block output</text>
-      </svg>
-      <figcaption class="tf-caption">The block starts and ends with the same shape. That is why many blocks can be stacked: the output of one block is a valid input for the next.</figcaption>
-    </figure>
+          <rect class="tf-box" x="150" y="14" width="170" height="48" rx="7"></rect>
+          <text class="tf-label" x="235" y="44" text-anchor="middle">Block input</text>
 
-    <h2>Our input</h2>
-    <p>We begin with five contextual token vectors. In a real LLM the width might be thousands of dimensions; here it is six so the numbers fit on the page.</p>
-    <div class="tf-figure"><div class="tf-figure-title">input x — shape (5, 6)</div><div class="tf-scroll"><table class="tf-matrix"><thead><tr><th class="tf-corner"></th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr></thead><tbody><tr><td class="tf-rowlabel">the₁</td><td>0.25</td><td>-0.69</td><td>-0.03</td><td>0.00</td><td>0.09</td><td>0.12</td></tr><tr><td class="tf-rowlabel">dog</td><td>0.15</td><td>-0.61</td><td>-0.18</td><td>-0.33</td><td>-0.24</td><td>0.31</td></tr><tr><td class="tf-rowlabel">fetched</td><td>0.06</td><td>-0.36</td><td>-0.15</td><td>-0.14</td><td>-0.06</td><td>0.13</td></tr><tr><td class="tf-rowlabel">the₂</td><td>0.04</td><td>-0.38</td><td>-0.16</td><td>-0.12</td><td>-0.02</td><td>0.14</td></tr><tr><td class="tf-rowlabel">ball</td><td>0.11</td><td>-0.38</td><td>-0.04</td><td>-0.09</td><td>-0.04</td><td>0.19</td></tr></tbody></table></div></div>
+          <path class="tf-arrow" d="M235 62 V91" marker-end="url(#transformer-arrow)"></path>
+          <rect class="tf-box tf-box-norm" x="120" y="94" width="230" height="54" rx="7"></rect>
+          <text class="tf-label" x="235" y="127" text-anchor="middle">LayerNorm</text>
 
-    <h2>Step 1 — normalise before attention</h2>
-    <p>LayerNorm works across the features of one token at a time. For each row, it subtracts that row's mean and divides by that row's standard deviation, then applies learned scale and shift parameters.</p>
-    <pre class="tf-calculation"><code>mean(the₁) = (0.25 - 0.69 - 0.03 + 0.00 + 0.09 + 0.12) / 6 = -0.0433
-norm(the₁, feature 0) = (0.25 - (-0.0433)) / std(the₁)</code></pre>
-    <p>This gives attention a steadier input distribution. In modern decoder-only LLMs this is commonly done in <em>pre-norm</em> form: normalise first, run the sub-layer second, then add the unnormalised input back in.</p>
+          <path class="tf-arrow" d="M235 148 V177" marker-end="url(#transformer-arrow)"></path>
+          <rect class="tf-box tf-box-attention" x="100" y="180" width="270" height="66" rx="7"></rect>
+          <text class="tf-label" x="235" y="209" text-anchor="middle">Self-attention</text>
+          <text class="tf-sublabel" x="235" y="230" text-anchor="middle">shares information between tokens</text>
 
-    <h2>Step 2 — multi-head attention adds context</h2>
-    <p>The normalised vectors go into multi-head attention. Attention is the only part of this block where rows directly exchange information: each token chooses a weighted mix of the previous token representations.</p>
-    <div class="tf-note"><p>For a decoder-only language model, attention uses a causal mask. A token can look at itself and earlier tokens, but not future tokens. The output shape is still <code>(5, 6)</code>.</p></div>
+          <path class="tf-arrow" d="M235 246 V278" marker-end="url(#transformer-arrow)"></path>
+          <circle class="tf-add" cx="235" cy="302" r="21"></circle>
+          <text class="tf-label" x="235" y="308" text-anchor="middle">+</text>
+          <text class="tf-sublabel" x="203" y="307" text-anchor="end">add</text>
 
-    <h2>Step 3 — add the first residual connection</h2>
-    <p>Instead of replacing <code>x</code> with the attention result, the block adds the attention result to the original input:</p>
-    <pre class="tf-code"><code>x = x + <span class="tf-fn">attention</span>(<span class="tf-fn">norm1</span>(x))</code></pre>
-    <p>This residual connection means the attention layer only has to learn a useful <em>change</em>. If attention has nothing helpful to add for a feature, the original value can pass through unchanged.</p>
+          <path class="tf-shortcut" d="M235 76 H455 V302 H259" marker-end="url(#transformer-shortcut-arrow)"></path>
+          <text class="tf-shortcut-label" x="445" y="190" text-anchor="middle" transform="rotate(90 445 190)">residual connection</text>
 
-    <h2>Step 4 — normalise again, then use the feed-forward layer</h2>
-    <p>The partially updated sequence is normalised again and passed through the feed-forward network. Unlike attention, the feed-forward layer processes each token position independently. It widens each token into a hidden feature space, applies a non-linearity, and projects back to the embedding width.</p>
-    <pre class="tf-code"><code>hidden = <span class="tf-fn">norm2</span>(x)
-change = <span class="tf-fn">feed_forward</span>(hidden)  <span class="tf-comment"># shape remains (5, 6)</span></code></pre>
+          <path class="tf-arrow" d="M235 323 V352" marker-end="url(#transformer-arrow)"></path>
+          <rect class="tf-box tf-box-norm" x="120" y="355" width="230" height="54" rx="7"></rect>
+          <text class="tf-label" x="235" y="388" text-anchor="middle">LayerNorm</text>
 
-    <h2>Step 5 — add the second residual connection</h2>
-    <p>The feed-forward change is added back to the sequence from the attention half of the block:</p>
-    <pre class="tf-code"><code>x = x + <span class="tf-fn">feed_forward</span>(<span class="tf-fn">norm2</span>(x))</code></pre>
-    <p>At this point one block is complete. The output still has shape <code>(5, 6)</code>, but each row has been refined by both context mixing and per-token feature processing.</p>
+          <path class="tf-arrow" d="M235 409 V438" marker-end="url(#transformer-arrow)"></path>
+          <rect class="tf-box tf-box-ffn" x="100" y="441" width="270" height="66" rx="7"></rect>
+          <text class="tf-label" x="235" y="470" text-anchor="middle">Feed-forward layer</text>
+          <text class="tf-sublabel" x="235" y="491" text-anchor="middle">processes each token</text>
 
-    <h2 id="transformer-block-class">Full implementation</h2>
-    <p>Putting the two wrapped sub-layers together gives the standard shape of a pre-normalised transformer block:</p>
-    <pre class="tf-code"><code><span class="tf-kw">import</span> torch.nn <span class="tf-kw">as</span> nn
+          <path class="tf-arrow" d="M235 507 V539" marker-end="url(#transformer-arrow)"></path>
+          <circle class="tf-add" cx="235" cy="563" r="21"></circle>
+          <text class="tf-label" x="235" y="569" text-anchor="middle">+</text>
+          <text class="tf-sublabel" x="203" y="568" text-anchor="end">add</text>
+
+          <path class="tf-shortcut" d="M235 337 H455 V563 H259" marker-end="url(#transformer-shortcut-arrow)"></path>
+          <text class="tf-shortcut-label" x="445" y="451" text-anchor="middle" transform="rotate(90 445 451)">residual connection</text>
+
+          <path class="tf-arrow" d="M235 584 V613" marker-end="url(#transformer-arrow)"></path>
+          <rect class="tf-box" x="135" y="616" width="200" height="38" rx="7"></rect>
+          <text class="tf-label" x="235" y="641" text-anchor="middle">Output to next block</text>
+        </svg>
+      </figure>
+
+      <p>There are a couple of extra components here: LayerNorm and residual connections.</p>
+
+      <h2>LayerNorm</h2>
+
+      <p>This is a scaling mechanism which keeps the numbers well-behaved as they pass through the many layers of the LLM. It stops the numbers from blowing up unpredictably and helps to prevent instability while training the model.</p>
+
+      <p>It works by subtracting the mean of the vector and dividing by the standard deviation.</p>
+      <p>There is a built-in PyTorch implementation for this:</p>
+
+      <pre class="tf-code" id="layer-norm-code"><code><span class="tf-kw">import</span> torch.nn <span class="tf-kw">as</span> nn
+
+
+layer_norm = nn.<span class="tf-fn">LayerNorm</span>(model_dim)
+normalised_x = <span class="tf-fn">layer_norm</span>(x)</code></pre>
+
+      <h2>Residual connections</h2>
+
+      <p>After each stage, a <em>residual connection</em> carries the stage's input around the side and adds it back to the result. This preserves useful existing information while the stage adds what it has learned. During training, the same shortcuts also give the learning signal (called the <em>gradient</em>) a clearer route back through the model, helping even the earliest blocks learn effectively.</p>
+
+      <p>Without residual connections our transformer block would look like this:</p>
+
+      <pre class="tf-code" id="transformer-without-residuals-code"><code><span class="tf-kw">import</span> torch.nn <span class="tf-kw">as</span> nn
+
+
+<span class="tf-kw">class</span> <span class="tf-fn">TransformerBlockWithoutResidualConnections</span>(nn.Module):
+
+    <span class="tf-kw">def</span> <span class="tf-fn">__init__</span>(self, model_dim, head_dim, num_heads, hidden_dim):
+        super().<span class="tf-fn">__init__</span>()
+        self.attention_norm = nn.<span class="tf-fn">LayerNorm</span>(model_dim)
+        self.attention = MultiHeadAttention(model_dim, head_dim, num_heads)
+        self.feed_forward_norm = nn.<span class="tf-fn">LayerNorm</span>(model_dim)
+        self.feed_forward = FeedForwardLayer(model_dim, hidden_dim)
+
+    <span class="tf-kw">def</span> <span class="tf-fn">forward</span>(self, x):
+        x = self.<span class="tf-fn">attention</span>(self.<span class="tf-fn">attention_norm</span>(x))
+        x = self.<span class="tf-fn">feed_forward</span>(self.<span class="tf-fn">feed_forward_norm</span>(x))
+        <span class="tf-kw">return</span> x</code></pre>
+
+      <p>With residual connections we get our implementation of our transformer:</p>
+
+      <pre class="tf-code" id="transformer-block-code"><code><span class="tf-kw">import</span> torch.nn <span class="tf-kw">as</span> nn
 
 
 <span class="tf-kw">class</span> <span class="tf-fn">TransformerBlock</span>(nn.Module):
 
-    <span class="tf-kw">def</span> <span class="tf-fn">__init__</span>(self, embed_dim, num_heads, hidden_dim):
+    <span class="tf-kw">def</span> <span class="tf-fn">__init__</span>(self, model_dim, head_dim, num_heads, hidden_dim):
         super().<span class="tf-fn">__init__</span>()
-        self.norm1 = nn.<span class="tf-fn">LayerNorm</span>(embed_dim)
-        self.attention = MultiHeadAttention(embed_dim, num_heads)
-        self.norm2 = nn.<span class="tf-fn">LayerNorm</span>(embed_dim)
-        self.feed_forward = FeedForward(embed_dim, hidden_dim)
+        self.attention_norm = nn.<span class="tf-fn">LayerNorm</span>(model_dim)
+        self.attention = MultiHeadAttention(model_dim, head_dim, num_heads)
+        self.feed_forward_norm = nn.<span class="tf-fn">LayerNorm</span>(model_dim)
+        self.feed_forward = FeedForwardLayer(model_dim, hidden_dim)
 
     <span class="tf-kw">def</span> <span class="tf-fn">forward</span>(self, x):
-        x = x + self.<span class="tf-fn">attention</span>(self.<span class="tf-fn">norm1</span>(x))
-        x = x + self.<span class="tf-fn">feed_forward</span>(self.<span class="tf-fn">norm2</span>(x))
+        x = x + self.<span class="tf-fn">attention</span>(self.<span class="tf-fn">attention_norm</span>(x))
+        x = x + self.<span class="tf-fn">feed_forward</span>(self.<span class="tf-fn">feed_forward_norm</span>(x))
         <span class="tf-kw">return</span> x</code></pre>
-
-    <div class="tf-two-cols">
-      <div class="tf-mini-card"><h3>Why LayerNorm?</h3><p>It keeps each token vector on a predictable scale before a sub-layer tries to process it, which makes deep stacks easier to train.</p></div>
-      <div class="tf-mini-card"><h3>Why residuals?</h3><p>They preserve existing information and give gradients a short route backwards through many stacked blocks.</p></div>
-    </div>
+    </main>
 
     <p class="back"><a href="/#transformer-block">← Back to How LLMs Work</a></p>
   </body>

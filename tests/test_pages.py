@@ -75,16 +75,25 @@ def test_feed_forward_navigation_links_are_present(client):
     assert 'href="/feed-forward"' in attention_html
 
 
-def test_transformer_block_page_contains_worked_example(client):
+def test_transformer_block_page_matches_source_and_completes_placeholders(client):
     response = client.get("/transformer-block")
     html = response.get_data(as_text=True)
 
     assert response.status_code == 200
-    assert "Transformer Block" in html
-    assert "Pre-normalised transformer block" in html
-    assert "LayerNorm 1" in html
-    assert "first residual connection" in html
-    assert 'id="transformer-block-class"' in html
+    assert "<h1>Transformer Block</h1>" in html
+    assert "The core component of an LLM is the transformer block." in html
+    assert 'href="/self-attention">self-attention</a>' in html
+    assert 'href="/feed-forward">feed-forward network</a>' in html
+    assert 'class="tf-diagram"' in html
+    assert "The parts of a transformer block" in html
+    assert "There are a couple of extra components here: LayerNorm and residual connections." in html
+    assert "There is a built-in PyTorch implementation for this:" in html
+    assert 'id="layer-norm-code"' in html
+    assert 'id="transformer-without-residuals-code"' in html
+    assert 'id="transformer-block-code"' in html
+    assert "TransformerBlockWithoutResidualConnections" in html
+    assert "MultiHeadAttention" in html
+    assert "FeedForwardLayer" in html
     assert "TransformerBlock" in html
 
 
