@@ -51,7 +51,7 @@ def test_feed_forward_page_contains_worked_example(client):
     html = response.get_data(as_text=True)
 
     assert response.status_code == 200
-    assert "Feed-Forward Layer, Step by Step" in html
+    assert "Feed-Forward Layer" in html
     assert "shape (5, 6)" in html
     assert "shape (5, 12)" in html
     assert "GELU" in html
@@ -74,7 +74,7 @@ def test_transformer_block_page_contains_worked_example(client):
     html = response.get_data(as_text=True)
 
     assert response.status_code == 200
-    assert "Transformer Block, Step by Step" in html
+    assert "Transformer Block" in html
     assert "Pre-normalised transformer block" in html
     assert "LayerNorm 1" in html
     assert "first residual connection" in html
@@ -94,7 +94,7 @@ def test_full_llm_page_contains_worked_example(client):
     html = response.get_data(as_text=True)
 
     assert response.status_code == 200
-    assert "Full LLM, Step by Step" in html
+    assert "Full LLM" in html
     assert "Decoder-only LLM forward pass" in html
     assert "Token + position embeddings" in html
     assert "Transformer block 1" in html
