@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Tokenisation, Step by Step — How LLMs Work</title>
+    <title>Tokenisation — How LLMs Work</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
       h2 { margin-top: 52px; }
@@ -15,74 +15,254 @@
       .tok-comment { color: #6a737d; }
       .tok-kw { color: #d73a49; }
       .tok-fn { color: #6f42c1; }
+      .tok-str { color: #032f62; }
       .tok-figure { margin: 22px 0; padding: 16px; background: #fff; border: 1px solid #ddd; border-radius: 6px; }
       .tok-figure-title { font-size: 0.82em; font-weight: bold; text-transform: uppercase; letter-spacing: 0.04em; color: #666; margin-bottom: 12px; }
       .tok-caption { margin-top: 10px; font-size: 0.88em; color: #555; font-style: italic; }
       .tok-scroll { overflow-x: auto; }
       table.tok-matrix { border-collapse: collapse; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.82em; margin: 0 auto; }
-      table.tok-matrix th, table.tok-matrix td { border: 1px solid #e3e3e3; padding: 5px 10px; text-align: right; white-space: nowrap; }
+      table.tok-matrix th, table.tok-matrix td { border: 1px solid #e3e3e3; padding: 5px 10px; text-align: center; white-space: nowrap; }
       table.tok-matrix thead th { color: #777; font-weight: normal; text-align: center; }
       table.tok-matrix .tok-rowlabel { text-align: left; font-weight: bold; color: #1a0dab; background: #fafbff; }
       table.tok-matrix .tok-corner { border: none; background: none; }
+      table.tok-matrix td.tok-new { background: rgba(52, 168, 83, 0.16); font-weight: bold; }
+      table.tok-matrix td.tok-seen { color: #999; font-style: italic; }
       .tok-chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
       .tok-chip { display: inline-block; padding: 5px 10px; border-radius: 6px; border: 1px solid #c9cffa; background: #eef0ff; color: #1a0dab; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
       .tok-chip.hot { background: rgba(251, 188, 5, 0.35); border-color: #c28a00; color: #5c4300; }
+      .tok-pair-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+      .tok-pair { display: inline-flex; flex-direction: column; border: 1px solid #c9cffa; border-radius: 6px; overflow: hidden; text-align: center; min-width: 54px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.86em; }
+      .tok-pair-piece { background: #eef0ff; color: #1a0dab; padding: 5px 10px; }
+      .tok-pair-id { background: #fff; color: #333; padding: 4px 10px; border-top: 1px solid #c9cffa; }
+      .tok-pair-id + .tok-pair-piece { border-top: 1px solid #c9cffa; }
+      .tok-pair .tok-pair-id:first-child { border-top: none; }
+      .tok-pair.hot { border-color: #c28a00; }
+      .tok-pair.hot .tok-pair-piece { background: rgba(251, 188, 5, 0.35); color: #5c4300; }
+      .tok-pair.hot .tok-pair-id { border-top-color: #c28a00; }
+      .tok-pair.miss { border-color: #d73a49; }
+      .tok-pair.miss .tok-pair-piece { background: #ffeef0; color: #86181d; }
+      .tok-pair.miss .tok-pair-id { border-top-color: #d73a49; color: #86181d; }
+      .tok-space { color: #9aa0c9; }
+      .tok-result { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 10px 14px; margin-top: 12px; }
+      .tok-step-arrow { text-align: center; color: #999; font-size: 1.2em; line-height: 1; margin: 6px 0; }
       .tok-note { border-left: 3px solid #1a0dab; background: #f6f7ff; padding: 10px 16px; margin: 18px 0; border-radius: 0 4px 4px 0; font-size: 0.95em; }
       .tok-note p { margin: 6px 0; }
-      .tok-flow svg { display: block; width: 100%; max-width: 600px; height: auto; margin: 0 auto; }
-      .tok-flow-box { fill: #fff; stroke: #aaa; stroke-width: 1.5; }
-      .tok-flow-vocab { fill: #eef0ff; stroke: #1a0dab; }
-      .tok-flow-merge { fill: #fff8df; stroke: #c28a00; }
-      .tok-flow-arrow { stroke: #777; stroke-width: 1.6; fill: none; }
-      .tok-flow-label { font-family: sans-serif; font-size: 15px; fill: #222; font-weight: bold; }
-      .tok-flow-sub { font-family: sans-serif; font-size: 12px; fill: #666; }
+      sup.tok-fnref { font-size: 0.7em; line-height: 0; }
+      sup.tok-fnref a { text-decoration: none; padding: 0 1px; }
+      .tok-footnotes { margin-top: 48px; padding-top: 14px; border-top: 1px solid #ddd; font-size: 0.88em; color: #555; }
+      .tok-footnotes ol { padding-left: 22px; margin: 0; }
+      .tok-footnotes li { margin: 6px 0; }
+      .tok-footnotes li:target { background: rgba(251, 188, 5, 0.25); }
     </style>
   </head>
   <body>
     <p class="tok-top-link"><a href="/#tokenisation">← Back to How LLMs Work</a></p>
-    <h1>Tokenisation, Step by Step</h1>
+    <h1>Tokenisation</h1>
 
-    <p>Tokenisation is the bridge between human text and the integer IDs a language model can process. It slices text into reusable pieces, then replaces each piece with an ID from a fixed vocabulary.</p>
-    <p>Modern LLM tokenizers are usually sub-word tokenizers. Common words can be single tokens, while uncommon words, names, code, and punctuation can be split into smaller chunks.</p>
+    <p>The job of a tokeniser is to break down a prompt into <em>tokens</em>. Then it uses a scheme to map each token to a unique number, called a <em>token id</em>, which the LLM can process. When the LLM then generates token ids in response to our prompt, we can use this number mapping to convert those token ids to tokens, and then to generated text.</p>
 
-    <h2>The process at a glance</h2>
-    <figure class="tok-figure tok-flow">
-      <div class="tok-figure-title">Text to token IDs</div>
-      <svg viewBox="0 0 600 420" role="img" aria-labelledby="tok-flow-title tok-flow-desc">
-        <title id="tok-flow-title">Tokenisation flow</title>
-        <desc id="tok-flow-desc">Input text is normalised, split into candidate byte pieces, greedily merged into vocabulary tokens, then mapped to integer IDs.</desc>
-        <defs><marker id="tok-arrow" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#777"></path></marker></defs>
-        <rect class="tok-flow-box" x="175" y="14" width="250" height="50" rx="7"></rect><text class="tok-flow-label" x="300" y="45" text-anchor="middle">Raw text</text>
-        <path class="tok-flow-arrow" d="M300 64 V96" marker-end="url(#tok-arrow)"></path>
-        <rect class="tok-flow-box" x="145" y="99" width="310" height="58" rx="7"></rect><text class="tok-flow-label" x="300" y="124" text-anchor="middle">Pre-token split</text><text class="tok-flow-sub" x="300" y="144" text-anchor="middle">words, spaces, punctuation, bytes</text>
-        <path class="tok-flow-arrow" d="M300 157 V189" marker-end="url(#tok-arrow)"></path>
-        <rect class="tok-flow-box tok-flow-merge" x="135" y="192" width="330" height="64" rx="7"></rect><text class="tok-flow-label" x="300" y="218" text-anchor="middle">Byte Pair Encoding merges</text><text class="tok-flow-sub" x="300" y="238" text-anchor="middle">choose known chunks from the vocabulary</text>
-        <path class="tok-flow-arrow" d="M300 256 V288" marker-end="url(#tok-arrow)"></path>
-        <rect class="tok-flow-box tok-flow-vocab" x="145" y="291" width="310" height="58" rx="7"></rect><text class="tok-flow-label" x="300" y="316" text-anchor="middle">Token IDs</text><text class="tok-flow-sub" x="300" y="336" text-anchor="middle">integers passed to the embedding table</text>
-      </svg>
-      <figcaption class="tok-caption">The exact vocabulary is chosen before model training. The model later learns what each ID should mean through its embedding vector.</figcaption>
-    </figure>
+    <p>To show how this works we’ll start with a simplified example, then we’ll move on to how real LLM tokenisers work.</p>
 
-    <h2>Step 1 — split the text into rough pieces</h2>
-    <p>Suppose the prompt is <em>“The tokeniser re-tokenised pdlawson.com!”</em>. A tokenizer first separates broad patterns such as words, leading spaces, punctuation, and byte-level fallbacks.</p>
-    <div class="tok-chip-row"><span class="tok-chip">The</span><span class="tok-chip"> tokeniser</span><span class="tok-chip"> re</span><span class="tok-chip">-</span><span class="tok-chip">tokenised</span><span class="tok-chip"> pdlawson</span><span class="tok-chip">.</span><span class="tok-chip">com</span><span class="tok-chip">!</span></div>
+    <h2>Word-based tokeniser</h2>
 
-    <h2>Step 2 — use sub-word pieces for rare text</h2>
-    <p>Vocabulary space is limited. Instead of storing every possible word, a tokenizer stores frequent chunks that can be recombined. That is why <code>tokenisation</code>, <code>tokeniser</code>, and <code>re-tokenised</code> can share pieces.</p>
-    <div class="tok-figure"><div class="tok-figure-title">shared sub-word vocabulary</div><div class="tok-scroll"><table class="tok-matrix"><thead><tr><th class="tok-corner"></th><th>piece 1</th><th>piece 2</th><th>piece 3</th><th>piece 4</th></tr></thead><tbody><tr><td class="tok-rowlabel">tokenisation</td><td>token</td><td>isation</td><td></td><td></td></tr><tr><td class="tok-rowlabel">tokeniser</td><td>token</td><td>iser</td><td></td><td></td></tr><tr><td class="tok-rowlabel">re-tokenised</td><td>re</td><td>-</td><td>token</td><td>ised</td></tr></tbody></table></div><figcaption class="tok-caption">The real split depends on the model's tokenizer, but the principle is the same: common reusable chunks save vocabulary slots.</figcaption></div>
+    <p>One very straightforward way to split a prompt into tokens is to split it into words and punctuation characters:</p>
 
-    <h2>Step 3 — map each token to an ID</h2>
-    <p>After splitting, each token is just a vocabulary entry. The model receives IDs, not strings. Spaces often belong to the token that follows them, which lets the model distinguish <code>dog</code> from <code> dog</code>.</p>
-    <div class="tok-figure"><div class="tok-figure-title">token IDs — shape (9,)</div><div class="tok-scroll"><table class="tok-matrix"><thead><tr><th class="tok-corner"></th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th></tr></thead><tbody><tr><td class="tok-rowlabel">token</td><td>The</td><td> token</td><td>iser</td><td> re</td><td>-</td><td>token</td><td>ised</td><td> .com</td><td>!</td></tr><tr><td class="tok-rowlabel">id</td><td>791</td><td>4037</td><td>1082</td><td>312</td><td>12</td><td>5963</td><td>4147</td><td>916</td><td>0</td></tr></tbody></table></div><figcaption class="tok-caption">These IDs are illustrative. The live demo on the main page uses the app's configured tokenizer to show actual IDs.</figcaption></div>
+    <pre class="tok-code"><code><span class="tok-kw">import</span> re
 
-    <div class="tok-note"><p><strong>Why this matters:</strong> token count controls context length, latency, and cost. A sentence that looks short to a human can become many tokens if it contains unusual names, URLs, emojis, or code.</p></div>
+<span class="tok-kw">def</span> <span class="tok-fn">tokenise</span>(text):
+    <span class="tok-comment"># \w+ matches a run of word characters,</span>
+    <span class="tok-comment"># [^\w\s] matches a single punctuation character</span>
+    <span class="tok-kw">return</span> re.<span class="tok-fn">findall</span>(<span class="tok-str">r"\w+|[^\w\s]"</span>, text)
 
-    <h2 id="tokeniser-function">Minimal implementation</h2>
-    <p>A tokenizer API used by the app only needs to return the pieces and IDs:</p>
-    <pre class="tok-code"><code><span class="tok-kw">def</span> <span class="tok-fn">tokenise</span>(text, encoding):
-    token_ids = encoding.encode(text)
-    tokens = [encoding.decode([token_id]) <span class="tok-kw">for</span> token_id <span class="tok-kw">in</span> token_ids]
-    <span class="tok-kw">return</span> {"tokens": tokens, "token_ids": token_ids}</code></pre>
+
+<span class="tok-fn">tokenise</span>(<span class="tok-str">"The dog fetched the ball!"</span>)
+<span class="tok-comment"># ['The', 'dog', 'fetched', 'the', 'ball', '!']</span></code></pre>
+
+    <div class="tok-figure">
+      <div class="tok-figure-title">splitting a prompt into words and punctuation</div>
+      <div class="tok-result">"The dog fetched the ball!"</div>
+      <div class="tok-step-arrow">▼</div>
+      <div class="tok-chip-row"><span class="tok-chip">The</span><span class="tok-chip">dog</span><span class="tok-chip">fetched</span><span class="tok-chip">the</span><span class="tok-chip">ball</span><span class="tok-chip">!</span></div>
+      <figcaption class="tok-caption">Whitespace disappears in this scheme: the tokens are the words and the punctuation characters, and nothing else.</figcaption>
+    </div>
+
+    <p>In order to map these to token ids, before we start LLM training, we take a large corpus of text. This could be the corpus we intend to use for LLM training. Then we split this corpus using our tokeniser, and start assigning token ids to each word we encounter:</p>
+
+    <div class="tok-figure">
+      <div class="tok-figure-title">scanning the corpus — first six tokens</div>
+      <div class="tok-result">"The dog chased the cat. The cat ran away!"</div>
+      <div class="tok-step-arrow">▼</div>
+      <div class="tok-scroll">
+        <table class="tok-matrix">
+          <thead><tr><th class="tok-corner"></th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr></thead>
+          <tbody>
+            <tr><td class="tok-rowlabel">token</td><td>The</td><td>dog</td><td>chased</td><td>the</td><td>cat</td><td>.</td></tr>
+            <tr><td class="tok-rowlabel">token id</td><td class="tok-new">0</td><td class="tok-new">1</td><td class="tok-new">2</td><td class="tok-new">3</td><td class="tok-new">4</td><td class="tok-new">5</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figcaption class="tok-caption">Every token here is new, so each one gets the next available id. Note that <code>The</code> and <code>the</code> are different strings, so they get different ids.</figcaption>
+    </div>
+
+    <p>If we encounter the same word twice, we ignore it:</p>
+
+    <div class="tok-figure">
+      <div class="tok-figure-title">scanning the corpus — remaining five tokens</div>
+      <div class="tok-scroll">
+        <table class="tok-matrix">
+          <thead><tr><th class="tok-corner"></th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th></tr></thead>
+          <tbody>
+            <tr><td class="tok-rowlabel">token</td><td>The</td><td>cat</td><td>ran</td><td>away</td><td>!</td></tr>
+            <tr><td class="tok-rowlabel">token id</td><td class="tok-seen">already 0</td><td class="tok-seen">already 4</td><td class="tok-new">6</td><td class="tok-new">7</td><td class="tok-new">8</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figcaption class="tok-caption"><code>The</code> and <code>cat</code> have been seen before, so they keep the ids they were given the first time round. Only genuinely new tokens consume a new id.</figcaption>
+    </div>
+
+    <p>This way, we map every word in our text corpus to a unique token id.</p>
+
+    <div class="tok-figure">
+      <div class="tok-figure-title">the finished vocabulary — 9 entries</div>
+      <div class="tok-scroll">
+        <table class="tok-matrix">
+          <tbody>
+            <tr><td class="tok-rowlabel">token</td><td>The</td><td>dog</td><td>chased</td><td>the</td><td>cat</td><td>.</td><td>ran</td><td>away</td><td>!</td></tr>
+            <tr><td class="tok-rowlabel">token id</td><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figcaption class="tok-caption">A real corpus produces tens of thousands of entries this way, but the rule is exactly the one above.</figcaption>
+    </div>
+
+    <p>Now, when we tokenise a prompt, we have a way to map it to token ids:</p>
+
+    <div class="tok-figure">
+      <div class="tok-figure-title">encoding a prompt</div>
+      <div class="tok-result">"The dog chased the cat!"</div>
+      <div class="tok-step-arrow">▼</div>
+      <div class="tok-pair-row">
+        <span class="tok-pair"><span class="tok-pair-piece">The</span><span class="tok-pair-id">0</span></span>
+        <span class="tok-pair"><span class="tok-pair-piece">dog</span><span class="tok-pair-id">1</span></span>
+        <span class="tok-pair"><span class="tok-pair-piece">chased</span><span class="tok-pair-id">2</span></span>
+        <span class="tok-pair"><span class="tok-pair-piece">the</span><span class="tok-pair-id">3</span></span>
+        <span class="tok-pair"><span class="tok-pair-piece">cat</span><span class="tok-pair-id">4</span></span>
+        <span class="tok-pair"><span class="tok-pair-piece">!</span><span class="tok-pair-id">8</span></span>
+      </div>
+      <div class="tok-step-arrow">▼</div>
+      <div class="tok-result">[0, 1, 2, 3, 4, 8]</div>
+      <figcaption class="tok-caption">This list of token ids is what actually reaches the model. From here on it never sees the text.</figcaption>
+    </div>
+
+    <p>When the LLM produces output token ids, we can now construct text from them using the reverse of this mapping:</p>
+
+    <div class="tok-figure">
+      <div class="tok-figure-title">decoding the model's output</div>
+      <div class="tok-result">[4, 6, 7, 8]</div>
+      <div class="tok-step-arrow">▼</div>
+      <div class="tok-pair-row">
+        <span class="tok-pair"><span class="tok-pair-id">4</span><span class="tok-pair-piece">cat</span></span>
+        <span class="tok-pair"><span class="tok-pair-id">6</span><span class="tok-pair-piece">ran</span></span>
+        <span class="tok-pair"><span class="tok-pair-id">7</span><span class="tok-pair-piece">away</span></span>
+        <span class="tok-pair"><span class="tok-pair-id">8</span><span class="tok-pair-piece">!</span></span>
+      </div>
+      <div class="tok-step-arrow">▼</div>
+      <div class="tok-result">"cat ran away !"</div>
+      <figcaption class="tok-caption">Because the split threw whitespace away, we have to guess it back on the way out — which is why the exclamation mark ends up adrift. Real tokenisers keep the whitespace inside the tokens, as we’ll see below.</figcaption>
+    </div>
+
+    <p>This simple tokenisation scheme has some limitations. Firstly, if we encounter a word in our prompt that was not in our training corpus, we will not be able to map it to a token. Think, for example, of misspellings, or names of cities in fantasy books. With this tokeniser, our LLM will not be able to process these words.</p>
+
+    <div class="tok-figure">
+      <div class="tok-figure-title">a prompt the vocabulary cannot handle</div>
+      <div class="tok-result">"The dog fetched the ball!"</div>
+      <div class="tok-step-arrow">▼</div>
+      <div class="tok-pair-row">
+        <span class="tok-pair"><span class="tok-pair-piece">The</span><span class="tok-pair-id">0</span></span>
+        <span class="tok-pair"><span class="tok-pair-piece">dog</span><span class="tok-pair-id">1</span></span>
+        <span class="tok-pair miss"><span class="tok-pair-piece">fetched</span><span class="tok-pair-id">?</span></span>
+        <span class="tok-pair"><span class="tok-pair-piece">the</span><span class="tok-pair-id">3</span></span>
+        <span class="tok-pair miss"><span class="tok-pair-piece">ball</span><span class="tok-pair-id">?</span></span>
+        <span class="tok-pair"><span class="tok-pair-piece">!</span><span class="tok-pair-id">8</span></span>
+      </div>
+      <figcaption class="tok-caption"><code>fetched</code> and <code>ball</code> never appeared in the corpus, so the vocabulary has no token id for them and the prompt cannot be encoded.</figcaption>
+    </div>
+
+    <p>Secondly, the vocabulary has no idea that some of its words are obviously related. <code>walk</code>, <code>walks</code>, <code>walked</code> and <code>walking</code> each map to a separate token id, and nothing about those four ids tells the model that they share a root — it has to learn that connection from scratch, four times over. Multiply that across every inflection, plural, compound and capitalisation in a language and the vocabulary becomes both enormous and wasteful.</p>
+
+    <h2>How LLMs actually do it</h2>
+
+    <p>Real LLMs, instead of breaking text into words, break text into <em>sequences of characters that commonly occur together</em>. This will often end up being whole words (as words are sequences of characters that commonly occur together!).</p>
+
+    <p>There are various schemes for doing this, including Byte Pair Encoding (BPE), WordPiece, and Unigram. All of these break down text into words and sub-word parts, for example</p>
+
+    <div class="tok-figure">
+      <div class="tok-figure-title">sub-word split — GPT-4's cl100k_base tokeniser</div>
+      <div class="tok-result">"The tokeniser retokenised Winterfell!"</div>
+      <div class="tok-step-arrow">▼</div>
+      <div class="tok-pair-row">
+        <span class="tok-pair"><span class="tok-pair-piece">The</span><span class="tok-pair-id">791</span></span>
+        <span class="tok-pair hot"><span class="tok-pair-piece"><span class="tok-space">␣</span>token</span><span class="tok-pair-id">4037</span></span>
+        <span class="tok-pair hot"><span class="tok-pair-piece">iser</span><span class="tok-pair-id">12329</span></span>
+        <span class="tok-pair hot"><span class="tok-pair-piece"><span class="tok-space">␣</span>ret</span><span class="tok-pair-id">2160</span></span>
+        <span class="tok-pair hot"><span class="tok-pair-piece">oken</span><span class="tok-pair-id">1713</span></span>
+        <span class="tok-pair hot"><span class="tok-pair-piece">ised</span><span class="tok-pair-id">4147</span></span>
+        <span class="tok-pair hot"><span class="tok-pair-piece"><span class="tok-space">␣</span>Winter</span><span class="tok-pair-id">20704</span></span>
+        <span class="tok-pair hot"><span class="tok-pair-piece">fell</span><span class="tok-pair-id">67643</span></span>
+        <span class="tok-pair"><span class="tok-pair-piece">!</span><span class="tok-pair-id">0</span></span>
+      </div>
+      <figcaption class="tok-caption">Highlighted tokens are sub-word parts. <code>␣</code> marks a leading space — whitespace lives inside the tokens, so decoding reproduces the original text exactly. <code>Winterfell</code> is represented by the two reusable vocabulary pieces <code>␣Winter</code> and <code>fell</code>, rather than receiving a token of its own.</figcaption>
+    </div>
+
+    <p>Importantly, tokenisers implementing these schemes are able to uniquely tokenise any prompt they encounter. In a worst-case scenario, they can just break down a word into its constituent characters.<sup class="tok-fnref" id="fnref-bytes"><a href="#fn-bytes">1</a></sup></p>
+
+    <div class="tok-figure">
+      <div class="tok-figure-title">falling back to single characters</div>
+      <div class="tok-result">"The dog fetched the ball in Zxjyv!"</div>
+      <div class="tok-step-arrow">▼</div>
+      <div class="tok-pair-row">
+        <span class="tok-pair"><span class="tok-pair-piece">The</span><span class="tok-pair-id">791</span></span>
+        <span class="tok-pair"><span class="tok-pair-piece"><span class="tok-space">␣</span>dog</span><span class="tok-pair-id">5679</span></span>
+        <span class="tok-pair"><span class="tok-pair-piece"><span class="tok-space">␣</span>fetched</span><span class="tok-pair-id">42542</span></span>
+        <span class="tok-pair"><span class="tok-pair-piece"><span class="tok-space">␣</span>the</span><span class="tok-pair-id">279</span></span>
+        <span class="tok-pair"><span class="tok-pair-piece"><span class="tok-space">␣</span>ball</span><span class="tok-pair-id">5041</span></span>
+        <span class="tok-pair"><span class="tok-pair-piece"><span class="tok-space">␣</span>in</span><span class="tok-pair-id">304</span></span>
+        <span class="tok-pair hot"><span class="tok-pair-piece"><span class="tok-space">␣</span>Z</span><span class="tok-pair-id">1901</span></span>
+        <span class="tok-pair hot"><span class="tok-pair-piece">x</span><span class="tok-pair-id">87</span></span>
+        <span class="tok-pair hot"><span class="tok-pair-piece">j</span><span class="tok-pair-id">73</span></span>
+        <span class="tok-pair hot"><span class="tok-pair-piece">y</span><span class="tok-pair-id">88</span></span>
+        <span class="tok-pair hot"><span class="tok-pair-piece">v</span><span class="tok-pair-id">85</span></span>
+        <span class="tok-pair"><span class="tok-pair-piece">!</span><span class="tok-pair-id">0</span></span>
+      </div>
+      <figcaption class="tok-caption">The invented city <code>Zxjyv</code> contains no multi-character chunk the vocabulary knows, so it collapses to one token per character. The words the word-based tokeniser choked on — <code>fetched</code> and <code>ball</code> — are single tokens here.</figcaption>
+    </div>
+
+    <p>Once we have our tokenisation scheme, everything else works the same as in our simple word-based tokeniser.</p>
+
+    <p>Here’s some code showing how the tiktoken library can be used to encode and decode text as tokens:</p>
+
+    <pre class="tok-code" id="tokeniser-function"><code><span class="tok-kw">import</span> tiktoken
+
+<span class="tok-comment"># the vocabulary and merge rules GPT-4 uses</span>
+encoding = tiktoken.<span class="tok-fn">get_encoding</span>(<span class="tok-str">"cl100k_base"</span>)
+
+<span class="tok-comment"># text -> token ids</span>
+token_ids = encoding.<span class="tok-fn">encode</span>(<span class="tok-str">"The dog fetched the ball!"</span>)
+<span class="tok-comment"># [791, 5679, 42542, 279, 5041, 0]</span>
+
+<span class="tok-comment"># inspect the token behind each token id</span>
+tokens = [encoding.<span class="tok-fn">decode</span>([token_id]) <span class="tok-kw">for</span> token_id <span class="tok-kw">in</span> token_ids]
+<span class="tok-comment"># ['The', ' dog', ' fetched', ' the', ' ball', '!']</span>
+
+<span class="tok-comment"># token ids -> text</span>
+encoding.<span class="tok-fn">decode</span>(token_ids)
+<span class="tok-comment"># 'The dog fetched the ball!'</span></code></pre>
+
+    <div class="tok-footnotes">
+      <ol>
+        <li id="fn-bytes">Strictly, schemes like <code>cl100k_base</code> work on <em>bytes</em> rather than characters, so the true fallback is one token per byte. For ordinary English text the two are the same thing, because each character is a single byte. Outside of ASCII text this is not necessarily true: for example, in UTF-8 the single character <code>🙂</code> is four bytes, and many characters in non-Latin alphabets are also encoded as multiple bytes. <a href="#fnref-bytes">↩</a></li>
+      </ol>
+    </div>
 
     <p class="tok-top-link"><a href="/token-embeddings">Next — token embeddings: in depth →</a></p>
   </body>

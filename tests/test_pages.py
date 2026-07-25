@@ -115,10 +115,11 @@ def test_tokenisation_page_contains_worked_example(client):
     html = response.get_data(as_text=True)
 
     assert response.status_code == 200
-    assert "Tokenisation, Step by Step" in html
-    assert "Text to token IDs" in html
-    assert "Byte Pair Encoding merges" in html
-    assert "shape (9,)" in html
+    assert "<h1>Tokenisation</h1>" in html
+    assert "Word-based tokeniser" in html
+    assert "How LLMs actually do it" in html
+    assert "Byte Pair Encoding (BPE)" in html
+    assert "the finished vocabulary" in html
     assert 'id="tokeniser-function"' in html
     assert "tokenise" in html
 
