@@ -3,92 +3,360 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Token Embeddings, Step by Step — How LLMs Work</title>
+    <title>Token Embeddings — How LLMs Work</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-      h2 { margin-top: 52px; } h3 { margin-top: 32px; margin-bottom: 8px; }
+      h2 { margin-top: 52px; }
       .emb-top-link { font-size: 0.9em; margin-bottom: 8px; }
-      code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; background: rgba(27, 31, 35, 0.06); padding: 1px 5px; border-radius: 4px; }
-      pre.emb-code, pre.emb-calculation { background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; margin: 16px 0; }
-      pre.emb-code code, pre.emb-calculation code { background: none; padding: 0; font-size: 0.84em; color: #24292e; }
-      .emb-comment { color: #6a737d; } .emb-kw { color: #d73a49; } .emb-fn { color: #6f42c1; }
-      .emb-figure { margin: 22px 0; padding: 16px; background: #fff; border: 1px solid #ddd; border-radius: 6px; }
-      .emb-figure-title { font-size: 0.82em; font-weight: bold; text-transform: uppercase; letter-spacing: 0.04em; color: #666; margin-bottom: 12px; }
-      .emb-caption { margin-top: 10px; font-size: 0.88em; color: #555; font-style: italic; }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.9em;
+        background: rgba(27, 31, 35, 0.06);
+        padding: 1px 5px;
+        border-radius: 4px;
+      }
+      pre.emb-code {
+        background: #f6f8fa;
+        border: 1px solid #e1e4e8;
+        border-radius: 6px;
+        padding: 14px 16px;
+        overflow-x: auto;
+        line-height: 1.5;
+        margin: 18px 0;
+      }
+      pre.emb-code code {
+        background: none;
+        padding: 0;
+        font-size: 0.84em;
+        color: #24292e;
+      }
+      .emb-comment { color: #6a737d; }
+      .emb-kw { color: #d73a49; }
+      .emb-fn { color: #6f42c1; }
+      .emb-figure {
+        margin: 22px 0;
+        padding: 18px;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+      }
+      .emb-caption {
+        margin-top: 12px;
+        font-size: 0.88em;
+        color: #555;
+        font-style: italic;
+      }
       .emb-scroll { overflow-x: auto; }
-      table.emb-matrix { border-collapse: collapse; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.82em; margin: 0 auto; }
-      table.emb-matrix th, table.emb-matrix td { border: 1px solid #e3e3e3; padding: 5px 10px; text-align: right; white-space: nowrap; }
-      table.emb-matrix thead th { color: #777; font-weight: normal; text-align: center; }
-      table.emb-matrix .emb-rowlabel { text-align: left; font-weight: bold; color: #1a0dab; background: #fafbff; }
-      table.emb-matrix .emb-corner { border: none; background: none; }
-      table.emb-matrix td.hot { background: rgba(251, 188, 5, 0.35); font-weight: bold; }
-      .emb-note { border-left: 3px solid #1a0dab; background: #f6f7ff; padding: 10px 16px; margin: 18px 0; border-radius: 0 4px 4px 0; font-size: 0.95em; }
-      .emb-note p { margin: 6px 0; }
-      .emb-flow svg { display: block; width: 100%; max-width: 620px; height: auto; margin: 0 auto; }
-      .emb-flow-box { fill: #fff; stroke: #aaa; stroke-width: 1.5; }
-      .emb-flow-table { fill: #eef0ff; stroke: #1a0dab; }
-      .emb-flow-pos { fill: #fff8df; stroke: #c28a00; }
-      .emb-flow-arrow { stroke: #777; stroke-width: 1.6; fill: none; }
-      .emb-flow-label { font-family: sans-serif; font-size: 15px; fill: #222; font-weight: bold; }
-      .emb-flow-sub { font-family: sans-serif; font-size: 12px; fill: #666; }
-      .emb-two-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
-      .emb-mini-card { border: 1px solid #ddd; border-radius: 6px; padding: 14px; background: #fafafa; }
-      .emb-mini-card h3 { margin-top: 0; }
+      .emb-prompt,
+      .emb-array {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.9em;
+        background: #f6f8fa;
+        border: 1px solid #e1e4e8;
+        border-radius: 6px;
+        padding: 10px 14px;
+      }
+      .emb-prompt { display: inline-block; }
+      .emb-step-arrow {
+        color: #999;
+        font-size: 1.2em;
+        line-height: 1;
+        margin: 7px 0;
+        padding-left: 18px;
+      }
+      .emb-pair-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .emb-pair {
+        display: inline-flex;
+        flex-direction: column;
+        border: 1px solid #c9cffa;
+        border-radius: 6px;
+        overflow: hidden;
+        text-align: center;
+        min-width: 62px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.84em;
+      }
+      .emb-pair-token {
+        background: #eef0ff;
+        color: #1a0dab;
+        padding: 5px 9px;
+      }
+      .emb-pair-id {
+        background: #fff;
+        color: #333;
+        padding: 4px 9px;
+        border-top: 1px solid #c9cffa;
+      }
+      .emb-space { color: #9aa0c9; }
+      table.emb-matrix,
+      table.emb-sequence {
+        border-collapse: collapse;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.82em;
+        margin: 0 auto;
+      }
+      table.emb-matrix th,
+      table.emb-matrix td,
+      table.emb-sequence th,
+      table.emb-sequence td {
+        border: 1px solid #e3e3e3;
+        padding: 6px 10px;
+        text-align: right;
+        white-space: nowrap;
+      }
+      table.emb-matrix thead th,
+      table.emb-sequence thead th {
+        color: #666;
+        background: #fafafa;
+        font-weight: normal;
+        text-align: center;
+      }
+      table.emb-matrix .emb-row-label,
+      table.emb-sequence .emb-row-label {
+        text-align: left;
+        font-weight: bold;
+        color: #1a0dab;
+        background: #fafbff;
+      }
+      table.emb-matrix .emb-dots td {
+        height: 58px;
+        border-top: 0;
+        border-bottom: 0;
+        color: #999;
+        font-size: 1.15em;
+        text-align: center;
+        letter-spacing: 0.08em;
+      }
+      table.emb-sequence td { text-align: center; }
+      table.emb-sequence td.emb-repeat {
+        background: rgba(251, 188, 5, 0.28);
+        color: #5c4300;
+        font-weight: bold;
+      }
+      .emb-lookup {
+        display: grid;
+        grid-template-columns: minmax(112px, auto) 34px minmax(330px, 1fr);
+        gap: 10px;
+        align-items: center;
+      }
+      .emb-lookup-id {
+        border: 1px solid #c9cffa;
+        background: #eef0ff;
+        border-radius: 6px;
+        padding: 10px 14px;
+        text-align: center;
+      }
+      .emb-lookup-id span {
+        display: block;
+        color: #666;
+        font-size: 0.78em;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .emb-lookup-id strong {
+        display: block;
+        color: #1a0dab;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 1.35em;
+      }
+      .emb-lookup-arrow {
+        color: #777;
+        font-size: 1.4em;
+        text-align: center;
+      }
+      .emb-vector {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(52px, 1fr));
+        border: 2px solid #c28a00;
+        border-radius: 6px;
+        overflow: hidden;
+        background: #fff8df;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.8em;
+      }
+      .emb-vector span {
+        padding: 11px 6px;
+        text-align: center;
+        border-right: 1px solid #ead79a;
+      }
+      .emb-vector span:last-child { border-right: 0; }
+      @media (max-width: 620px) {
+        .emb-figure { padding: 14px; }
+        .emb-lookup { grid-template-columns: 1fr; }
+        .emb-lookup-arrow { transform: rotate(90deg); }
+        .emb-vector { min-width: 360px; }
+      }
     </style>
   </head>
   <body>
     <p class="emb-top-link"><a href="/#token-embeddings">← Back to How LLMs Work</a></p>
-    <h1>Token Embeddings, Step by Step</h1>
+    <h1>Token Embeddings</h1>
 
-    <p>Token embeddings turn token IDs into vectors: lists of learned numbers that a neural network can transform. If tokenisation says <em>which vocabulary item</em> appeared, the embedding says <em>how that item starts its journey through the model</em>.</p>
-    <p>On this page we use six-dimensional vectors so the tables fit. Real LLMs often use thousands of dimensions.</p>
+    <p>Starting from where we left off in the <a href="/tokenisation">tokenisation deep dive</a>, after tokenisation, we have turned our prompt into a list of <em>token IDs</em>.</p>
 
-    <h2>The lookup at a glance</h2>
-    <figure class="emb-figure emb-flow">
-      <div class="emb-figure-title">Token and position embedding lookup</div>
-      <svg viewBox="0 0 620 430" role="img" aria-labelledby="emb-flow-title emb-flow-desc">
-        <title id="emb-flow-title">Embedding lookup flow</title>
-        <desc id="emb-flow-desc">Token IDs select rows from a token embedding table. Position IDs select rows from a position table. The selected vectors are added to form the sequence tensor.</desc>
-        <defs><marker id="emb-arrow" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#777"></path></marker></defs>
-        <rect class="emb-flow-box" x="190" y="14" width="240" height="50" rx="7"></rect><text class="emb-flow-label" x="310" y="45" text-anchor="middle">Token IDs</text>
-        <path class="emb-flow-arrow" d="M310 64 V96" marker-end="url(#emb-arrow)"></path>
-        <rect class="emb-flow-box emb-flow-table" x="80" y="99" width="210" height="72" rx="7"></rect><text class="emb-flow-label" x="185" y="128" text-anchor="middle">Token table</text><text class="emb-flow-sub" x="185" y="150" text-anchor="middle">vocab_size × embed_dim</text>
-        <rect class="emb-flow-box emb-flow-pos" x="330" y="99" width="210" height="72" rx="7"></rect><text class="emb-flow-label" x="435" y="128" text-anchor="middle">Position table</text><text class="emb-flow-sub" x="435" y="150" text-anchor="middle">max_seq_len × embed_dim</text>
-        <path class="emb-flow-arrow" d="M185 171 V224 H286" marker-end="url(#emb-arrow)"></path><path class="emb-flow-arrow" d="M435 171 V224 H334" marker-end="url(#emb-arrow)"></path>
-        <circle class="emb-flow-box" cx="310" cy="224" r="24"></circle><text class="emb-flow-label" x="310" y="230" text-anchor="middle">+</text>
-        <path class="emb-flow-arrow" d="M310 248 V280" marker-end="url(#emb-arrow)"></path>
-        <rect class="emb-flow-box" x="170" y="283" width="280" height="58" rx="7"></rect><text class="emb-flow-label" x="310" y="309" text-anchor="middle">Input sequence tensor</text><text class="emb-flow-sub" x="310" y="329" text-anchor="middle">shape: sequence_length × embed_dim</text>
-      </svg>
-      <figcaption class="emb-caption">The embedding operation is a table lookup, not a calculation from the text itself. The table values are learned during training.</figcaption>
+    <figure class="emb-figure" aria-labelledby="tokenised-prompt-caption">
+      <div class="emb-prompt">The dog fetched the ball</div>
+      <div class="emb-step-arrow" aria-hidden="true">▼</div>
+      <div class="emb-pair-row">
+        <span class="emb-pair"><span class="emb-pair-token">The</span><span class="emb-pair-id">791</span></span>
+        <span class="emb-pair"><span class="emb-pair-token"><span class="emb-space">␣</span>dog</span><span class="emb-pair-id">5679</span></span>
+        <span class="emb-pair"><span class="emb-pair-token"><span class="emb-space">␣</span>fetched</span><span class="emb-pair-id">42542</span></span>
+        <span class="emb-pair"><span class="emb-pair-token"><span class="emb-space">␣</span>the</span><span class="emb-pair-id">279</span></span>
+        <span class="emb-pair"><span class="emb-pair-token"><span class="emb-space">␣</span>ball</span><span class="emb-pair-id">5041</span></span>
+      </div>
+      <div class="emb-step-arrow" aria-hidden="true">▼</div>
+      <div class="emb-array">[791, 5679, 42542, 279, 5041]</div>
+      <figcaption class="emb-caption" id="tokenised-prompt-caption">Each token has become a token id. From this point on, the model works with numbers rather than the prompt text.</figcaption>
     </figure>
 
-    <h2>Step 1 — start with token IDs</h2>
-    <p>Continuing the tiny example from the full LLM walkthrough, the prompt <em>“the dog fetched the ball”</em> has five token IDs.</p>
-    <div class="emb-figure"><div class="emb-figure-title">token IDs — shape (5,)</div><div class="emb-scroll"><table class="emb-matrix"><thead><tr><th class="emb-corner"></th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead><tbody><tr><td class="emb-rowlabel">token</td><td>the₁</td><td>dog</td><td>fetched</td><td>the₂</td><td>ball</td></tr><tr><td class="emb-rowlabel">id</td><td>791</td><td>5679</td><td>8732</td><td>279</td><td>5041</td></tr></tbody></table></div></div>
+    <p>Neural networks, and in particular LLMs, operate on vectors, which can be represented as points in multidimensional space. Therefore we need to transform our token IDs into vectors.</p>
 
-    <h2>Step 2 — look up token vectors</h2>
-    <p>Each ID selects one row from the learned token embedding table. Tokens that appear in similar contexts are pushed toward useful geometric relationships during training.</p>
-    <div class="emb-figure"><div class="emb-figure-title">token embeddings — shape (5, 6)</div><div class="emb-scroll"><table class="emb-matrix"><thead><tr><th class="emb-corner"></th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr></thead><tbody><tr><td class="emb-rowlabel">the₁</td><td>0.08</td><td>-0.44</td><td>0.18</td><td>0.02</td><td>-0.11</td><td>0.31</td></tr><tr><td class="emb-rowlabel">dog</td><td>0.32</td><td>-0.18</td><td>0.41</td><td>-0.27</td><td>0.09</td><td>0.22</td></tr><tr><td class="emb-rowlabel">fetched</td><td>-0.12</td><td>0.27</td><td>0.33</td><td>-0.16</td><td>0.25</td><td>0.07</td></tr><tr><td class="emb-rowlabel">the₂</td><td>0.08</td><td>-0.44</td><td>0.18</td><td>0.02</td><td>-0.11</td><td>0.31</td></tr><tr><td class="emb-rowlabel">ball</td><td>0.25</td><td>-0.09</td><td>0.36</td><td>-0.22</td><td>0.18</td><td>0.14</td></tr></tbody></table></div><figcaption class="emb-caption">Repeated token IDs select the same token vector. Here both “the” tokens begin with the same embedding.</figcaption></div>
+    <p>There are many reasons why vectors are the natural objects for LLMs to work with, including:</p>
+    <ul>
+      <li>vectors are lists of numbers, which makes them convenient for the types of mathematical operations that neural networks need to perform</li>
+      <li>vector spaces with a large number of dimensions have lots of “room” in which to encode complex features of language, such as semantic meaning and grammatical structure</li>
+      <li>vectors have <em>geometry</em>. The distance between two learned vectors can express relationships, such as whether their tokens often appear in similar contexts</li>
+    </ul>
 
-    <h2>Step 3 — add position embeddings</h2>
-    <p>The same token can appear in different places. A position embedding tells the model where each token sits in the sequence. The model adds token and position vectors element by element.</p>
-    <pre class="emb-calculation"><code>x[position] = token_embedding[token_id] + position_embedding[position]
-<span class="emb-comment"># for five tokens and six features, x has shape (5, 6)</span></code></pre>
-    <div class="emb-figure"><div class="emb-figure-title">combined input — shape (5, 6)</div><div class="emb-scroll"><table class="emb-matrix"><thead><tr><th class="emb-corner"></th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr></thead><tbody><tr><td class="emb-rowlabel">the₁</td><td>0.25</td><td>-0.69</td><td>-0.03</td><td>0.00</td><td>0.09</td><td>0.12</td></tr><tr><td class="emb-rowlabel">dog</td><td>0.15</td><td>-0.61</td><td>-0.18</td><td>-0.33</td><td>-0.24</td><td>0.31</td></tr><tr><td class="emb-rowlabel">fetched</td><td>0.06</td><td>-0.36</td><td>-0.15</td><td>-0.14</td><td>-0.06</td><td>0.13</td></tr><tr><td class="emb-rowlabel">the₂</td><td>0.04</td><td>-0.38</td><td>-0.16</td><td>-0.12</td><td>-0.02</td><td>0.14</td></tr><tr><td class="emb-rowlabel">ball</td><td>0.11</td><td>-0.38</td><td>-0.04</td><td>-0.09</td><td>-0.04</td><td>0.19</td></tr></tbody></table></div><figcaption class="emb-caption">This is the sequence tensor passed into the first transformer block in the other deep dives.</figcaption></div>
+    <p>Real LLMs use vectors with many thousands of dimensions, but we’ll use 6-dimensional vectors to make them easier to show on the page.</p>
 
-    <div class="emb-note"><p><strong>Important distinction:</strong> the simple 3D demo on the main page visualises semantic word embeddings. LLM token embeddings are learned as part of the language model itself and may encode syntax, position-sensitive usage, and model-internal features as well as meaning.</p></div>
+    <h2>The embedding matrix</h2>
 
-    <h2 id="embedding-layer-class">Minimal implementation</h2>
-    <p>In a neural-network library, token embeddings and position embeddings are usually two learned lookup tables:</p>
-    <pre class="emb-code"><code><span class="emb-kw">class</span> <span class="emb-fn">TokenAndPositionEmbeddings</span>(nn.Module):
-    <span class="emb-kw">def</span> <span class="emb-fn">__init__</span>(self, vocab_size, max_seq_len, embed_dim):
-        super().<span class="emb-fn">__init__</span>()
-        self.token_embedding = nn.<span class="emb-fn">Embedding</span>(vocab_size, embed_dim)
-        self.position_embedding = nn.<span class="emb-fn">Embedding</span>(max_seq_len, embed_dim)
+    <p>In order to map each token ID to a vector, we define a matrix of size n by 6, where n is the vocabulary size:</p>
 
-    <span class="emb-kw">def</span> <span class="emb-fn">forward</span>(self, token_ids):
-        positions = torch.arange(token_ids.shape[-1], device=token_ids.device)
-        <span class="emb-kw">return</span> self.token_embedding(token_ids) + self.position_embedding(positions)</code></pre>
+    <figure class="emb-figure" aria-labelledby="embedding-matrix-caption">
+      <div class="emb-scroll">
+        <table class="emb-matrix">
+          <thead>
+            <tr>
+              <th scope="col">token ID</th>
+              <th scope="col">dimension 1</th>
+              <th scope="col">dimension 2</th>
+              <th scope="col">dimension 3</th>
+              <th scope="col">dimension 4</th>
+              <th scope="col">dimension 5</th>
+              <th scope="col">dimension 6</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><th class="emb-row-label" scope="row">0</th><td>0.12</td><td>-0.31</td><td>0.08</td><td>0.44</td><td>-0.17</td><td>0.25</td></tr>
+            <tr><th class="emb-row-label" scope="row">1</th><td>0.34</td><td>0.06</td><td>-0.22</td><td>0.11</td><td>0.29</td><td>-0.40</td></tr>
+            <tr><th class="emb-row-label" scope="row">2</th><td>-0.09</td><td>0.27</td><td>0.38</td><td>-0.15</td><td>0.04</td><td>0.19</td></tr>
+            <tr class="emb-dots" aria-label="Rows omitted"><td>⋮</td><td>⋮</td><td>⋮</td><td>⋮</td><td>⋮</td><td>⋮</td><td>⋮</td></tr>
+            <tr><th class="emb-row-label" scope="row">n − 3</th><td>0.21</td><td>-0.07</td><td>0.13</td><td>-0.36</td><td>0.18</td><td>0.02</td></tr>
+            <tr><th class="emb-row-label" scope="row">n − 2</th><td>-0.28</td><td>0.16</td><td>0.05</td><td>0.31</td><td>-0.12</td><td>0.24</td></tr>
+            <tr><th class="emb-row-label" scope="row">n − 1</th><td>0.07</td><td>0.33</td><td>-0.19</td><td>0.14</td><td>0.22</td><td>-0.26</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figcaption class="emb-caption" id="embedding-matrix-caption">Each horizontal row stores one 6-dimensional vector. The vertical dots stand in for all the other rows in the vocabulary.</figcaption>
+    </figure>
+
+    <p>This acts as a lookup table; the first row is the vector that the token with ID 0 will be transformed to, the second is the vector that token ID 1 will be transformed to, and so on:</p>
+
+    <figure class="emb-figure" aria-labelledby="embedding-lookup-caption">
+      <div class="emb-scroll">
+        <div class="emb-lookup">
+          <div class="emb-lookup-id"><span>token ID</span><strong>1</strong></div>
+          <div class="emb-lookup-arrow" aria-hidden="true">→</div>
+          <div class="emb-vector" aria-label="The six numbers in the embedding row for token ID 1">
+            <span>0.34</span><span>0.06</span><span>-0.22</span><span>0.11</span><span>0.29</span><span>-0.40</span>
+          </div>
+        </div>
+      </div>
+      <figcaption class="emb-caption" id="embedding-lookup-caption">Looking up token ID 1 selects the whole second row, turning one number into a 6-dimensional vector.</figcaption>
+    </figure>
+
+    <p>How do we decide the actual numbers that go into the embedding matrix? In other words, how do we decide which vector each token gets transformed to? The numbers in the matrix are called weights (there will be many more weights in the full LLM!), and these are optimised to produce meaningful output from the LLM during model training. Before training, we usually initialise the embedding matrix with random weights.</p>
+
+    <p>Now we have a way to turn token IDs into vectors.</p>
+
+    <pre class="emb-code" id="token-embedding-code"><code><span class="emb-kw">import</span> torch
+
+vocabulary_size = 100_000
+embedding_size = 6
+
+token_embedding_matrix = torch.nn.<span class="emb-fn">Embedding</span>(
+    vocabulary_size,
+    embedding_size,
+)
+
+token_ids = torch.<span class="emb-fn">tensor</span>([791, 5679, 42542, 279, 5041])
+token_vectors = <span class="emb-fn">token_embedding_matrix</span>(token_ids)
+
+<span class="emb-comment"># one 6-dimensional vector for each of the 5 token IDs</span>
+<span class="emb-comment"># token_vectors.shape == torch.Size([5, 6])</span></code></pre>
+
+    <h2>Positional embeddings</h2>
+
+    <p>The same token can appear in different positions within text.</p>
+
+    <figure class="emb-figure" aria-labelledby="repeated-token-caption">
+      <div class="emb-scroll">
+        <table class="emb-sequence">
+          <thead>
+            <tr><th scope="col">position</th><th scope="col">0</th><th scope="col">1</th><th scope="col">2</th><th scope="col">3</th><th scope="col">4</th></tr>
+          </thead>
+          <tbody>
+            <tr><th class="emb-row-label" scope="row">token</th><td class="emb-repeat">the</td><td>dog</td><td>fetched</td><td class="emb-repeat">the</td><td>ball</td></tr>
+            <tr><th class="emb-row-label" scope="row">token ID</th><td class="emb-repeat">42</td><td>8</td><td>19</td><td class="emb-repeat">42</td><td>31</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figcaption class="emb-caption" id="repeated-token-caption">The repeated token has the same token ID at positions 0 and 3, so the token embedding matrix gives it the same vector both times.</figcaption>
+    </figure>
+
+    <p>Sometimes these different positions can be meaningful within the context of a sentence, but the above embedding scheme can’t capture this meaning; it maps the same token to the same vector, no matter the position.</p>
+
+    <p>For this reason, LLMs employ a second embedding matrix: the <em>positional embedding matrix</em>.<br>
+    This maps each possible token position to a vector. This matrix has size m by 6, where m is the maximum context length (i.e., the maximum number of tokens that will be allowed as input) of the LLM.</p>
+
+    <figure class="emb-figure" aria-labelledby="position-matrix-caption">
+      <div class="emb-scroll">
+        <table class="emb-matrix">
+          <thead>
+            <tr>
+              <th scope="col">position</th>
+              <th scope="col">dimension 1</th>
+              <th scope="col">dimension 2</th>
+              <th scope="col">dimension 3</th>
+              <th scope="col">dimension 4</th>
+              <th scope="col">dimension 5</th>
+              <th scope="col">dimension 6</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><th class="emb-row-label" scope="row">0</th><td>0.17</td><td>-0.25</td><td>-0.21</td><td>-0.02</td><td>0.20</td><td>-0.19</td></tr>
+            <tr><th class="emb-row-label" scope="row">1</th><td>-0.17</td><td>-0.43</td><td>-0.59</td><td>-0.06</td><td>-0.33</td><td>0.09</td></tr>
+            <tr><th class="emb-row-label" scope="row">2</th><td>0.18</td><td>-0.63</td><td>-0.48</td><td>0.02</td><td>-0.31</td><td>0.06</td></tr>
+            <tr class="emb-dots" aria-label="Rows omitted"><td>⋮</td><td>⋮</td><td>⋮</td><td>⋮</td><td>⋮</td><td>⋮</td><td>⋮</td></tr>
+            <tr><th class="emb-row-label" scope="row">m − 2</th><td>0.09</td><td>0.21</td><td>-0.14</td><td>0.32</td><td>-0.07</td><td>0.12</td></tr>
+            <tr><th class="emb-row-label" scope="row">m − 1</th><td>-0.11</td><td>0.05</td><td>0.28</td><td>-0.16</td><td>0.24</td><td>-0.03</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <figcaption class="emb-caption" id="position-matrix-caption">Each possible position has its own 6-dimensional vector. The number of rows is the maximum context length, m.</figcaption>
+    </figure>
+
+    <p>We now compute the <em>vector embedding</em> of a token ID as the sum of these two embeddings.</p>
+
+    <pre class="emb-code" id="position-embedding-code"><code>maximum_context_length = 2_048
+position_embedding_matrix = torch.nn.<span class="emb-fn">Embedding</span>(
+    maximum_context_length,
+    embedding_size,
+)
+
+positions = torch.<span class="emb-fn">arange</span>(<span class="emb-fn">len</span>(token_ids))
+position_vectors = <span class="emb-fn">position_embedding_matrix</span>(positions)
+
+vector_embeddings = token_vectors + position_vectors
+<span class="emb-comment"># vector_embeddings.shape == torch.Size([5, 6])</span></code></pre>
+
+    <p>This allows an LLM to encode information about both the token itself and the token’s position within the given input text.</p>
 
     <p class="emb-top-link"><a href="/self-attention">Next — self-attention: in depth →</a></p>
   </body>
