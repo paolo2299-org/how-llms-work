@@ -607,7 +607,7 @@
       <svg class="architecture-diagram" viewBox="0 0 520 660" role="img"
         aria-labelledby="transformer-block-diagram-title transformer-block-diagram-desc">
         <title id="transformer-block-diagram-title">The parts of a transformer block</title>
-        <desc id="transformer-block-diagram-desc">An input passes through LayerNorm and self-attention, then is added back through a shortcut connection. It then passes through another LayerNorm and a feed-forward layer, followed by a second shortcut addition, before becoming the block output.</desc>
+        <desc id="transformer-block-diagram-desc">An input passes through LayerNorm and self-attention, then is added back through a residual connection. It then passes through another LayerNorm and a feed-forward layer, followed by a second shortcut addition, before becoming the block output.</desc>
         <defs>
           <marker id="transformer-arrow" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
             <path d="M0,0 L7,3.5 L0,7 Z" fill="#777"></path>
@@ -635,7 +635,7 @@
         <text class="architecture-sublabel" x="203" y="307" text-anchor="end">add</text>
 
         <path class="architecture-shortcut" d="M235 76 H455 V302 H259" marker-end="url(#transformer-shortcut-arrow)"></path>
-        <text class="architecture-shortcut-label" x="445" y="190" text-anchor="middle" transform="rotate(90 445 190)">shortcut connection</text>
+        <text class="architecture-shortcut-label" x="445" y="190" text-anchor="middle" transform="rotate(90 445 190)">residual connection</text>
 
         <path class="architecture-arrow" d="M235 323 V352" marker-end="url(#transformer-arrow)"></path>
         <rect class="architecture-box architecture-box-norm" x="120" y="355" width="230" height="54" rx="7"></rect>
@@ -652,7 +652,7 @@
         <text class="architecture-sublabel" x="203" y="568" text-anchor="end">add</text>
 
         <path class="architecture-shortcut" d="M235 337 H455 V563 H259" marker-end="url(#transformer-shortcut-arrow)"></path>
-        <text class="architecture-shortcut-label" x="445" y="451" text-anchor="middle" transform="rotate(90 445 451)">shortcut connection</text>
+        <text class="architecture-shortcut-label" x="445" y="451" text-anchor="middle" transform="rotate(90 445 451)">residual connection</text>
 
         <path class="architecture-arrow" d="M235 584 V613" marker-end="url(#transformer-arrow)"></path>
         <rect class="architecture-box" x="135" y="616" width="200" height="38" rx="7"></rect>
@@ -664,7 +664,7 @@
     smaller than others. Before each stage, <em>LayerNorm</em> brings those values
     back to a consistent scale, giving the stage a steady input to work with.</p>
 
-    <p>After each stage, a <em>shortcut connection</em> carries the stage's input
+    <p>After each stage, a <em>residual connection</em> carries the stage's input
     around the side and adds it back to the result. This preserves useful existing
     information while the stage adds what it has learned. During training, the same
     shortcuts also give the learning signal (called the <em>gradient</em>) a clearer

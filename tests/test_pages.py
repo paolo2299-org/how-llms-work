@@ -18,7 +18,7 @@ def test_index_contains_transformer_overviews(client):
     assert response.status_code == 200
     assert 'id="transformer-block"' in html
     assert "LayerNorm" in html
-    assert "shortcut connection" in html
+    assert "residual connection" in html
     assert 'id="llm-architecture"' in html
     assert "Transformer block 1" in html
     assert "Output head" in html
