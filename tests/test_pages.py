@@ -104,18 +104,35 @@ def test_transformer_block_navigation_link_is_present(client):
     assert 'href="/transformer-block"' in html
 
 
-def test_full_llm_page_contains_worked_example(client):
+def test_full_llm_page_matches_source_and_completes_placeholders(client):
     response = client.get("/full-llm")
     html = response.get_data(as_text=True)
 
     assert response.status_code == 200
-    assert "Full LLM" in html
-    assert "Decoder-only LLM forward pass" in html
+    assert "<h1>Full LLM</h1>" in html
+    assert "A full language model turns a prompt into a probability distribution for the next token." in html
+    assert "We have already encountered almost all of the components required to make an LLM." in html
+    assert "project the final resulting vector into an array of logits" in html
+    assert "The code now looks like this:" in html
+    assert "The result of this is an array with the same size as the number of tokens" in html
+    assert "We then use softmax to interpret this as a probability distribution" in html
+    assert "One way of obtaining the next token at this point is to just use the most likely token:" in html
+    assert "We can also make our LLM more variable by instead randomly sampling the probability distribution of tokens." in html
+    assert 'id="full-llm-visual"' in html
+    assert "Full language model pipeline" in html
     assert "Token + position embeddings" in html
     assert "Transformer block 1" in html
-    assert "softmax" in html
-    assert 'id="full-llm-class"' in html
-    assert "TinyLanguageModel" in html
+    assert "Vocabulary projection" in html
+    assert 'id="full-llm-code"' in html
+    assert "LanguageModel" in html
+    assert "TransformerBlock" in html
+    assert 'id="next-token-probabilities-code"' in html
+    assert 'class="llm-fn">softmax</span>' in html
+    assert 'id="greedy-decoding-code"' in html
+    assert 'class="llm-fn">argmax</span>' in html
+    assert 'id="sampling-code"' in html
+    assert 'class="llm-fn">multinomial</span>' in html
+    assert "TinyLanguageModel" not in html
 
 
 def test_full_llm_navigation_link_is_present(client):

@@ -6,133 +6,291 @@
     <title>Full LLM — How LLMs Work</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-      h2 { margin-top: 52px; }
-      h3 { margin-top: 32px; margin-bottom: 8px; }
-      .llm-top-link { font-size: 0.9em; margin-bottom: 8px; }
-      code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; background: rgba(27, 31, 35, 0.06); padding: 1px 5px; border-radius: 4px; }
-      pre.llm-code, pre.llm-calculation { background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; margin: 16px 0; }
-      pre.llm-code code, pre.llm-calculation code { background: none; padding: 0; font-size: 0.84em; color: #24292e; }
+      .llm-top-link {
+        margin-bottom: 8px;
+        font-size: 0.9em;
+      }
+
+      .llm-figure {
+        margin: 28px 0;
+        padding: 18px;
+        overflow: hidden;
+        background: #fff;
+        border: 1px solid #d9dce7;
+        border-radius: 8px;
+      }
+
+      .llm-figure figcaption {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 10px;
+        margin-bottom: 16px;
+      }
+
+      .llm-figure figcaption strong {
+        color: #333;
+      }
+
+      .llm-figure figcaption span {
+        color: #666;
+        font-size: 0.9em;
+      }
+
+      .llm-diagram {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-width: 680px;
+        margin: 0 auto;
+        font-family: sans-serif;
+      }
+
+      .llm-box {
+        fill: #fff;
+        stroke: #aaa;
+        stroke-width: 1.5;
+      }
+
+      .llm-box-embedding {
+        fill: #eef0ff;
+        stroke: #1a0dab;
+      }
+
+      .llm-stack {
+        fill: #fffdf5;
+        stroke: #d8c98e;
+        stroke-width: 1.5;
+        stroke-dasharray: 6 5;
+      }
+
+      .llm-box-block {
+        fill: #fff8df;
+        stroke: #c28a00;
+      }
+
+      .llm-box-head {
+        fill: #e9f7ef;
+        stroke: #138a4a;
+      }
+
+      .llm-box-output {
+        fill: #f6f7ff;
+        stroke: #1a0dab;
+        stroke-width: 2;
+      }
+
+      .llm-arrow {
+        fill: none;
+        stroke: #777;
+        stroke-width: 1.8;
+      }
+
+      .llm-label {
+        fill: #222;
+        font-size: 15px;
+        font-weight: bold;
+      }
+
+      .llm-sublabel {
+        fill: #666;
+        font-size: 12px;
+      }
+
+      .llm-token {
+        fill: #1a0dab;
+        font-size: 12px;
+        font-weight: bold;
+      }
+
+      .llm-probability-track {
+        fill: #e5e7ee;
+      }
+
+      .llm-probability-bar {
+        fill: #1a0dab;
+      }
+
+      code {
+        padding: 1px 5px;
+        background: rgba(27, 31, 35, 0.06);
+        border-radius: 4px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.9em;
+      }
+
+      pre.llm-code {
+        margin: 16px 0 26px;
+        padding: 14px 16px;
+        overflow-x: auto;
+        background: #f6f8fa;
+        border: 1px solid #e1e4e8;
+        border-radius: 6px;
+        line-height: 1.5;
+      }
+
+      pre.llm-code code {
+        padding: 0;
+        color: #24292e;
+        background: none;
+        font-size: 0.84em;
+      }
+
       .llm-comment { color: #6a737d; }
       .llm-kw { color: #d73a49; }
       .llm-fn { color: #6f42c1; }
-      .llm-figure { margin: 22px 0; padding: 16px; background: #fff; border: 1px solid #ddd; border-radius: 6px; }
-      .llm-figure-title { font-size: 0.82em; font-weight: bold; text-transform: uppercase; letter-spacing: 0.04em; color: #666; margin-bottom: 12px; }
-      .llm-caption { margin-top: 10px; font-size: 0.88em; color: #555; font-style: italic; }
-      .llm-scroll { overflow-x: auto; }
-      table.llm-matrix { border-collapse: collapse; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.82em; margin: 0 auto; }
-      table.llm-matrix th, table.llm-matrix td { border: 1px solid #e3e3e3; padding: 5px 10px; text-align: right; white-space: nowrap; }
-      table.llm-matrix thead th { color: #777; font-weight: normal; text-align: center; }
-      table.llm-matrix .llm-rowlabel { text-align: left; font-weight: bold; color: #1a0dab; background: #fafbff; }
-      table.llm-matrix .llm-corner { border: none; background: none; }
-      table.llm-matrix td.hot { background: rgba(251, 188, 5, 0.35); font-weight: bold; }
-      .llm-note { border-left: 3px solid #1a0dab; background: #f6f7ff; padding: 10px 16px; margin: 18px 0; border-radius: 0 4px 4px 0; font-size: 0.95em; }
-      .llm-note p { margin: 6px 0; }
-      .llm-flow svg { display: block; width: 100%; max-width: 600px; height: auto; margin: 0 auto; }
-      .llm-flow-box { fill: #fff; stroke: #aaa; stroke-width: 1.5; }
-      .llm-flow-embed { fill: #eef0ff; stroke: #1a0dab; }
-      .llm-flow-block { fill: #fff8df; stroke: #c28a00; }
-      .llm-flow-head { fill: #e9f7ef; stroke: #138a4a; }
-      .llm-flow-output { fill: #fff; stroke: #1a0dab; stroke-width: 2; }
-      .llm-flow-arrow { stroke: #777; stroke-width: 1.6; fill: none; }
-      .llm-flow-label { font-family: sans-serif; font-size: 15px; fill: #222; font-weight: bold; }
-      .llm-flow-sub { font-family: sans-serif; font-size: 12px; fill: #666; }
-      .llm-two-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
-      .llm-mini-card { border: 1px solid #ddd; border-radius: 6px; padding: 14px; background: #fafafa; }
-      .llm-mini-card h3 { margin-top: 0; }
+
+      @media (max-width: 480px) {
+        .llm-figure {
+          padding: 12px 6px;
+        }
+      }
     </style>
   </head>
   <body>
     <p class="llm-top-link"><a href="/#llm-architecture">← Back to How LLMs Work</a></p>
-    <h1>Full LLM</h1>
+    <main>
+      <h1>Full LLM</h1>
 
-    <p>A full language model turns a prompt into a probability distribution for the next token. Everything on this page is the same idea used by large models, but with a tiny five-token sequence and six-dimensional vectors so the shapes stay visible.</p>
+      <p>A full language model turns a prompt into a probability distribution for the next token.</p>
 
-    <p>We will connect the earlier pieces together: tokenisation, token embeddings, positional information, a stack of <a href="/transformer-block">transformer blocks</a>, a final normalisation, and an output head that scores every token in the vocabulary.</p>
+      <p>We have already encountered almost all of the components required to make an LLM. An LLM consists of tokenisation and vector embedding, followed by a series of transformer blocks. We then use a final LayerNorm and project the final resulting vector into an array of logits, with one logit for each token in the vocabulary:</p>
 
-    <h2>The whole model at a glance</h2>
-    <figure class="llm-figure llm-flow">
-      <div class="llm-figure-title">Decoder-only LLM forward pass</div>
-      <svg viewBox="0 0 600 760" role="img" aria-labelledby="llm-flow-title llm-flow-desc">
-        <title id="llm-flow-title">Full LLM forward pass</title>
-        <desc id="llm-flow-desc">Prompt text is tokenised, embedded, combined with positions, processed by repeated transformer blocks, normalised, projected to vocabulary logits, and sampled into the next token.</desc>
-        <defs><marker id="llm-arrow" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#777"></path></marker></defs>
-        <rect class="llm-flow-box" x="190" y="12" width="220" height="50" rx="7"></rect><text class="llm-flow-label" x="300" y="43" text-anchor="middle">Prompt text</text>
-        <path class="llm-flow-arrow" d="M300 62 V94" marker-end="url(#llm-arrow)"></path>
-        <rect class="llm-flow-box" x="170" y="97" width="260" height="58" rx="7"></rect><text class="llm-flow-label" x="300" y="122" text-anchor="middle">Token IDs</text><text class="llm-flow-sub" x="300" y="142" text-anchor="middle">[791, 5679, 8732, 279, 5041]</text>
-        <path class="llm-flow-arrow" d="M300 155 V187" marker-end="url(#llm-arrow)"></path>
-        <rect class="llm-flow-box llm-flow-embed" x="145" y="190" width="310" height="64" rx="7"></rect><text class="llm-flow-label" x="300" y="216" text-anchor="middle">Token + position embeddings</text><text class="llm-flow-sub" x="300" y="236" text-anchor="middle">sequence tensor shape (5, 6)</text>
-        <path class="llm-flow-arrow" d="M300 254 V286" marker-end="url(#llm-arrow)"></path>
-        <rect class="llm-flow-box llm-flow-block" x="145" y="289" width="310" height="70" rx="7"></rect><text class="llm-flow-label" x="300" y="317" text-anchor="middle">Transformer block 1</text><text class="llm-flow-sub" x="300" y="339" text-anchor="middle">attention + feed-forward + residuals</text>
-        <path class="llm-flow-arrow" d="M300 359 V391" marker-end="url(#llm-arrow)"></path>
-        <rect class="llm-flow-box llm-flow-block" x="145" y="394" width="310" height="70" rx="7"></rect><text class="llm-flow-label" x="300" y="422" text-anchor="middle">Transformer block 2</text><text class="llm-flow-sub" x="300" y="444" text-anchor="middle">same shape: (5, 6)</text>
-        <path class="llm-flow-arrow" d="M300 464 V496" marker-end="url(#llm-arrow)"></path>
-        <rect class="llm-flow-box llm-flow-block" x="145" y="499" width="310" height="70" rx="7"></rect><text class="llm-flow-label" x="300" y="527" text-anchor="middle">... block N</text><text class="llm-flow-sub" x="300" y="549" text-anchor="middle">representations get more contextual</text>
-        <path class="llm-flow-arrow" d="M300 569 V601" marker-end="url(#llm-arrow)"></path>
-        <rect class="llm-flow-box" x="185" y="604" width="230" height="50" rx="7"></rect><text class="llm-flow-label" x="300" y="635" text-anchor="middle">Final LayerNorm</text>
-        <path class="llm-flow-arrow" d="M300 654 V686" marker-end="url(#llm-arrow)"></path>
-        <rect class="llm-flow-box llm-flow-head" x="165" y="689" width="270" height="58" rx="7"></rect><text class="llm-flow-label" x="300" y="714" text-anchor="middle">Output head</text><text class="llm-flow-sub" x="300" y="734" text-anchor="middle">scores every vocabulary token</text>
-      </svg>
-      <figcaption class="llm-caption">A decoder-only LLM repeats this forward pass one generated token at a time. After choosing a token, it appends that token to the context and runs the model again.</figcaption>
-    </figure>
+      <figure class="llm-figure" id="full-llm-visual" aria-labelledby="llm-visual-title">
+        <figcaption id="llm-visual-title">
+          <strong>From prompt to next-token probabilities</strong>
+          <span>Each stage transforms the prompt while the sequence of token vectors flows through the model.</span>
+        </figcaption>
 
-    <h2>Step 1 — turn text into token IDs</h2>
-    <p>Suppose the prompt is <em>“the dog fetched the ball”</em>. The tokenizer maps each piece of text to an integer ID from a fixed vocabulary. The model never receives raw characters; it receives these IDs.</p>
-    <div class="llm-figure"><div class="llm-figure-title">token IDs — shape (5,)</div><div class="llm-scroll"><table class="llm-matrix"><thead><tr><th class="llm-corner"></th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th></tr></thead><tbody><tr><td class="llm-rowlabel">token</td><td>the</td><td>dog</td><td>fetched</td><td>the</td><td>ball</td></tr><tr><td class="llm-rowlabel">id</td><td>791</td><td>5679</td><td>8732</td><td>279</td><td>5041</td></tr></tbody></table></div></div>
+        <svg class="llm-diagram" viewBox="0 0 680 920" role="img"
+          aria-labelledby="llm-diagram-title llm-diagram-desc">
+          <title id="llm-diagram-title">Full language model pipeline</title>
+          <desc id="llm-diagram-desc">A prompt is tokenised and embedded. Its vectors pass through a stack of transformer blocks, a final LayerNorm, and a vocabulary projection. Softmax turns the resulting logits into a probability for every possible next token.</desc>
+          <defs>
+            <marker id="full-llm-arrow" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+              <path d="M0,0 L7,3.5 L0,7 Z" fill="#777"></path>
+            </marker>
+          </defs>
 
-    <h2>Step 2 — look up token and position embeddings</h2>
-    <p>Each token ID selects one row from a learned embedding table. A second learned table supplies position vectors, because the same word in position 0 and position 3 should not look identical to the model. The two vectors are added together.</p>
-    <pre class="llm-calculation"><code>x = token_embedding[token_ids] + position_embedding[positions]
-<span class="llm-comment"># x has shape (sequence_length, embed_dim) = (5, 6)</span></code></pre>
+          <rect class="llm-box" x="205" y="12" width="270" height="58" rx="7"></rect>
+          <text class="llm-sublabel" x="340" y="34" text-anchor="middle">Prompt</text>
+          <text class="llm-label" x="340" y="57" text-anchor="middle">“The cat sat”</text>
 
-    <h2>Step 3 — run the transformer stack</h2>
-    <p>The sequence tensor flows through many identical transformer blocks. Each block keeps the same shape, which is what makes stacking possible. Earlier blocks tend to build local and syntactic features; later blocks can combine those into more task-specific representations.</p>
-    <pre class="llm-code"><code><span class="llm-kw">for</span> block <span class="llm-kw">in</span> self.blocks:
-    x = block(x)  <span class="llm-comment"># still (5, 6)</span></code></pre>
-    <div class="llm-note"><p>The causal mask is crucial during generation. The representation at each position may use that token and earlier tokens, but not later tokens. That is why the final position is the one used to predict the next token.</p></div>
+          <path class="llm-arrow" d="M340 70 V101" marker-end="url(#full-llm-arrow)"></path>
+          <rect class="llm-box" x="205" y="104" width="270" height="58" rx="7"></rect>
+          <text class="llm-label" x="340" y="129" text-anchor="middle">Tokenisation</text>
+          <text class="llm-sublabel" x="340" y="150" text-anchor="middle">text → token IDs</text>
 
-    <h2>Step 4 — convert the last position into vocabulary scores</h2>
-    <p>After the final block, the output head projects each position from the embedding width to the vocabulary size. If the vocabulary has 50,000 tokens, every position gets 50,000 raw scores called <em>logits</em>.</p>
-    <pre class="llm-calculation"><code>logits = output_head(final_norm(x))
-next_token_logits = logits[-1]  <span class="llm-comment"># use the final prompt position</span></code></pre>
-    <div class="llm-figure"><div class="llm-figure-title">example final-position logits</div><div class="llm-scroll"><table class="llm-matrix"><thead><tr><th class="llm-corner"></th><th>on</th><th>to</th><th>away</th><th>dog</th><th>.</th></tr></thead><tbody><tr><td class="llm-rowlabel">logit</td><td class="hot">3.8</td><td>2.1</td><td>1.4</td><td>-0.6</td><td>0.9</td></tr></tbody></table></div><figcaption class="llm-caption">The output head scores every token in the vocabulary. This tiny table only shows five possible continuations.</figcaption></div>
+          <path class="llm-arrow" d="M340 162 V193" marker-end="url(#full-llm-arrow)"></path>
+          <rect class="llm-box llm-box-embedding" x="170" y="196" width="340" height="66" rx="7"></rect>
+          <text class="llm-label" x="340" y="224" text-anchor="middle">Token + position embeddings</text>
+          <text class="llm-sublabel" x="340" y="247" text-anchor="middle">one vector for every prompt token</text>
 
-    <h2>Step 5 — softmax turns scores into probabilities</h2>
-    <p>Softmax converts logits into probabilities. Larger logits become more likely, but lower-scoring tokens can still have non-zero probability. A decoding rule then chooses the next token: greedy decoding takes the highest probability, while sampling introduces controlled randomness.</p>
-    <pre class="llm-calculation"><code>probabilities = softmax(next_token_logits)
-next_token = sample(probabilities)  <span class="llm-comment"># for example: "on"</span></code></pre>
+          <path class="llm-arrow" d="M340 262 V293" marker-end="url(#full-llm-arrow)"></path>
+          <rect class="llm-stack" x="100" y="296" width="480" height="272" rx="12"></rect>
+          <text class="llm-sublabel" x="340" y="320" text-anchor="middle">Transformer stack</text>
 
-    <h2 id="full-llm-class">Full implementation</h2>
-    <p>Putting the pieces together gives the shape of a small decoder-only language model:</p>
-    <pre class="llm-code"><code><span class="llm-kw">import</span> torch
+          <rect class="llm-box llm-box-block" x="155" y="338" width="370" height="56" rx="7"></rect>
+          <text class="llm-label" x="340" y="363" text-anchor="middle">Transformer block 1</text>
+          <text class="llm-sublabel" x="340" y="383" text-anchor="middle">attention + feed-forward</text>
+
+          <path class="llm-arrow" d="M340 394 V419" marker-end="url(#full-llm-arrow)"></path>
+          <rect class="llm-box llm-box-block" x="155" y="422" width="370" height="56" rx="7"></rect>
+          <text class="llm-label" x="340" y="447" text-anchor="middle">Transformer block 2</text>
+          <text class="llm-sublabel" x="340" y="467" text-anchor="middle">attention + feed-forward</text>
+
+          <path class="llm-arrow" d="M340 478 V503" marker-end="url(#full-llm-arrow)"></path>
+          <rect class="llm-box llm-box-block" x="155" y="506" width="370" height="44" rx="7"></rect>
+          <text class="llm-label" x="340" y="534" text-anchor="middle">… Transformer block N</text>
+
+          <path class="llm-arrow" d="M340 568 V599" marker-end="url(#full-llm-arrow)"></path>
+          <rect class="llm-box" x="205" y="602" width="270" height="54" rx="7"></rect>
+          <text class="llm-label" x="340" y="635" text-anchor="middle">Final LayerNorm</text>
+
+          <path class="llm-arrow" d="M340 656 V687" marker-end="url(#full-llm-arrow)"></path>
+          <rect class="llm-box llm-box-head" x="170" y="690" width="340" height="64" rx="7"></rect>
+          <text class="llm-label" x="340" y="718" text-anchor="middle">Vocabulary projection</text>
+          <text class="llm-sublabel" x="340" y="741" text-anchor="middle">one logit for every token in the vocabulary</text>
+
+          <path class="llm-arrow" d="M340 754 V785" marker-end="url(#full-llm-arrow)"></path>
+          <rect class="llm-box llm-box-output" x="90" y="788" width="500" height="118" rx="9"></rect>
+          <text class="llm-label" x="340" y="815" text-anchor="middle">Softmax → next-token probabilities</text>
+
+          <text class="llm-token" x="120" y="847">the</text>
+          <rect class="llm-probability-track" x="168" y="837" width="300" height="12" rx="6"></rect>
+          <rect class="llm-probability-bar" x="168" y="837" width="168" height="12" rx="6"></rect>
+          <text class="llm-sublabel" x="480" y="847">56%</text>
+
+          <text class="llm-token" x="120" y="873">on</text>
+          <rect class="llm-probability-track" x="168" y="863" width="300" height="12" rx="6"></rect>
+          <rect class="llm-probability-bar" x="168" y="863" width="81" height="12" rx="6"></rect>
+          <text class="llm-sublabel" x="480" y="873">27%</text>
+
+          <text class="llm-token" x="120" y="899">…</text>
+          <rect class="llm-probability-track" x="168" y="889" width="300" height="12" rx="6"></rect>
+          <rect class="llm-probability-bar" x="168" y="889" width="51" height="12" rx="6"></rect>
+          <text class="llm-sublabel" x="480" y="899">17%</text>
+        </svg>
+      </figure>
+
+      <p>The code now looks like this:</p>
+
+      <pre class="llm-code" id="full-llm-code"><code><span class="llm-kw">import</span> torch
 <span class="llm-kw">import</span> torch.nn <span class="llm-kw">as</span> nn
 
 
-<span class="llm-kw">class</span> <span class="llm-fn">TinyLanguageModel</span>(nn.Module):
+<span class="llm-kw">class</span> <span class="llm-fn">LanguageModel</span>(nn.Module):
 
-    <span class="llm-kw">def</span> <span class="llm-fn">__init__</span>(self, vocab_size, max_seq_len, embed_dim, num_heads, hidden_dim, num_layers):
+    <span class="llm-kw">def</span> <span class="llm-fn">__init__</span>(
+        self,
+        vocab_size,
+        max_sequence_length,
+        model_dim,
+        head_dim,
+        num_heads,
+        hidden_dim,
+        num_layers,
+    ):
         super().<span class="llm-fn">__init__</span>()
-        self.token_embedding = nn.<span class="llm-fn">Embedding</span>(vocab_size, embed_dim)
-        self.position_embedding = nn.<span class="llm-fn">Embedding</span>(max_seq_len, embed_dim)
-        self.blocks = nn.<span class="llm-fn">ModuleList</span>([
-            TransformerBlock(embed_dim, num_heads, hidden_dim)
-            <span class="llm-kw">for</span> _ <span class="llm-kw">in</span> range(num_layers)
+        self.token_embedding = nn.<span class="llm-fn">Embedding</span>(vocab_size, model_dim)
+        self.position_embedding = nn.<span class="llm-fn">Embedding</span>(max_sequence_length, model_dim)
+        self.transformer_blocks = nn.<span class="llm-fn">ModuleList</span>([
+            <span class="llm-fn">TransformerBlock</span>(model_dim, head_dim, num_heads, hidden_dim)
+            <span class="llm-kw">for</span> _ <span class="llm-kw">in</span> <span class="llm-fn">range</span>(num_layers)
         ])
-        self.final_norm = nn.<span class="llm-fn">LayerNorm</span>(embed_dim)
-        self.output_head = nn.<span class="llm-fn">Linear</span>(embed_dim, vocab_size)
+        self.final_norm = nn.<span class="llm-fn">LayerNorm</span>(model_dim)
+        self.vocabulary_projection = nn.<span class="llm-fn">Linear</span>(model_dim, vocab_size)
 
     <span class="llm-kw">def</span> <span class="llm-fn">forward</span>(self, token_ids):
-        positions = torch.<span class="llm-fn">arange</span>(token_ids.size(0), device=token_ids.device)
-        x = self.token_embedding(token_ids) + self.position_embedding(positions)
-        <span class="llm-kw">for</span> block <span class="llm-kw">in</span> self.blocks:
-            x = block(x)
-        x = self.final_norm(x)
-        logits = self.output_head(x)
-        <span class="llm-kw">return</span> logits</code></pre>
+        positions = torch.<span class="llm-fn">arange</span>(
+            token_ids.size(0),
+            device=token_ids.device,
+        )
+        x = self.<span class="llm-fn">token_embedding</span>(token_ids)
+        x = x + self.<span class="llm-fn">position_embedding</span>(positions)
 
-    <div class="llm-two-cols">
-      <div class="llm-mini-card"><h3>Training</h3><p>During training, the model sees many text sequences and learns to make the next-token logits assign high probability to the real next token.</p></div>
-      <div class="llm-mini-card"><h3>Generation</h3><p>During generation, the model predicts one next token, appends it to the prompt, and repeats the same forward pass.</p></div>
-    </div>
+        <span class="llm-kw">for</span> block <span class="llm-kw">in</span> self.transformer_blocks:
+            x = <span class="llm-fn">block</span>(x)
+
+        x = self.<span class="llm-fn">final_norm</span>(x)
+        last_token_vector = x[-1]
+        <span class="llm-kw">return</span> self.<span class="llm-fn">vocabulary_projection</span>(last_token_vector)</code></pre>
+
+      <p>The result of this is an array with the same size as the number of tokens in the vocabulary of our LLM. We then use softmax to interpret this as a probability distribution over the next token to be generated:</p>
+
+      <pre class="llm-code" id="next-token-probabilities-code"><code>next_token_logits = <span class="llm-fn">model</span>(token_ids)
+next_token_probabilities = torch.<span class="llm-fn">softmax</span>(next_token_logits, dim=-1)</code></pre>
+
+      <p>One way of obtaining the next token at this point is to just use the most likely token:</p>
+
+      <pre class="llm-code" id="greedy-decoding-code"><code>next_token_id = torch.<span class="llm-fn">argmax</span>(next_token_probabilities).<span class="llm-fn">item</span>()</code></pre>
+
+      <p>We can also make our LLM more variable by instead randomly sampling the probability distribution of tokens.</p>
+
+      <pre class="llm-code" id="sampling-code"><code>next_token_id = torch.<span class="llm-fn">multinomial</span>(
+    next_token_probabilities,
+    num_samples=1,
+).<span class="llm-fn">item</span>()</code></pre>
+    </main>
 
     <p class="back"><a href="/#llm-architecture">← Back to How LLMs Work</a></p>
   </body>
