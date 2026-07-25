@@ -46,18 +46,22 @@ def test_index_table_of_contents_links_overviews_and_detail_pages(client):
     assert 'href="/full-llm"' in html
 
 
-def test_feed_forward_page_contains_worked_example(client):
+def test_feed_forward_page_matches_source_and_completes_placeholders(client):
     response = client.get("/feed-forward")
     html = response.get_data(as_text=True)
 
     assert response.status_code == 200
-    assert "Feed-Forward Layer" in html
-    assert "shape (5, 6)" in html
-    assert "shape (5, 12)" in html
-    assert "GELU" in html
-    assert 'id="feed-forward-class"' in html
-    assert "FeedForward" in html
-    assert "Feed-forward tensor shape flow" in html
+    assert "<h1>Feed-Forward Layer</h1>" in html
+    assert "helps an LLM to <em>learn features</em>" in html
+    assert "This phrase expresses disagreement." in html
+    assert "Projects the result back to the original vector size" in html
+    assert 'id="feed-forward-visual"' in html
+    assert "Widen, activate, then narrow" in html
+    assert 'aria-labelledby="ff-visual-title"' in html
+    assert 'id="feed-forward-code"' in html
+    assert "FeedForwardLayer" in html
+    assert 'nn.<span class="ff-fn">Linear</span>' in html
+    assert 'llm/feed-forward-detail.js' in html
 
 
 def test_feed_forward_navigation_links_are_present(client):

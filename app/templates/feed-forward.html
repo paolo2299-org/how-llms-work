@@ -6,416 +6,412 @@
     <title>Feed-Forward Layer — How LLMs Work</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-      h2 { margin-top: 52px; }
-      h3 { margin-top: 32px; margin-bottom: 8px; }
-      .ff-top-link { font-size: 0.9em; margin-bottom: 8px; }
+      .ff-top-link {
+        margin-bottom: 8px;
+        font-size: 0.9em;
+      }
+
+      .ff-examples {
+        margin: 4px 0 24px;
+        padding-left: 18px;
+        border-left: 3px solid #e2e4f4;
+      }
+
+      .ff-examples p {
+        margin: 7px 0;
+      }
+
+      .ff-steps {
+        padding-left: 24px;
+      }
+
+      .ff-steps li {
+        margin: 7px 0;
+        padding-left: 3px;
+      }
+
+      .ff-figure {
+        margin: 28px 0;
+        padding: 18px;
+        overflow: hidden;
+        background: #fff;
+        border: 1px solid #d9dce7;
+        border-radius: 8px;
+      }
+
+      .ff-figure figcaption {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 10px;
+        margin-bottom: 16px;
+      }
+
+      .ff-figure figcaption strong {
+        color: #333;
+      }
+
+      .ff-figure figcaption span {
+        color: #666;
+        font-size: 0.9em;
+      }
+
+      .ff-picker {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+
+      .ff-picker-label {
+        margin-right: 2px;
+        color: #555;
+        font-size: 0.88em;
+      }
+
+      .ff-picker button {
+        padding: 6px 11px;
+        color: #333;
+        font: inherit;
+        font-size: 0.86em;
+        background: #fff;
+        border: 1px solid #c7cad6;
+        border-radius: 999px;
+        cursor: pointer;
+      }
+
+      .ff-picker button:hover {
+        border-color: #1a0dab;
+      }
+
+      .ff-picker button:focus-visible {
+        outline: 3px solid rgba(26, 13, 171, 0.22);
+        outline-offset: 2px;
+      }
+
+      .ff-picker button[aria-pressed="true"] {
+        color: #fff;
+        background: #1a0dab;
+        border-color: #1a0dab;
+      }
+
+      .ff-pipeline {
+        display: grid;
+        grid-template-columns: minmax(86px, 1fr) auto minmax(126px, 1.3fr) auto auto minmax(86px, 1fr);
+        gap: 10px;
+        align-items: center;
+      }
+
+      .ff-stage {
+        min-width: 0;
+        padding: 12px 10px;
+        text-align: center;
+        background: #fafbff;
+        border: 1px solid #dfe1ec;
+        border-radius: 7px;
+      }
+
+      .ff-stage-title {
+        display: block;
+        margin-bottom: 2px;
+        font-weight: bold;
+        font-size: 0.82em;
+      }
+
+      .ff-stage-dim {
+        display: block;
+        margin-bottom: 11px;
+        color: #666;
+        font-size: 0.72em;
+      }
+
+      .ff-bars {
+        display: flex;
+        height: 92px;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 6px;
+      }
+
+      .ff-bar {
+        width: 12px;
+        min-height: 8px;
+        background: #6860ca;
+        border-radius: 3px 3px 1px 1px;
+        transition: height 240ms ease;
+      }
+
+      .ff-output-bar {
+        background: #2f8c68;
+      }
+
+      .ff-hidden-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 15px);
+        justify-content: center;
+        gap: 9px;
+        min-height: 92px;
+        align-content: center;
+      }
+
+      .ff-hidden-unit {
+        width: 15px;
+        height: 15px;
+        background: #d99216;
+        border: 1px solid #a66b08;
+        border-radius: 50%;
+        transition: opacity 240ms ease, transform 240ms ease;
+      }
+
+      .ff-operation {
+        width: 58px;
+        color: #60636d;
+        text-align: center;
+      }
+
+      .ff-arrow-symbol {
+        display: block;
+        color: #8b8e98;
+        font-size: 1.45em;
+        line-height: 1;
+      }
+
+      .ff-operation-label {
+        display: block;
+        margin-top: 5px;
+        font-size: 0.68em;
+        line-height: 1.25;
+      }
+
+      .ff-activation {
+        padding: 8px 7px;
+        color: #664700;
+        text-align: center;
+        background: #fff5d6;
+        border: 1px solid #dfbd57;
+        border-radius: 6px;
+        font-weight: bold;
+        font-size: 0.78em;
+        line-height: 1.2;
+      }
+
+      .ff-activation small {
+        display: block;
+        margin-top: 3px;
+        font-weight: normal;
+        font-size: 0.76em;
+      }
+
+      .ff-feature-callout {
+        margin: 18px 0 0;
+        padding: 9px 12px;
+        color: #4e3700;
+        text-align: center;
+        background: #fff9e8;
+        border-radius: 5px;
+        font-size: 0.9em;
+      }
 
       code {
+        padding: 1px 5px;
+        background: rgba(27, 31, 35, 0.06);
+        border-radius: 4px;
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         font-size: 0.9em;
-        background: rgba(27, 31, 35, 0.06);
-        padding: 1px 5px;
-        border-radius: 4px;
       }
-      pre.ff-code,
-      pre.ff-calculation {
+
+      pre.ff-code {
+        margin: 16px 0;
+        padding: 14px 16px;
+        overflow-x: auto;
         background: #f6f8fa;
         border: 1px solid #e1e4e8;
         border-radius: 6px;
-        padding: 14px 16px;
-        overflow-x: auto;
         line-height: 1.5;
-        margin: 16px 0;
       }
-      pre.ff-code code,
-      pre.ff-calculation code {
-        background: none;
+
+      pre.ff-code code {
         padding: 0;
-        font-size: 0.84em;
         color: #24292e;
+        background: none;
+        font-size: 0.84em;
       }
-      .ff-comment { color: #6a737d; }
+
       .ff-kw { color: #d73a49; }
       .ff-fn { color: #6f42c1; }
 
-      .ff-figure {
-        margin: 22px 0;
-        padding: 16px;
-        background: #fff;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-      }
-      .ff-figure-title {
-        font-size: 0.82em;
-        font-weight: bold;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: #666;
-        margin-bottom: 12px;
-      }
-      .ff-caption {
-        margin-top: 10px;
-        font-size: 0.88em;
-        color: #555;
-        font-style: italic;
-      }
-      .ff-scroll { overflow-x: auto; }
-
-      table.ff-matrix {
-        border-collapse: collapse;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        font-size: 0.82em;
-        margin: 0 auto;
-      }
-      table.ff-matrix th,
-      table.ff-matrix td {
-        border: 1px solid #e3e3e3;
-        padding: 5px 10px;
-        text-align: right;
+      .ff-sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
         white-space: nowrap;
+        border: 0;
       }
-      table.ff-matrix thead th {
-        color: #777;
-        font-weight: normal;
-        text-align: center;
-      }
-      table.ff-matrix .ff-rowlabel {
-        text-align: left;
-        font-weight: bold;
-        color: #1a0dab;
-        background: #fafbff;
-      }
-      table.ff-matrix .ff-corner { border: none; background: none; }
 
-      .ff-note {
-        border-left: 3px solid #1a0dab;
-        background: #f6f7ff;
-        padding: 10px 16px;
-        margin: 18px 0;
-        border-radius: 0 4px 4px 0;
-        font-size: 0.95em;
-      }
-      .ff-note p { margin: 6px 0; }
+      @media (max-width: 620px) {
+        .ff-pipeline {
+          grid-template-columns: minmax(0, 1fr);
+          gap: 8px;
+        }
 
-      .ff-flow svg {
-        display: block;
-        width: 100%;
-        max-width: 520px;
-        height: auto;
-        margin: 0 auto;
+        .ff-stage {
+          width: min(210px, 100%);
+          margin: 0 auto;
+        }
+
+        .ff-operation {
+          width: auto;
+        }
+
+        .ff-arrow-symbol {
+          transform: rotate(90deg);
+        }
+
+        .ff-activation {
+          width: min(170px, 100%);
+          margin: 0 auto;
+        }
       }
-      .ff-flow-data {
-        fill: #fff;
-        stroke: #999;
-        stroke-width: 1.5;
+
+      @media (prefers-reduced-motion: reduce) {
+        .ff-bar,
+        .ff-hidden-unit {
+          transition: none;
+        }
       }
-      .ff-flow-layer {
-        fill: #f6f7ff;
-        stroke: #1a0dab;
-        stroke-width: 1.5;
-      }
-      .ff-flow-activation {
-        fill: rgba(251, 188, 5, 0.18);
-        stroke: #c48d00;
-        stroke-width: 1.5;
-      }
-      .ff-flow-arrow { stroke: #777; stroke-width: 1.6; fill: none; }
-      .ff-flow-label { font-family: sans-serif; font-size: 15px; fill: #222; }
-      .ff-flow-sub { font-family: sans-serif; font-size: 12px; fill: #666; }
     </style>
   </head>
   <body>
     <p class="ff-top-link"><a href="/#feed-forward">← Back to How LLMs Work</a></p>
     <h1>Feed-Forward Layer</h1>
 
-    <p>Self-attention lets tokens exchange information. The feed-forward layer that follows does
-    something deliberately different: it processes each enriched token <em>independently</em>,
-    using the same small neural network for every token in the sequence.</p>
+    <p>The feed-forward layer helps an LLM to <em>learn features</em> of the text that it is trained on.</p>
 
-    <p>We will continue directly from the five-token example on the
-    <a href="/multi-head-attention">multi-head attention page</a>. Its output has six values per
-    token, so our feed-forward layer will expand each token from 6 dimensions to 12, apply a
-    non-linear activation, then project it back to 6 dimensions.</p>
+    <p>By feature, we mean a pattern or property of the text that the model finds useful for predicting what comes next.</p>
 
-    <h2>The shape of the layer</h2>
+    <p>Examples might include:</p>
 
-    <p>A feed-forward layer is often called a <em>position-wise MLP</em>. “Position-wise” means
-    that every row is transformed separately; unlike attention, this operation never combines
-    one token's row with another token's row. “MLP” means that it contains more than one linear
-    layer, with a non-linear activation between them.</p>
+    <div class="ff-examples">
+      <p>“This word is probably a person’s name.”</p>
+      <p>“The sentence is discussing something in the past.”</p>
+      <p>“This phrase expresses disagreement.”</p>
+      <p>“The current token is inside a quotation.”</p>
+      <p>“The subject is plural, so the following verb should probably be plural.”</p>
+      <p>“The context concerns France and its capital.”</p>
+    </div>
 
-    <figure class="ff-figure ff-flow">
-      <div class="ff-figure-title">One sequence through the feed-forward layer</div>
-      <svg viewBox="0 0 520 620" role="img" aria-labelledby="ff-flow-title ff-flow-desc">
-        <title id="ff-flow-title">Feed-forward tensor shape flow</title>
-        <desc id="ff-flow-desc">Five tokens with six values each pass through a linear layer that expands each token to twelve values, GELU keeps that shape unchanged, and a second linear layer projects each token back to six values.</desc>
-        <defs>
-          <marker id="ff-arrow" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
-            <path d="M0,0 L7,3.5 L0,7 Z" fill="#777"></path>
-          </marker>
-        </defs>
+    <p>At the beginning of training, the model’s internal transformations are mostly random. It repeatedly predicts the next token, measures its error, and adjusts its weights. Over many examples, these adjustments create internal patterns that respond to useful properties of text. That is what we mean when we say the model <em>learns features</em>.</p>
 
-        <rect class="ff-flow-data" x="150" y="12" width="220" height="58" rx="7"></rect>
-        <text class="ff-flow-label" x="260" y="37" text-anchor="middle">Input x</text>
-        <text class="ff-flow-sub" x="260" y="57" text-anchor="middle">shape (5, 6)</text>
+    <p>There are many feed-forward layers in an LLM. Each one does the following:</p>
 
-        <path class="ff-flow-arrow" d="M260 70 V105" marker-end="url(#ff-arrow)"></path>
-        <rect class="ff-flow-layer" x="125" y="108" width="270" height="70" rx="7"></rect>
-        <text class="ff-flow-label" x="260" y="136" text-anchor="middle">Linear: expand 6 → 12</text>
-        <text class="ff-flow-sub" x="260" y="158" text-anchor="middle">weight (12, 6) · bias (12,)</text>
+    <ul class="ff-steps">
+      <li>Takes an input vector and projects it into a higher-dimensional space</li>
+      <li>Applies a nonlinear activation</li>
+      <li>Projects the result back to the original vector size</li>
+    </ul>
 
-        <path class="ff-flow-arrow" d="M260 178 V213" marker-end="url(#ff-arrow)"></path>
-        <rect class="ff-flow-data" x="150" y="216" width="220" height="58" rx="7"></rect>
-        <text class="ff-flow-label" x="260" y="241" text-anchor="middle">Expanded values</text>
-        <text class="ff-flow-sub" x="260" y="261" text-anchor="middle">shape (5, 12)</text>
+    <figure class="ff-figure" id="feed-forward-visual" data-ff-visual aria-labelledby="ff-visual-title">
+      <figcaption id="ff-visual-title">
+        <strong>Widen, activate, then narrow</strong>
+        <span>A simplified, illustrative feed-forward layer.</span>
+      </figcaption>
 
-        <path class="ff-flow-arrow" d="M260 274 V309" marker-end="url(#ff-arrow)"></path>
-        <rect class="ff-flow-activation" x="165" y="312" width="190" height="58" rx="7"></rect>
-        <text class="ff-flow-label" x="260" y="337" text-anchor="middle">GELU</text>
-        <text class="ff-flow-sub" x="260" y="357" text-anchor="middle">shape stays (5, 12)</text>
+      <div class="ff-picker" role="group" aria-label="Choose an illustrative input">
+        <span class="ff-picker-label">Choose an input:</span>
+        <button type="button" data-example="name" aria-pressed="true">Alice waved.</button>
+        <button type="button" data-example="past" aria-pressed="false">They walked.</button>
+        <button type="button" data-example="disagreement" aria-pressed="false">I disagree.</button>
+      </div>
 
-        <path class="ff-flow-arrow" d="M260 370 V405" marker-end="url(#ff-arrow)"></path>
-        <rect class="ff-flow-layer" x="125" y="408" width="270" height="70" rx="7"></rect>
-        <text class="ff-flow-label" x="260" y="436" text-anchor="middle">Linear: project 12 → 6</text>
-        <text class="ff-flow-sub" x="260" y="458" text-anchor="middle">weight (6, 12) · bias (6,)</text>
+      <div class="ff-pipeline" role="img" aria-labelledby="ff-visual-title" aria-describedby="ff-visual-description">
+        <div class="ff-stage">
+          <span class="ff-stage-title">Input vector</span>
+          <span class="ff-stage-dim">4 dimensions</span>
+          <div class="ff-bars" aria-hidden="true">
+            <span class="ff-bar ff-input-value" style="height: 72%"></span>
+            <span class="ff-bar ff-input-value" style="height: 38%"></span>
+            <span class="ff-bar ff-input-value" style="height: 84%"></span>
+            <span class="ff-bar ff-input-value" style="height: 53%"></span>
+          </div>
+        </div>
 
-        <path class="ff-flow-arrow" d="M260 478 V513" marker-end="url(#ff-arrow)"></path>
-        <rect class="ff-flow-data" x="150" y="516" width="220" height="58" rx="7"></rect>
-        <text class="ff-flow-label" x="260" y="541" text-anchor="middle">Output</text>
-        <text class="ff-flow-sub" x="260" y="561" text-anchor="middle">shape (5, 6)</text>
-      </svg>
-      <figcaption class="ff-caption">The hidden dimension is wider, giving the network more
-        room to represent useful features. Returning to six dimensions makes the result compatible
-        with the rest of the transformer block.</figcaption>
+        <div class="ff-operation" aria-hidden="true">
+          <span class="ff-arrow-symbol">→</span>
+          <span class="ff-operation-label">Linear<br>4 → 12</span>
+        </div>
+
+        <div class="ff-stage">
+          <span class="ff-stage-title">Higher-dimensional space</span>
+          <span class="ff-stage-dim">12 feature responses</span>
+          <div class="ff-hidden-grid" aria-hidden="true">
+            <span class="ff-hidden-unit" style="opacity: 0.34; transform: scale(0.86)"></span>
+            <span class="ff-hidden-unit" style="opacity: 0.44; transform: scale(0.89)"></span>
+            <span class="ff-hidden-unit" style="opacity: 0.96; transform: scale(1.06)"></span>
+            <span class="ff-hidden-unit" style="opacity: 0.29; transform: scale(0.84)"></span>
+            <span class="ff-hidden-unit" style="opacity: 0.38; transform: scale(0.87)"></span>
+            <span class="ff-hidden-unit" style="opacity: 0.55; transform: scale(0.93)"></span>
+            <span class="ff-hidden-unit" style="opacity: 0.26; transform: scale(0.83)"></span>
+            <span class="ff-hidden-unit" style="opacity: 0.63; transform: scale(0.96)"></span>
+            <span class="ff-hidden-unit" style="opacity: 0.33; transform: scale(0.85)"></span>
+            <span class="ff-hidden-unit" style="opacity: 0.48; transform: scale(0.90)"></span>
+            <span class="ff-hidden-unit" style="opacity: 0.31; transform: scale(0.85)"></span>
+            <span class="ff-hidden-unit" style="opacity: 0.41; transform: scale(0.88)"></span>
+          </div>
+        </div>
+
+        <div class="ff-activation" aria-hidden="true">
+          GELU
+          <small>nonlinear activation</small>
+        </div>
+
+        <div class="ff-operation" aria-hidden="true">
+          <span class="ff-arrow-symbol">→</span>
+          <span class="ff-operation-label">Linear<br>12 → 4</span>
+        </div>
+
+        <div class="ff-stage">
+          <span class="ff-stage-title">Output vector</span>
+          <span class="ff-stage-dim">4 dimensions</span>
+          <div class="ff-bars" aria-hidden="true">
+            <span class="ff-bar ff-output-bar ff-output-value" style="height: 56%"></span>
+            <span class="ff-bar ff-output-bar ff-output-value" style="height: 82%"></span>
+            <span class="ff-bar ff-output-bar ff-output-value" style="height: 47%"></span>
+            <span class="ff-bar ff-output-bar ff-output-value" style="height: 69%"></span>
+          </div>
+        </div>
+      </div>
+
+      <p class="ff-feature-callout"><strong>Feature responding:</strong> <span data-feature-label>person’s name</span></p>
+      <p class="ff-sr-only" id="ff-visual-description" aria-live="polite">For “Alice waved.”, a four-dimensional input is projected into twelve feature responses. The person’s name response is strongest. GELU applies a nonlinear activation before a second linear layer returns a four-dimensional output.</p>
     </figure>
 
-    <h2>Our input</h2>
+    <p>This is a setup that is very common in neural networks which are aimed at learning complex features. Projecting into a higher-dimensional space gives the LLM more capacity to detect and transform complex features. Projecting back down then combines those features into a compact representation whose dimensions remain consistent throughout the LLM architecture.</p>
 
-    <p>Here is the output from the previous attention example, treated as the exact input to this
-    walkthrough. The two occurrences of <code>the</code> have different vectors because attention
-    has already enriched each occurrence using its surrounding context.</p>
+    <p>In code this looks like the following:</p>
 
-    <div class="ff-figure">
-      <div class="ff-figure-title">input x — shape (5, 6)</div>
-      <div class="ff-scroll">
-        <table class="ff-matrix">
-          <thead>
-            <tr><th class="ff-corner"></th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>
-          </thead>
-          <tbody>
-            <tr><td class="ff-rowlabel">the₁</td><td>0.25</td><td>-0.69</td><td>-0.03</td><td>0.00</td><td>0.09</td><td>0.12</td></tr>
-            <tr><td class="ff-rowlabel">dog</td><td>0.15</td><td>-0.61</td><td>-0.18</td><td>-0.33</td><td>-0.24</td><td>0.31</td></tr>
-            <tr><td class="ff-rowlabel">fetched</td><td>0.06</td><td>-0.36</td><td>-0.15</td><td>-0.14</td><td>-0.06</td><td>0.13</td></tr>
-            <tr><td class="ff-rowlabel">the₂</td><td>0.04</td><td>-0.38</td><td>-0.16</td><td>-0.12</td><td>-0.02</td><td>0.14</td></tr>
-            <tr><td class="ff-rowlabel">ball</td><td>0.11</td><td>-0.38</td><td>-0.04</td><td>-0.09</td><td>-0.04</td><td>0.19</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <p>The complete setup below uses <code>torch.manual_seed(42)</code>, so PyTorch initialises the
-    two linear layers with the same weights every time. That makes every number on this page
-    reproducible. The tables round values to four decimal places; PyTorch keeps full precision
-    during the calculations.</p>
-
-    <pre class="ff-code"><code><span class="ff-kw">import</span> torch
-<span class="ff-kw">import</span> torch.nn <span class="ff-kw">as</span> nn
+    <pre class="ff-code" id="feed-forward-code"><code><span class="ff-kw">import</span> torch.nn <span class="ff-kw">as</span> nn
 
 
-x = torch.<span class="ff-fn">tensor</span>([
-    [0.25, -0.69, -0.03,  0.00,  0.09, 0.12],
-    [0.15, -0.61, -0.18, -0.33, -0.24, 0.31],
-    [0.06, -0.36, -0.15, -0.14, -0.06, 0.13],
-    [0.04, -0.38, -0.16, -0.12, -0.02, 0.14],
-    [0.11, -0.38, -0.04, -0.09, -0.04, 0.19],
-])
+<span class="ff-kw">class</span> <span class="ff-fn">FeedForwardLayer</span>(nn.Module):
 
-torch.<span class="ff-fn">manual_seed</span>(42)
-expand   = nn.<span class="ff-fn">Linear</span>(6, 12)  <span class="ff-comment"># includes a learned bias</span>
-activate = nn.<span class="ff-fn">GELU</span>()
-project  = nn.<span class="ff-fn">Linear</span>(12, 6)  <span class="ff-comment"># includes a learned bias</span></code></pre>
-
-    <h2>Step 1 — expand each token</h2>
-
-    <p>The first linear layer applies <code>x @ weight.T + bias</code>. Its weight has shape
-    <code>(12, 6)</code>: twelve learned feature rows, each looking at all six values in a token.
-    The same weight and bias are used for every token.</p>
-
-    <pre class="ff-code"><code>expanded = <span class="ff-fn">expand</span>(x)
-
-<span class="ff-fn">print</span>(expand.weight.shape)  <span class="ff-comment"># torch.Size([12, 6])</span>
-<span class="ff-fn">print</span>(expand.bias.shape)    <span class="ff-comment"># torch.Size([12])</span>
-<span class="ff-fn">print</span>(expanded.shape)       <span class="ff-comment"># torch.Size([5, 12])</span></code></pre>
-
-    <p>For example, the first number produced for <code>the₁</code> is the dot product of that
-    token's six values and the first row of the weight, plus the first bias:</p>
-
-    <pre class="ff-calculation"><code>expanded[the₁, 0]
-= ( 0.25 ×  0.3121) + (-0.69 ×  0.3388) + (-0.03 × -0.0956)
-  + ( 0.00 ×  0.3750) + ( 0.09 × -0.0894) + ( 0.12 ×  0.0824)
-  + 0.3928
-= 0.2418</code></pre>
-
-    <p>Doing all twelve dot products for all five rows gives:</p>
-
-    <div class="ff-figure">
-      <div class="ff-figure-title">expanded — shape (5, 12)</div>
-      <div class="ff-scroll">
-        <table class="ff-matrix">
-          <thead>
-            <tr><th class="ff-corner"></th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th></tr>
-          </thead>
-          <tbody>
-            <tr><td class="ff-rowlabel">the₁</td><td>0.2418</td><td>-0.5217</td><td>-0.3380</td><td>-0.4156</td><td>-0.2668</td><td>0.5057</td><td>-0.0703</td><td>0.1536</td><td>0.0368</td><td>-0.3755</td><td>0.4126</td><td>0.1433</td></tr>
-            <tr><td class="ff-rowlabel">dog</td><td>0.1734</td><td>-0.5404</td><td>-0.4667</td><td>-0.2381</td><td>-0.2406</td><td>0.4631</td><td>-0.0717</td><td>0.1252</td><td>0.2758</td><td>-0.5513</td><td>0.3578</td><td>0.1116</td></tr>
-            <tr><td class="ff-rowlabel">fetched</td><td>0.2675</td><td>-0.4586</td><td>-0.4392</td><td>-0.2882</td><td>-0.2293</td><td>0.2963</td><td>0.0216</td><td>0.2033</td><td>0.0362</td><td>-0.4074</td><td>0.3007</td><td>0.0087</td></tr>
-            <tr><td class="ff-rowlabel">the₂</td><td>0.2602</td><td>-0.4540</td><td>-0.4363</td><td>-0.2895</td><td>-0.2253</td><td>0.2913</td><td>0.0140</td><td>0.1968</td><td>0.0288</td><td>-0.4047</td><td>0.3058</td><td>0.0204</td></tr>
-            <tr><td class="ff-rowlabel">ball</td><td>0.2877</td><td>-0.4370</td><td>-0.3966</td><td>-0.3100</td><td>-0.2900</td><td>0.3722</td><td>0.0122</td><td>0.2307</td><td>0.0131</td><td>-0.4020</td><td>0.3118</td><td>0.0070</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="ff-caption">The sequence still has five rows. Only the last dimension has
-        changed: each token now has twelve learned feature values instead of six.</p>
-    </div>
-
-    <h2>Step 2 — apply GELU</h2>
-
-    <p>If we stacked two linear layers without an activation between them, the pair would still
-    behave like a single linear layer. GELU introduces the non-linearity that lets the network
-    learn more complicated features.</p>
-
-    <pre class="ff-code"><code>activated = <span class="ff-fn">activate</span>(expanded)
-<span class="ff-fn">print</span>(activated.shape)  <span class="ff-comment"># torch.Size([5, 12])</span></code></pre>
-
-    <p>GELU smoothly scales each number using
-    <code>GELU(z) = 0.5z(1 + erf(z / √2))</code>. For the value we just calculated:</p>
-
-    <pre class="ff-calculation"><code>GELU(0.2418) = 0.5 × 0.2418 × (1 + erf(0.2418 / √2))
-             = 0.1440</code></pre>
-
-    <p>Positive values tend to pass through, while negative values are usually reduced towards
-    zero rather than being cut off abruptly. The activation changes the values but not their
-    shape:</p>
-
-    <div class="ff-figure">
-      <div class="ff-figure-title">activated — shape (5, 12)</div>
-      <div class="ff-scroll">
-        <table class="ff-matrix">
-          <thead>
-            <tr><th class="ff-corner"></th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th></tr>
-          </thead>
-          <tbody>
-            <tr><td class="ff-rowlabel">the₁</td><td>0.1440</td><td>-0.1570</td><td>-0.1243</td><td>-0.1408</td><td>-0.1053</td><td>0.3507</td><td>-0.0332</td><td>0.0862</td><td>0.0190</td><td>-0.1328</td><td>0.2723</td><td>0.0798</td></tr>
-            <tr><td class="ff-rowlabel">dog</td><td>0.0986</td><td>-0.1591</td><td>-0.1495</td><td>-0.0966</td><td>-0.0974</td><td>0.3141</td><td>-0.0338</td><td>0.0688</td><td>0.1679</td><td>-0.1603</td><td>0.2289</td><td>0.0608</td></tr>
-            <tr><td class="ff-rowlabel">fetched</td><td>0.1620</td><td>-0.1482</td><td>-0.1451</td><td>-0.1114</td><td>-0.0938</td><td>0.1827</td><td>0.0110</td><td>0.1180</td><td>0.0186</td><td>-0.1393</td><td>0.1859</td><td>0.0044</td></tr>
-            <tr><td class="ff-rowlabel">the₂</td><td>0.1568</td><td>-0.1475</td><td>-0.1446</td><td>-0.1118</td><td>-0.0926</td><td>0.1790</td><td>0.0071</td><td>0.1137</td><td>0.0147</td><td>-0.1387</td><td>0.1897</td><td>0.0103</td></tr>
-            <tr><td class="ff-rowlabel">ball</td><td>0.1764</td><td>-0.1447</td><td>-0.1372</td><td>-0.1173</td><td>-0.1119</td><td>0.2401</td><td>0.0062</td><td>0.1364</td><td>0.0066</td><td>-0.1382</td><td>0.1940</td><td>0.0035</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="ff-note">
-      <p>The twelve hidden values can be thought of as learned feature activations. Some may line
-      up with concepts people can name, but real models also use distributed and overlapping
-      representations: a useful concept does not have to live in exactly one hidden unit.</p>
-    </div>
-
-    <h2>Step 3 — project back to the embedding width</h2>
-
-    <p>The second linear layer combines the twelve activated features into six output values per
-    token. Its weight therefore has shape <code>(6, 12)</code>.</p>
-
-    <pre class="ff-code"><code>output = <span class="ff-fn">project</span>(activated)
-
-<span class="ff-fn">print</span>(project.weight.shape)  <span class="ff-comment"># torch.Size([6, 12])</span>
-<span class="ff-fn">print</span>(project.bias.shape)    <span class="ff-comment"># torch.Size([6])</span>
-<span class="ff-fn">print</span>(output.shape)          <span class="ff-comment"># torch.Size([5, 6])</span></code></pre>
-
-    <p>For the first output value of <code>the₁</code>, the twelve activated values are dotted with
-    the first projection-weight row, then its bias is added:</p>
-
-    <pre class="ff-calculation"><code>[ 0.1440, -0.1570, -0.1243, -0.1408, -0.1053,  0.3507,
- -0.0332,  0.0862,  0.0190, -0.1328,  0.2723,  0.0798]
-·
-[ 0.1752, -0.0685,  0.1651, -0.2243, -0.1457,  0.0880,
-  0.0610, -0.0736,  0.1721,  0.1962, -0.2093, -0.1541]
-+ 0.1543
-= 0.1471</code></pre>
-
-    <div class="ff-figure">
-      <div class="ff-figure-title">output — shape (5, 6)</div>
-      <div class="ff-scroll">
-        <table class="ff-matrix">
-          <thead>
-            <tr><th class="ff-corner"></th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>
-          </thead>
-          <tbody>
-            <tr><td class="ff-rowlabel">the₁</td><td>0.1471</td><td>0.1797</td><td>-0.0761</td><td>-0.0766</td><td>0.2128</td><td>-0.0428</td></tr>
-            <tr><td class="ff-rowlabel">dog</td><td>0.1543</td><td>0.1780</td><td>-0.0344</td><td>-0.0508</td><td>0.2481</td><td>-0.0278</td></tr>
-            <tr><td class="ff-rowlabel">fetched</td><td>0.1519</td><td>0.1896</td><td>-0.0264</td><td>-0.0964</td><td>0.2546</td><td>-0.0040</td></tr>
-            <tr><td class="ff-rowlabel">the₂</td><td>0.1484</td><td>0.1868</td><td>-0.0247</td><td>-0.0942</td><td>0.2556</td><td>-0.0026</td></tr>
-            <tr><td class="ff-rowlabel">ball</td><td>0.1594</td><td>0.1952</td><td>-0.0484</td><td>-0.1066</td><td>0.2384</td><td>-0.0228</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="ff-caption">The layer has changed every token, but the sequence shape is back to
-        <code>(5, 6)</code>. That matching width is what allows the transformer to add this result
-        back to the layer's input through a residual connection.</p>
-    </div>
-
-    <h2>Every token is processed independently</h2>
-
-    <p>All five rows can be calculated together because PyTorch batches the matrix operations, but
-    the result for a token does not depend on any other row. Processing <code>dog</code> alone gives
-    exactly the same result as taking its row from the full sequence:</p>
-
-    <pre class="ff-code"><code>dog_alone = <span class="ff-fn">project</span>(<span class="ff-fn">activate</span>(<span class="ff-fn">expand</span>(x[1])))
-
-torch.<span class="ff-fn">allclose</span>(dog_alone, output[1])  <span class="ff-comment"># True</span></code></pre>
-
-    <p>This is the key contrast: self-attention mixes information <em>between</em> token positions;
-    the feed-forward layer then transforms the features <em>within</em> each position.</p>
-
-    <h2>Full implementation</h2>
-
-    <p>Putting the three operations together gives a complete feed-forward layer:</p>
-
-    <pre class="ff-code" id="feed-forward-class"><code><span class="ff-kw">import</span> torch.nn <span class="ff-kw">as</span> nn
-
-
-<span class="ff-kw">class</span> <span class="ff-fn">FeedForward</span>(nn.Module):
-
-    <span class="ff-kw">def</span> <span class="ff-fn">__init__</span>(self, embed_dim, hidden_dim):
+    <span class="ff-kw">def</span> <span class="ff-fn">__init__</span>(self, model_dim, hidden_dim):
         super().<span class="ff-fn">__init__</span>()
-        self.expand = nn.<span class="ff-fn">Linear</span>(embed_dim, hidden_dim)
+        self.expand = nn.<span class="ff-fn">Linear</span>(model_dim, hidden_dim)
         self.activation = nn.<span class="ff-fn">GELU</span>()
-        self.project = nn.<span class="ff-fn">Linear</span>(hidden_dim, embed_dim)
+        self.project = nn.<span class="ff-fn">Linear</span>(hidden_dim, model_dim)
 
     <span class="ff-kw">def</span> <span class="ff-fn">forward</span>(self, x):
-        <span class="ff-kw">return</span> self.<span class="ff-fn">project</span>(self.<span class="ff-fn">activation</span>(self.<span class="ff-fn">expand</span>(x)))</code></pre>
+        hidden = self.<span class="ff-fn">expand</span>(x)
+        activated = self.<span class="ff-fn">activation</span>(hidden)
+        <span class="ff-kw">return</span> self.<span class="ff-fn">project</span>(activated)</code></pre>
 
-    <p><code>nn.Linear</code> always operates on the final dimension, so this class works without
-    modification for either a single sequence or a batch of sequences:</p>
-
-    <pre class="ff-code"><code>ffn = <span class="ff-fn">FeedForward</span>(embed_dim=6, hidden_dim=12)
-
-ffn(torch.<span class="ff-fn">randn</span>(5, 6)).shape     <span class="ff-comment"># torch.Size([5, 6])</span>
-ffn(torch.<span class="ff-fn">randn</span>(2, 5, 6)).shape  <span class="ff-comment"># torch.Size([2, 5, 6])</span></code></pre>
-
-    <p>LayerNorm and the residual connection belong to the surrounding transformer block, not to
-    the feed-forward layer itself. In a pre-normalised transformer, that surrounding operation is
-    conceptually:</p>
-
-    <pre class="ff-code"><code>x = x + <span class="ff-fn">feed_forward</span>(<span class="ff-fn">layer_norm</span>(x))</code></pre>
-
-    <div class="ff-note">
-      <p>Many modern LLMs use a gated feed-forward variant such as <em>SwiGLU</em> instead of this
-      classic GELU MLP. The details differ, but the central shape story remains the same: widen
-      each token into a feature space, apply a non-linear transformation, then project it back to
-      the embedding width.</p>
-    </div>
+    <p>The linear layers here (nn.Linear) contain weights (random to start with) which determine how the input vectors are projected into the larger space, and how the results of that projection are projected back to the smaller space. These weights are then optimised during training.</p>
 
     <p class="back"><a href="/#feed-forward">← Back to How LLMs Work</a></p>
+
+    <script type="module" src="{{ url_for('static', filename='llm/feed-forward-detail.js') }}"></script>
   </body>
 </html>
