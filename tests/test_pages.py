@@ -56,12 +56,14 @@ def test_feed_forward_page_matches_source_and_completes_placeholders(client):
     assert "This phrase expresses disagreement." in html
     assert "Projects the result back to the original vector size" in html
     assert 'id="feed-forward-visual"' in html
-    assert "Widen, activate, then narrow" in html
-    assert 'aria-labelledby="ff-visual-title"' in html
+    assert "Expand, then contract" in html
+    assert 'class="ff-network-svg"' in html
+    assert "Feed-forward layer expands and contracts vector dimensions" in html
+    assert "12 dimensions" in html
     assert 'id="feed-forward-code"' in html
     assert "FeedForwardLayer" in html
     assert 'nn.<span class="ff-fn">Linear</span>' in html
-    assert 'llm/feed-forward-detail.js' in html
+    assert 'llm/feed-forward-detail.js' not in html
 
 
 def test_feed_forward_navigation_links_are_present(client):

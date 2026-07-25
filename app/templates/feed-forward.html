@@ -55,161 +55,48 @@
         font-size: 0.9em;
       }
 
-      .ff-picker {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 20px;
-      }
-
-      .ff-picker-label {
-        margin-right: 2px;
-        color: #555;
-        font-size: 0.88em;
-      }
-
-      .ff-picker button {
-        padding: 6px 11px;
-        color: #333;
-        font: inherit;
-        font-size: 0.86em;
-        background: #fff;
-        border: 1px solid #c7cad6;
-        border-radius: 999px;
-        cursor: pointer;
-      }
-
-      .ff-picker button:hover {
-        border-color: #1a0dab;
-      }
-
-      .ff-picker button:focus-visible {
-        outline: 3px solid rgba(26, 13, 171, 0.22);
-        outline-offset: 2px;
-      }
-
-      .ff-picker button[aria-pressed="true"] {
-        color: #fff;
-        background: #1a0dab;
-        border-color: #1a0dab;
-      }
-
-      .ff-pipeline {
-        display: grid;
-        grid-template-columns: minmax(86px, 1fr) auto minmax(126px, 1.3fr) auto auto minmax(86px, 1fr);
-        gap: 10px;
-        align-items: center;
-      }
-
-      .ff-stage {
-        min-width: 0;
-        padding: 12px 10px;
-        text-align: center;
-        background: #fafbff;
-        border: 1px solid #dfe1ec;
-        border-radius: 7px;
-      }
-
-      .ff-stage-title {
+      .ff-network-svg {
         display: block;
-        margin-bottom: 2px;
+        width: 100%;
+        height: auto;
+        max-width: 680px;
+        margin: 0 auto;
+        font-family: sans-serif;
+      }
+
+      .ff-network-edge {
+        fill: none;
+        stroke: #888;
+        stroke-width: 1;
+        opacity: 0.22;
+      }
+
+      .ff-network-node {
+        fill: #fff;
+        stroke: #1a0dab;
+        stroke-width: 1.6;
+      }
+
+      .ff-network-node-hidden {
+        fill: #fff5d6;
+        stroke: #c28a00;
+      }
+
+      .ff-network-heading {
+        fill: #222;
+        font-size: 15px;
         font-weight: bold;
-        font-size: 0.82em;
       }
 
-      .ff-stage-dim {
-        display: block;
-        margin-bottom: 11px;
-        color: #666;
-        font-size: 0.72em;
+      .ff-network-dimension {
+        fill: #666;
+        font-size: 12px;
       }
 
-      .ff-bars {
-        display: flex;
-        height: 92px;
-        align-items: flex-end;
-        justify-content: center;
-        gap: 6px;
-      }
-
-      .ff-bar {
-        width: 12px;
-        min-height: 8px;
-        background: #6860ca;
-        border-radius: 3px 3px 1px 1px;
-        transition: height 240ms ease;
-      }
-
-      .ff-output-bar {
-        background: #2f8c68;
-      }
-
-      .ff-hidden-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 15px);
-        justify-content: center;
-        gap: 9px;
-        min-height: 92px;
-        align-content: center;
-      }
-
-      .ff-hidden-unit {
-        width: 15px;
-        height: 15px;
-        background: #d99216;
-        border: 1px solid #a66b08;
-        border-radius: 50%;
-        transition: opacity 240ms ease, transform 240ms ease;
-      }
-
-      .ff-operation {
-        width: 58px;
-        color: #60636d;
-        text-align: center;
-      }
-
-      .ff-arrow-symbol {
-        display: block;
-        color: #8b8e98;
-        font-size: 1.45em;
-        line-height: 1;
-      }
-
-      .ff-operation-label {
-        display: block;
-        margin-top: 5px;
-        font-size: 0.68em;
-        line-height: 1.25;
-      }
-
-      .ff-activation {
-        padding: 8px 7px;
-        color: #664700;
-        text-align: center;
-        background: #fff5d6;
-        border: 1px solid #dfbd57;
-        border-radius: 6px;
-        font-weight: bold;
-        font-size: 0.78em;
-        line-height: 1.2;
-      }
-
-      .ff-activation small {
-        display: block;
-        margin-top: 3px;
-        font-weight: normal;
-        font-size: 0.76em;
-      }
-
-      .ff-feature-callout {
-        margin: 18px 0 0;
-        padding: 9px 12px;
-        color: #4e3700;
-        text-align: center;
-        background: #fff9e8;
-        border-radius: 5px;
-        font-size: 0.9em;
+      .ff-network-direction {
+        fill: #555;
+        font-size: 13px;
+        font-style: italic;
       }
 
       code {
@@ -240,48 +127,6 @@
       .ff-kw { color: #d73a49; }
       .ff-fn { color: #6f42c1; }
 
-      .ff-sr-only {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border: 0;
-      }
-
-      @media (max-width: 620px) {
-        .ff-pipeline {
-          grid-template-columns: minmax(0, 1fr);
-          gap: 8px;
-        }
-
-        .ff-stage {
-          width: min(210px, 100%);
-          margin: 0 auto;
-        }
-
-        .ff-operation {
-          width: auto;
-        }
-
-        .ff-arrow-symbol {
-          transform: rotate(90deg);
-        }
-
-        .ff-activation {
-          width: min(170px, 100%);
-          margin: 0 auto;
-        }
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .ff-bar,
-        .ff-hidden-unit {
-          transition: none;
-        }
-      }
     </style>
   </head>
   <body>
@@ -313,79 +158,82 @@
       <li>Projects the result back to the original vector size</li>
     </ul>
 
-    <figure class="ff-figure" id="feed-forward-visual" data-ff-visual aria-labelledby="ff-visual-title">
+    <figure class="ff-figure" id="feed-forward-visual" aria-labelledby="ff-visual-title">
       <figcaption id="ff-visual-title">
-        <strong>Widen, activate, then narrow</strong>
-        <span>A simplified, illustrative feed-forward layer.</span>
+        <strong>Expand, then contract</strong>
+        <span>A feed-forward layer creates a wider hidden representation, then returns it to the original size.</span>
       </figcaption>
 
-      <div class="ff-picker" role="group" aria-label="Choose an illustrative input">
-        <span class="ff-picker-label">Choose an input:</span>
-        <button type="button" data-example="name" aria-pressed="true">Alice waved.</button>
-        <button type="button" data-example="past" aria-pressed="false">They walked.</button>
-        <button type="button" data-example="disagreement" aria-pressed="false">I disagree.</button>
-      </div>
+      <svg class="ff-network-svg" viewBox="0 0 680 380" role="img"
+        aria-labelledby="ff-network-title ff-network-desc">
+        <title id="ff-network-title">Feed-forward layer expands and contracts vector dimensions</title>
+        <desc id="ff-network-desc">Six input dimensions connect to twelve hidden dimensions, which connect to six output dimensions. The wider middle column represents expansion into a higher-dimensional space before contraction back to the original size.</desc>
 
-      <div class="ff-pipeline" role="img" aria-labelledby="ff-visual-title" aria-describedby="ff-visual-description">
-        <div class="ff-stage">
-          <span class="ff-stage-title">Input vector</span>
-          <span class="ff-stage-dim">4 dimensions</span>
-          <div class="ff-bars" aria-hidden="true">
-            <span class="ff-bar ff-input-value" style="height: 72%"></span>
-            <span class="ff-bar ff-input-value" style="height: 38%"></span>
-            <span class="ff-bar ff-input-value" style="height: 84%"></span>
-            <span class="ff-bar ff-input-value" style="height: 53%"></span>
-          </div>
-        </div>
+        <g aria-hidden="true">
+          <path class="ff-network-edge" d="
+            M118 100 L332 70 M118 100 L332 130 M118 100 L332 190 M118 100 L332 250
+            M118 140 L332 90 M118 140 L332 150 M118 140 L332 210 M118 140 L332 270
+            M118 180 L332 70 M118 180 L332 130 M118 180 L332 190 M118 180 L332 290
+            M118 220 L332 90 M118 220 L332 150 M118 220 L332 210 M118 220 L332 270
+            M118 260 L332 70 M118 260 L332 130 M118 260 L332 190 M118 260 L332 250
+            M118 300 L332 110 M118 300 L332 170 M118 300 L332 230 M118 300 L332 290
+            M348 70 L562 100 M348 70 L562 180
+            M348 90 L562 140 M348 90 L562 220
+            M348 110 L562 180 M348 110 L562 260
+            M348 130 L562 220 M348 130 L562 300
+            M348 150 L562 100 M348 150 L562 260
+            M348 170 L562 140 M348 170 L562 300
+            M348 190 L562 100 M348 190 L562 220
+            M348 210 L562 140 M348 210 L562 260
+            M348 230 L562 180 M348 230 L562 300
+            M348 250 L562 100 M348 250 L562 260
+            M348 270 L562 140 M348 270 L562 220
+            M348 290 L562 180 M348 290 L562 300"></path>
 
-        <div class="ff-operation" aria-hidden="true">
-          <span class="ff-arrow-symbol">→</span>
-          <span class="ff-operation-label">Linear<br>4 → 12</span>
-        </div>
+          <text class="ff-network-heading" x="110" y="28" text-anchor="middle">Input vector</text>
+          <text class="ff-network-dimension" x="110" y="47" text-anchor="middle">6 dimensions</text>
+          <text class="ff-network-heading" x="340" y="28" text-anchor="middle">Hidden representation</text>
+          <text class="ff-network-dimension" x="340" y="47" text-anchor="middle">12 dimensions</text>
+          <text class="ff-network-heading" x="570" y="28" text-anchor="middle">Output vector</text>
+          <text class="ff-network-dimension" x="570" y="47" text-anchor="middle">6 dimensions</text>
 
-        <div class="ff-stage">
-          <span class="ff-stage-title">Higher-dimensional space</span>
-          <span class="ff-stage-dim">12 feature responses</span>
-          <div class="ff-hidden-grid" aria-hidden="true">
-            <span class="ff-hidden-unit" style="opacity: 0.34; transform: scale(0.86)"></span>
-            <span class="ff-hidden-unit" style="opacity: 0.44; transform: scale(0.89)"></span>
-            <span class="ff-hidden-unit" style="opacity: 0.96; transform: scale(1.06)"></span>
-            <span class="ff-hidden-unit" style="opacity: 0.29; transform: scale(0.84)"></span>
-            <span class="ff-hidden-unit" style="opacity: 0.38; transform: scale(0.87)"></span>
-            <span class="ff-hidden-unit" style="opacity: 0.55; transform: scale(0.93)"></span>
-            <span class="ff-hidden-unit" style="opacity: 0.26; transform: scale(0.83)"></span>
-            <span class="ff-hidden-unit" style="opacity: 0.63; transform: scale(0.96)"></span>
-            <span class="ff-hidden-unit" style="opacity: 0.33; transform: scale(0.85)"></span>
-            <span class="ff-hidden-unit" style="opacity: 0.48; transform: scale(0.90)"></span>
-            <span class="ff-hidden-unit" style="opacity: 0.31; transform: scale(0.85)"></span>
-            <span class="ff-hidden-unit" style="opacity: 0.41; transform: scale(0.88)"></span>
-          </div>
-        </div>
+          <g class="ff-network-node">
+            <circle cx="110" cy="100" r="8"></circle>
+            <circle cx="110" cy="140" r="8"></circle>
+            <circle cx="110" cy="180" r="8"></circle>
+            <circle cx="110" cy="220" r="8"></circle>
+            <circle cx="110" cy="260" r="8"></circle>
+            <circle cx="110" cy="300" r="8"></circle>
+          </g>
 
-        <div class="ff-activation" aria-hidden="true">
-          GELU
-          <small>nonlinear activation</small>
-        </div>
+          <g class="ff-network-node ff-network-node-hidden">
+            <circle cx="340" cy="70" r="8"></circle>
+            <circle cx="340" cy="90" r="8"></circle>
+            <circle cx="340" cy="110" r="8"></circle>
+            <circle cx="340" cy="130" r="8"></circle>
+            <circle cx="340" cy="150" r="8"></circle>
+            <circle cx="340" cy="170" r="8"></circle>
+            <circle cx="340" cy="190" r="8"></circle>
+            <circle cx="340" cy="210" r="8"></circle>
+            <circle cx="340" cy="230" r="8"></circle>
+            <circle cx="340" cy="250" r="8"></circle>
+            <circle cx="340" cy="270" r="8"></circle>
+            <circle cx="340" cy="290" r="8"></circle>
+          </g>
 
-        <div class="ff-operation" aria-hidden="true">
-          <span class="ff-arrow-symbol">→</span>
-          <span class="ff-operation-label">Linear<br>12 → 4</span>
-        </div>
+          <g class="ff-network-node">
+            <circle cx="570" cy="100" r="8"></circle>
+            <circle cx="570" cy="140" r="8"></circle>
+            <circle cx="570" cy="180" r="8"></circle>
+            <circle cx="570" cy="220" r="8"></circle>
+            <circle cx="570" cy="260" r="8"></circle>
+            <circle cx="570" cy="300" r="8"></circle>
+          </g>
 
-        <div class="ff-stage">
-          <span class="ff-stage-title">Output vector</span>
-          <span class="ff-stage-dim">4 dimensions</span>
-          <div class="ff-bars" aria-hidden="true">
-            <span class="ff-bar ff-output-bar ff-output-value" style="height: 56%"></span>
-            <span class="ff-bar ff-output-bar ff-output-value" style="height: 82%"></span>
-            <span class="ff-bar ff-output-bar ff-output-value" style="height: 47%"></span>
-            <span class="ff-bar ff-output-bar ff-output-value" style="height: 69%"></span>
-          </div>
-        </div>
-      </div>
-
-      <p class="ff-feature-callout"><strong>Feature responding:</strong> <span data-feature-label>person’s name</span></p>
-      <p class="ff-sr-only" id="ff-visual-description" aria-live="polite">For “Alice waved.”, a four-dimensional input is projected into twelve feature responses. The person’s name response is strongest. GELU applies a nonlinear activation before a second linear layer returns a four-dimensional output.</p>
+          <text class="ff-network-direction" x="225" y="350" text-anchor="middle">expand</text>
+          <text class="ff-network-direction" x="455" y="350" text-anchor="middle">contract</text>
+        </g>
+      </svg>
     </figure>
 
     <p>This is a setup that is very common in neural networks which are aimed at learning complex features. Projecting into a higher-dimensional space gives the LLM more capacity to detect and transform complex features. Projecting back down then combines those features into a compact representation whose dimensions remain consistent throughout the LLM architecture.</p>
@@ -412,6 +260,5 @@
 
     <p class="back"><a href="/#feed-forward">← Back to How LLMs Work</a></p>
 
-    <script type="module" src="{{ url_for('static', filename='llm/feed-forward-detail.js') }}"></script>
   </body>
 </html>
