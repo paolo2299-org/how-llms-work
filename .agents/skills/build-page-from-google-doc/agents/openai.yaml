@@ -1,0 +1,4 @@
+interface:
+  display_name: "Build Page from Google Doc"
+  short_description: "Turn Google Docs into finished site pages"
+  default_prompt: "Use $build-page-from-google-doc to create or replace a site page from this Google Doc: [URL]."
