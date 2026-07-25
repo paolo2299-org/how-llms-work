@@ -136,12 +136,17 @@ def test_token_embeddings_page_contains_worked_example(client):
     html = response.get_data(as_text=True)
 
     assert response.status_code == 200
-    assert "Token Embeddings, Step by Step" in html
-    assert "Token and position embedding lookup" in html
-    assert "shape (5, 6)" in html
-    assert "position embeddings" in html
-    assert 'id="embedding-layer-class"' in html
-    assert "TokenAndPositionEmbeddings" in html
+    assert "<h1>Token Embeddings</h1>" in html
+    assert 'href="/tokenisation">tokenisation deep dive</a>' in html
+    assert "There are many reasons why vectors are the natural objects" in html
+    assert "<h2>The embedding matrix</h2>" in html
+    assert "first row is the vector that the token with ID 0" in html
+    assert "The vertical dots stand in for all the other rows" in html
+    assert "<h2>Positional embeddings</h2>" in html
+    assert 'id="token-embedding-code"' in html
+    assert 'id="position-embedding-code"' in html
+    assert "token_embedding_matrix" in html
+    assert "position_embedding_matrix" in html
 
 
 def test_token_embeddings_navigation_link_is_present(client):
