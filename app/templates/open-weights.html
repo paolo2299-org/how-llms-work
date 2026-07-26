@@ -11,73 +11,6 @@
         font-size: 0.9em;
       }
 
-      .ow-figure {
-        margin: 28px 0;
-        padding: 18px;
-        background: #fff;
-        border: 1px solid #d9dce7;
-        border-radius: 8px;
-      }
-
-      .ow-figure figcaption {
-        margin-bottom: 18px;
-      }
-
-      .ow-figure figcaption strong,
-      .ow-figure figcaption span {
-        display: block;
-      }
-
-      .ow-figure figcaption span {
-        color: #666;
-        font-size: 0.9em;
-      }
-
-      .ow-flow {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 24px;
-        margin: 0;
-        padding: 0;
-        list-style: none;
-        counter-reset: weight-step;
-      }
-
-      .ow-flow li {
-        position: relative;
-        min-width: 0;
-        padding: 14px 10px;
-        text-align: center;
-        background: #f6f7ff;
-        border: 1px solid #a8afe4;
-        border-radius: 7px;
-        counter-increment: weight-step;
-      }
-
-      .ow-flow li::before {
-        display: block;
-        width: 24px;
-        height: 24px;
-        margin: 0 auto 7px;
-        color: #fff;
-        background: #1a0dab;
-        border-radius: 50%;
-        content: counter(weight-step);
-        font-size: 0.8em;
-        font-weight: bold;
-        line-height: 24px;
-      }
-
-      .ow-flow li:not(:last-child)::after {
-        position: absolute;
-        top: 50%;
-        right: -19px;
-        color: #777;
-        content: "→";
-        font-size: 1.2em;
-        transform: translateY(-50%);
-      }
-
       code {
         padding: 1px 5px;
         background: rgba(27, 31, 35, 0.06);
@@ -147,19 +80,6 @@
         border-left: 4px solid #c28a00;
       }
 
-      @media (max-width: 620px) {
-        .ow-flow {
-          grid-template-columns: 1fr;
-          gap: 22px;
-        }
-
-        .ow-flow li:not(:last-child)::after {
-          top: auto;
-          right: 50%;
-          bottom: -24px;
-          transform: translateX(50%) rotate(90deg);
-        }
-      }
     </style>
   </head>
   <body>
@@ -172,19 +92,6 @@
       <p>An important thing to note when loading open weights using your own LLM code is that your LLM needs to be compatible with the architecture and parameter shapes of the LLM that produced the weights. There are many choices you can make when building an LLM: the number of transformer layers, projection dimensions, choice of activation functions, and many more. In our case, we have carefully constructed our LLM to be compatible with GPT-2 weights.</p>
 
       <p>Now the code to actually load the weights into our model looks as follows:</p>
-
-      <figure class="ow-figure" id="weight-loading-overview" aria-labelledby="weight-loading-title">
-        <figcaption id="weight-loading-title">
-          <strong>From a checkpoint file to a ready model</strong>
-          <span>The tensor values stay the same; only their names are adapted to our model.</span>
-        </figcaption>
-        <ol class="ow-flow">
-          <li>Build the GPT-2 shape</li>
-          <li>Read the checkpoint</li>
-          <li>Translate and check names</li>
-          <li>Load the weights</li>
-        </ol>
-      </figure>
 
       <pre class="ow-code" id="load-gpt2-code"><code><span class="ow-kw">def</span> <span class="ow-fn">load_gpt2_small</span>(weights_path, device=<span class="ow-kw">"cpu"</span>):
     model = <span class="ow-fn">LanguageModel</span>(
@@ -215,7 +122,9 @@
 
       <h2>Translate the parameter names</h2>
 
-      <p>A PyTorch weights file is a dictionary from parameter names to tensors. Our teaching model uses descriptive names, while the GPT-2 checkpoint uses shorter ones. The tensors already have the right values and shapes; the loader only needs to give them the names expected by our model.</p>
+      <p>A PyTorch weights file is a dictionary from parameter names to tensors. The <code>model.load_state_dict(...)</code> call copies those tensors into the model, matching each dictionary entry to a model parameter by its exact name rather than by its position in the file.</p>
+
+      <p>Our teaching model uses descriptive names, while the GPT-2 checkpoint uses shorter ones. Calling <code>load_state_dict</code> with the original names would therefore report missing and unexpected parameters. The tensors already have the right values and shapes; the loader only needs to give them the names expected by our model.</p>
 
       <div class="ow-table-scroll">
         <table class="ow-table">
@@ -268,7 +177,7 @@
         <strong>Why skip the masks?</strong> The checkpoint stores a causal attention mask for every transformer block. A mask contains no learned information, and our self-attention code recreates it from the prompt length each time it runs.
       </aside>
 
-      <p>The checks make sure that no parameter is missing, unexpected, or the wrong shape. Loading with <code>strict=True</code> provides one final safeguard: the program fails clearly instead of silently leaving part of the model randomly initialised.</p>
+      <p>The checks make sure that no parameter is missing, unexpected, or the wrong shape. Passing <code>strict=True</code> to <code>load_state_dict</code> provides one final safeguard: the program fails clearly instead of silently leaving part of the model randomly initialised.</p>
 
       <h2>Generate the next token</h2>
 

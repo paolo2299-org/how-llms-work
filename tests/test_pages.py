@@ -198,12 +198,14 @@ def test_open_weights_page_matches_source_and_completes_placeholder(client):
     for paragraph in source_paragraphs:
         assert f"<p>{paragraph}</p>" in html
 
-    assert 'id="weight-loading-overview"' in html
-    assert "From a checkpoint file to a ready model" in html
+    assert 'id="weight-loading-overview"' not in html
+    assert "From a checkpoint file to a ready model" not in html
     assert 'id="load-gpt2-code"' in html
     assert "load_gpt2_small" in html
     assert "weights_only=" in html
     assert 'id="translate-weights-code"' in html
+    assert "matching each dictionary entry to a model parameter by its exact name" in html
+    assert "Calling <code>load_state_dict</code> with the original names" in html
     assert "embedding.token_embedding.weight" in html
     assert "transformer_blocks.0.attention.W_query.weight" in html
     assert "strict=" in html
