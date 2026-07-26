@@ -45,11 +45,7 @@ def full_llm():
 
 @pages_bp.route("/open-weights")
 def open_weights():
-    return render_template(
-        "work-in-progress.html",
-        page_title="Open Weights",
-        section_id="open-weights",
-    )
+    return render_template("open-weights.html")
 
 
 @pages_bp.route("/pre-training")

@@ -1,18 +1,13 @@
 # Single-next-token LLM
 
 This folder joins the site's code samples into one small, runnable language
-model. It accepts one prompt (not a batch) and generates exactly one next token.
-
-The model is intentionally **not trained** and does not yet contain
-weight-loading code. Every model weight is initialised randomly. Its generated
-token is therefore arbitrary, not a useful prediction.
+model. It loads the GPT-2 small open weights, accepts one prompt (not a batch),
+and generates exactly one next token.
 
 The implementation keeps the tutorial's simple, unbatched structure while
-matching the parameter-bearing parts of the GPT model in `~/projects/gpt`.
-When constructed with GPT-2's dimensions and query/key/value biases, its learned
-parameters have compatible shapes. A future loader will only need to translate
-the differing parameter names and ignore the checkpoint's reproducible mask
-buffers.
+matching the parameter-bearing parts of GPT-2 small. The loader translates the
+checkpoint's parameter names, ignores its reproducible mask buffers, validates
+every key and tensor shape, and then loads the weights strictly.
 
 ## Files
 
@@ -24,7 +19,8 @@ buffers.
 | `feed_forward.py` | Feed-forward layer |
 | `transformer.py` | LayerNorm, residual connections, and a transformer block |
 | `language_model.py` | Transformer stack and vocabulary projection |
-| `generate.py` | Greedy selection of one next token |
+| `weight_loading.py` | GPT-2 small construction, validation, and weight loading |
+| `generate.py` | Weight loading and greedy selection of one next token |
 
 The tensors deliberately have no batch dimension. Their main shapes are:
 
@@ -57,6 +53,18 @@ On Windows PowerShell, activate the environment with:
 .venv\Scripts\Activate.ps1
 ```
 
+## Weights
+
+The example expects the GPT-2 small checkpoint at:
+
+```text
+weights/gpt2-small.pth
+```
+
+The path is resolved relative to this repository, so the script works from any
+current directory. The weights file is kept out of Git because of its size.
+Pass `--weights` to use the same checkpoint from a different location.
+
 ## Run
 
 Pass a prompt as the sole argument:
@@ -65,7 +73,15 @@ Pass a prompt as the sole argument:
 python code/generate.py "The dog fetched the"
 ```
 
-Or run without an argument to use that example prompt:
+To supply a different path:
+
+```bash
+python code/generate.py \
+  --weights /path/to/gpt2-small.pth \
+  "The dog fetched the"
+```
+
+Or run without arguments to use the default path and example prompt:
 
 ```bash
 python code/generate.py
@@ -74,6 +90,5 @@ python code/generate.py
 The script prints the prompt's token IDs, the selected next-token ID and text,
 its probability, and the prompt with that one token appended.
 
-Prompts must contain at least one token and fit within the example's
-64-token context length. The fixed random seed makes repeated runs
-reproducible with the same dependency versions.
+Prompts must contain at least one token and fit within GPT-2 small's
+1,024-token context length.

@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Open weights — How LLMs Work</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+      .ow-top-link {
+        margin-bottom: 8px;
+        font-size: 0.9em;
+      }
+
+      .ow-figure {
+        margin: 28px 0;
+        padding: 18px;
+        background: #fff;
+        border: 1px solid #d9dce7;
+        border-radius: 8px;
+      }
+
+      .ow-figure figcaption {
+        margin-bottom: 18px;
+      }
+
+      .ow-figure figcaption strong,
+      .ow-figure figcaption span {
+        display: block;
+      }
+
+      .ow-figure figcaption span {
+        color: #666;
+        font-size: 0.9em;
+      }
+
+      .ow-flow {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        counter-reset: weight-step;
+      }
+
+      .ow-flow li {
+        position: relative;
+        min-width: 0;
+        padding: 14px 10px;
+        text-align: center;
+        background: #f6f7ff;
+        border: 1px solid #a8afe4;
+        border-radius: 7px;
+        counter-increment: weight-step;
+      }
+
+      .ow-flow li::before {
+        display: block;
+        width: 24px;
+        height: 24px;
+        margin: 0 auto 7px;
+        color: #fff;
+        background: #1a0dab;
+        border-radius: 50%;
+        content: counter(weight-step);
+        font-size: 0.8em;
+        font-weight: bold;
+        line-height: 24px;
+      }
+
+      .ow-flow li:not(:last-child)::after {
+        position: absolute;
+        top: 50%;
+        right: -19px;
+        color: #777;
+        content: "→";
+        font-size: 1.2em;
+        transform: translateY(-50%);
+      }
+
+      code {
+        padding: 1px 5px;
+        background: rgba(27, 31, 35, 0.06);
+        border-radius: 4px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.9em;
+      }
+
+      pre.ow-code {
+        margin: 16px 0 26px;
+        padding: 14px 16px;
+        overflow-x: auto;
+        background: #f6f8fa;
+        border: 1px solid #e1e4e8;
+        border-radius: 6px;
+        line-height: 1.5;
+      }
+
+      pre.ow-code code {
+        padding: 0;
+        color: #24292e;
+        background: none;
+        font-size: 0.84em;
+      }
+
+      .ow-comment { color: #6a737d; }
+      .ow-kw { color: #d73a49; }
+      .ow-fn { color: #6f42c1; }
+
+      .ow-table-scroll {
+        margin: 16px 0 24px;
+        overflow-x: auto;
+      }
+
+      .ow-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9em;
+      }
+
+      .ow-table caption {
+        margin-bottom: 8px;
+        color: #555;
+        text-align: left;
+      }
+
+      .ow-table th,
+      .ow-table td {
+        padding: 9px 10px;
+        text-align: left;
+        vertical-align: top;
+        border: 1px solid #d9dce7;
+      }
+
+      .ow-table th {
+        background: #f6f7ff;
+      }
+
+      .ow-table code {
+        white-space: nowrap;
+      }
+
+      .ow-note {
+        margin: 20px 0;
+        padding: 12px 15px;
+        background: #fff8df;
+        border-left: 4px solid #c28a00;
+      }
+
+      @media (max-width: 620px) {
+        .ow-flow {
+          grid-template-columns: 1fr;
+          gap: 22px;
+        }
+
+        .ow-flow li:not(:last-child)::after {
+          top: auto;
+          right: 50%;
+          bottom: -24px;
+          transform: translateX(50%) rotate(90deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <p class="ow-top-link"><a href="/#open-weights">← Back to How LLMs Work</a></p>
+    <main>
+      <h1>Open weights</h1>
+
+      <p>We will see now how to load a weights file into our model. For this we'll use the published weights for the GPT-2 model, which is an older model (2019), but it is small and simple enough to work with on a modest laptop.</p>
+
+      <p>An important thing to note when loading open weights using your own LLM code, is that your LLM needs to exactly match the architecture of the LLM that produced the weights. There are many choices you can make when building an LLM; number of transformer layers, projection dimensions, choice of activation functions, and many more. In our case, we have carefully constructed our LLM to be compatible with GPT-2 weights.</p>
+
+      <p>Now the code to actually load the weights into our model looks as follows:</p>
+
+      <figure class="ow-figure" id="weight-loading-overview" aria-labelledby="weight-loading-title">
+        <figcaption id="weight-loading-title">
+          <strong>From a checkpoint file to a ready model</strong>
+          <span>The tensor values stay the same; only their names are adapted to our model.</span>
+        </figcaption>
+        <ol class="ow-flow">
+          <li>Build the GPT-2 shape</li>
+          <li>Read the checkpoint</li>
+          <li>Translate and check names</li>
+          <li>Load the weights</li>
+        </ol>
+      </figure>
+
+      <pre class="ow-code" id="load-gpt2-code"><code><span class="ow-kw">def</span> <span class="ow-fn">load_gpt2_small</span>(weights_path, device=<span class="ow-kw">"cpu"</span>):
+    model = <span class="ow-fn">LanguageModel</span>(
+        vocab_size=50257,
+        max_sequence_length=1024,
+        model_dim=768,
+        head_dim=64,
+        num_heads=12,
+        hidden_dim=3072,
+        num_layers=12,
+        qkv_bias=<span class="ow-kw">True</span>,
+    )
+
+    source_state = torch.<span class="ow-fn">load</span>(
+        weights_path,
+        map_location=<span class="ow-kw">"cpu"</span>,
+        weights_only=<span class="ow-kw">True</span>,
+    )
+    translated_state = <span class="ow-fn">translate_weights</span>(source_state, model)
+
+    model.<span class="ow-fn">load_state_dict</span>(translated_state, strict=<span class="ow-kw">True</span>)
+    model.<span class="ow-fn">eval</span>()
+    <span class="ow-kw">return</span> model.<span class="ow-fn">to</span>(device)</code></pre>
+
+      <p>We first construct our model with GPT-2 small's dimensions. The size of every learned tensor depends on these choices, so even one different dimension would make the weights incompatible.</p>
+
+      <p><code>torch.load</code> reads the tensors onto the CPU. The <code>weights_only=True</code> option limits loading to the data types needed for weights, rather than allowing arbitrary Python objects from the file.</p>
+
+      <h2>Translate the parameter names</h2>
+
+      <p>A PyTorch weights file is a dictionary from parameter names to tensors. Our teaching model uses descriptive names, while the GPT-2 checkpoint uses shorter ones. The tensors already have the right values and shapes; the loader only needs to give them the names expected by our model.</p>
+
+      <div class="ow-table-scroll">
+        <table class="ow-table">
+          <caption>Examples of equivalent names in the checkpoint and our model</caption>
+          <thead>
+            <tr>
+              <th scope="col">GPT-2 checkpoint</th>
+              <th scope="col">Our model</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>tok_emb.weight</code></td>
+              <td><code>embedding.token_embedding.weight</code></td>
+            </tr>
+            <tr>
+              <td><code>pos_emb.weight</code></td>
+              <td><code>embedding.position_embedding.weight</code></td>
+            </tr>
+            <tr>
+              <td><code>trf_blocks.0.att.W_query.weight</code></td>
+              <td><code>transformer_blocks.0.attention.W_query.weight</code></td>
+            </tr>
+            <tr>
+              <td><code>trf_blocks.0.ff.layers.0.weight</code></td>
+              <td><code>transformer_blocks.0.feed_forward.expand.weight</code></td>
+            </tr>
+            <tr>
+              <td><code>out_head.weight</code></td>
+              <td><code>vocabulary_projection.weight</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>The complete loader applies the same pattern to every parameter in all 12 transformer blocks:</p>
+
+      <pre class="ow-code" id="translate-weights-code"><code><span class="ow-kw">def</span> <span class="ow-fn">translate_weights</span>(source_state, model):
+    translated_state = {}
+
+    <span class="ow-kw">for</span> name, tensor <span class="ow-kw">in</span> source_state.<span class="ow-fn">items</span>():
+        <span class="ow-kw">if</span> name.<span class="ow-fn">endswith</span>(<span class="ow-kw">".att.mask"</span>):
+            <span class="ow-kw">continue</span>
+        translated_state[<span class="ow-fn">translate_name</span>(name)] = tensor
+
+    <span class="ow-fn">check_keys_and_shapes</span>(translated_state, model.<span class="ow-fn">state_dict</span>())
+    <span class="ow-kw">return</span> translated_state</code></pre>
+
+      <aside class="ow-note">
+        <strong>Why skip the masks?</strong> The checkpoint stores a causal attention mask for every transformer block. A mask contains no learned information, and our self-attention code recreates it from the prompt length each time it runs.
+      </aside>
+
+      <p>The checks make sure that no parameter is missing, unexpected, or the wrong shape. Loading with <code>strict=True</code> provides one final safeguard: the program fails clearly instead of silently leaving part of the model randomly initialised.</p>
+
+      <h2>Generate the next token</h2>
+
+      <p>Once loaded, the model is used in exactly the same way as before. The difference is that its predictions now come from learned weights rather than random starting values:</p>
+
+      <pre class="ow-code" id="generate-with-weights-code"><code>model = <span class="ow-fn">load_gpt2_small</span>(<span class="ow-kw">"weights/gpt2-small.pth"</span>)
+token_ids = torch.<span class="ow-fn">tensor</span>(<span class="ow-fn">tokenise</span>(<span class="ow-kw">"The dog fetched the"</span>))
+
+<span class="ow-kw">with</span> torch.<span class="ow-fn">inference_mode</span>():
+    next_token_logits = <span class="ow-fn">model</span>(token_ids)
+    next_token_id = torch.<span class="ow-fn">argmax</span>(next_token_logits).<span class="ow-fn">item</span>()
+
+<span class="ow-fn">print</span>(<span class="ow-fn">detokenise</span>([next_token_id]))</code></pre>
+
+      <p>The runnable example keeps all checkpoint-specific work in a separate weight-loading file. This leaves the language-model classes focused on the components we have already explored: embeddings, attention, feed-forward layers, transformer blocks, and the vocabulary projection.</p>
+    </main>
+
+    <p class="back"><a href="/#open-weights">← Back to How LLMs Work</a></p>
+  </body>
+</html>

@@ -1,41 +1,32 @@
 import argparse
+from pathlib import Path
 
 import torch
 
-from language_model import LanguageModel
 from tokenisation import (
     detokenise,
     tokenise,
     valid_token_ids,
-    vocabulary_size,
 )
-
-
-MAX_SEQUENCE_LENGTH = 64
-
-
-def build_model():
-    # A fixed seed makes the randomly initialised teaching model reproducible.
-    torch.manual_seed(42)
-    return LanguageModel(
-        vocab_size=vocabulary_size(),
-        max_sequence_length=MAX_SEQUENCE_LENGTH,
-        model_dim=32,
-        head_dim=8,
-        num_heads=4,
-        hidden_dim=128,
-        num_layers=2,
-    )
+from weight_loading import DEFAULT_WEIGHTS_PATH, load_gpt2_small
 
 
 def generate_next_token(model, prompt):
     prompt_token_ids = tokenise(prompt)
-    token_ids = torch.tensor(prompt_token_ids, dtype=torch.long)
+    device = next(model.parameters()).device
+    token_ids = torch.tensor(
+        prompt_token_ids,
+        dtype=torch.long,
+        device=device,
+    )
 
-    model.eval()
     with torch.inference_mode():
         next_token_logits = model(token_ids)
-        decodable_token_ids = torch.tensor(valid_token_ids(), dtype=torch.long)
+        decodable_token_ids = torch.tensor(
+            valid_token_ids(),
+            dtype=torch.long,
+            device=device,
+        )
         decodable_logits = next_token_logits[decodable_token_ids]
         next_token_probabilities = torch.softmax(decodable_logits, dim=-1)
         selected_index = torch.argmax(next_token_probabilities)
@@ -52,7 +43,7 @@ def generate_next_token(model, prompt):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Run an untrained teaching LLM to generate one next token."
+        description="Load GPT-2 small and generate one next token."
     )
     parser.add_argument(
         "prompt",
@@ -60,9 +51,21 @@ def main():
         default="The dog fetched the",
         help="prompt to pass to the model",
     )
+    parser.add_argument(
+        "--weights",
+        type=Path,
+        default=DEFAULT_WEIGHTS_PATH,
+        help="path to gpt2-small.pth",
+    )
+    parser.add_argument(
+        "--device",
+        default="cpu",
+        help="PyTorch inference device (default: cpu)",
+    )
     args = parser.parse_args()
 
-    result = generate_next_token(build_model(), args.prompt)
+    model = load_gpt2_small(args.weights, device=args.device)
+    result = generate_next_token(model, args.prompt)
 
     print(f"Prompt:         {args.prompt!r}")
     print(f"Prompt IDs:     {result['prompt_token_ids']}")

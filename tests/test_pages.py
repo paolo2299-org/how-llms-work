@@ -177,6 +177,40 @@ def test_index_contains_open_weights_revised_copy_with_deep_dive(client):
     assert 'href="/open-weights"' in html
 
 
+def test_open_weights_page_matches_source_and_completes_placeholder(client):
+    response = client.get("/open-weights")
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "<h1>Open weights</h1>" in html
+    source_paragraphs = (
+        "We will see now how to load a weights file into our model. For this we'll use "
+        "the published weights for the GPT-2 model, which is an older model (2019), but "
+        "it is small and simple enough to work with on a modest laptop.",
+        "An important thing to note when loading open weights using your own LLM code, "
+        "is that your LLM needs to exactly match the architecture of the LLM that produced "
+        "the weights. There are many choices you can make when building an LLM; number of "
+        "transformer layers, projection dimensions, choice of activation functions, and "
+        "many more. In our case, we have carefully constructed our LLM to be compatible "
+        "with GPT-2 weights.",
+        "Now the code to actually load the weights into our model looks as follows:",
+    )
+    for paragraph in source_paragraphs:
+        assert f"<p>{paragraph}</p>" in html
+
+    assert 'id="weight-loading-overview"' in html
+    assert "From a checkpoint file to a ready model" in html
+    assert 'id="load-gpt2-code"' in html
+    assert "load_gpt2_small" in html
+    assert "weights_only=" in html
+    assert 'id="translate-weights-code"' in html
+    assert "embedding.token_embedding.weight" in html
+    assert "transformer_blocks.0.attention.W_query.weight" in html
+    assert "strict=" in html
+    assert 'id="generate-with-weights-code"' in html
+    assert "Work in progress" not in html
+
+
 def test_index_contains_training_and_summary_placeholders(client):
     html = client.get("/").get_data(as_text=True)
 
@@ -189,7 +223,6 @@ def test_index_contains_training_and_summary_placeholders(client):
 @pytest.mark.parametrize(
     ("path", "title", "section_id"),
     (
-        ("/open-weights", "Open Weights", "open-weights"),
         ("/pre-training", "Pre-training", "pre-training"),
         ("/fine-tuning", "Fine-tuning", "fine-tuning"),
     ),
