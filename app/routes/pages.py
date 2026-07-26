@@ -41,3 +41,30 @@ def transformer_block():
 @pages_bp.route("/full-llm")
 def full_llm():
     return render_template("full-llm.html")
+
+
+@pages_bp.route("/open-weights")
+def open_weights():
+    return render_template(
+        "work-in-progress.html",
+        page_title="Open Weights",
+        section_id="open-weights",
+    )
+
+
+@pages_bp.route("/pre-training")
+def pre_training():
+    return render_template(
+        "work-in-progress.html",
+        page_title="Pre-training",
+        section_id="pre-training",
+    )
+
+
+@pages_bp.route("/fine-tuning")
+def fine_tuning():
+    return render_template(
+        "work-in-progress.html",
+        page_title="Fine-tuning",
+        section_id="fine-tuning",
+    )

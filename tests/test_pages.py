@@ -44,6 +44,13 @@ def test_index_table_of_contents_links_overviews_and_detail_pages(client):
     assert 'href="/transformer-block"' in html
     assert 'href="#llm-architecture"' in html
     assert 'href="/full-llm"' in html
+    assert 'href="#open-weights"' in html
+    assert 'href="/open-weights"' in html
+    assert 'href="#pre-training"' in html
+    assert 'href="/pre-training"' in html
+    assert 'href="#fine-tuning"' in html
+    assert 'href="/fine-tuning"' in html
+    assert 'href="#summary"' in html
 
 
 def test_feed_forward_page_matches_source_and_completes_placeholders(client):
@@ -142,7 +149,7 @@ def test_full_llm_navigation_link_is_present(client):
     assert 'href="/full-llm"' in html
 
 
-def test_index_contains_open_weights_revised_copy_without_deep_dive(client):
+def test_index_contains_open_weights_revised_copy_with_deep_dive(client):
     response = client.get("/")
     html = response.get_data(as_text=True)
 
@@ -167,7 +174,35 @@ def test_index_contains_open_weights_revised_copy_without_deep_dive(client):
     for paragraph in source_paragraphs:
         assert f"<p>{paragraph}</p>" in html
     assert 'href="#open-weights"' in html
-    assert 'href="/open-weights"' not in html
+    assert 'href="/open-weights"' in html
+
+
+def test_index_contains_training_and_summary_placeholders(client):
+    html = client.get("/").get_data(as_text=True)
+
+    assert '<h2 id="pre-training">Pre-training</h2>' in html
+    assert '<h2 id="fine-tuning">Fine-tuning</h2>' in html
+    assert '<h2 id="summary">Summary</h2>' in html
+    assert html.count("🚧") == 3
+
+
+@pytest.mark.parametrize(
+    ("path", "title", "section_id"),
+    (
+        ("/open-weights", "Open Weights", "open-weights"),
+        ("/pre-training", "Pre-training", "pre-training"),
+        ("/fine-tuning", "Fine-tuning", "fine-tuning"),
+    ),
+)
+def test_work_in_progress_deep_dive_pages(client, path, title, section_id):
+    response = client.get(path)
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert f"<h1>{title}</h1>" in html
+    assert "🚧" in html
+    assert "Work in progress" in html
+    assert f'href="/#{section_id}"' in html
 
 
 def test_tokenisation_page_contains_worked_example(client):

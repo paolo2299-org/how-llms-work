@@ -13,4 +13,11 @@ a { color: #1a0dab; }
 
 h1 { margin-bottom: 4px; }
 
+.work-in-progress {
+  padding: 14px 16px;
+  border: 1px solid #e4c15a;
+  border-radius: 6px;
+  background: #fff8df;
+}
+
 .back { margin-top: 40px; }
