@@ -506,6 +506,9 @@
             <li><a href="/full-llm">Full LLM: in depth</a></li>
           </ul>
         </li>
+        <li>
+          <a href="#open-weights">Open weights</a>
+        </li>
       </ul>
     </nav>
 
@@ -741,6 +744,14 @@
     in this case, the next token.</p>
 
     <p>Want to connect all the parts? <a href="/full-llm">Full LLM: in depth →</a> — follow token IDs through embeddings, repeated transformer blocks, logits, softmax, and next-token generation.</p>
+
+    <h2 id="open-weights">Open weights</h2>
+
+    <p>Throughout an LLM, there are weights: in the matrices used for embeddings, the linear projections central to self-attention, the linear layers in the feed-forward network, and so on. Each of these components can contain thousands or millions of weights. Together, these weights allow the LLM to learn patterns from its training text and generate meaningful answers to prompts. Some frontier models contain hundreds of billions of weights.</p>
+
+    <p>These weights are learned by training the model on a very large corpus of text: public web pages, code repositories, and many other sources. We’ll explore how this works later. Training an LLM this way can cost millions of dollars in hardware and electricity; for some frontier models, the figure can reach hundreds of millions.</p>
+
+    <p>However, some companies and research teams make their model weights available for others to use. They publish files containing the trained weights of their LLMs, which other companies or researchers can load into their own instances of the model. Sites like Hugging Face host these files.</p>
 
     <p class="back"><a href="https://pdlawson.com">← Back to home</a></p>
 

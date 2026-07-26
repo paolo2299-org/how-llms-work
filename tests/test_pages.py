@@ -142,6 +142,34 @@ def test_full_llm_navigation_link_is_present(client):
     assert 'href="/full-llm"' in html
 
 
+def test_index_contains_open_weights_revised_copy_without_deep_dive(client):
+    response = client.get("/")
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert '<h2 id="open-weights">Open weights</h2>' in html
+    source_paragraphs = (
+        "Throughout an LLM, there are weights: in the matrices used for embeddings, the "
+        "linear projections central to self-attention, the linear layers in the feed-forward "
+        "network, and so on. Each of these components can contain thousands or millions of "
+        "weights. Together, these weights allow the LLM to learn patterns from its training "
+        "text and generate meaningful answers to prompts. Some frontier models contain "
+        "hundreds of billions of weights.",
+        "These weights are learned by training the model on a very large corpus of text: "
+        "public web pages, code repositories, and many other sources. We’ll explore how "
+        "this works later. Training an LLM this way can cost millions of dollars in hardware "
+        "and electricity; for some frontier models, the figure can reach hundreds of millions.",
+        "However, some companies and research teams make their model weights available for "
+        "others to use. They publish files containing the trained weights of their LLMs, "
+        "which other companies or researchers can load into their own instances of the model. "
+        "Sites like Hugging Face host these files.",
+    )
+    for paragraph in source_paragraphs:
+        assert f"<p>{paragraph}</p>" in html
+    assert 'href="#open-weights"' in html
+    assert 'href="/open-weights"' not in html
+
+
 def test_tokenisation_page_contains_worked_example(client):
     response = client.get("/tokenisation")
     html = response.get_data(as_text=True)
