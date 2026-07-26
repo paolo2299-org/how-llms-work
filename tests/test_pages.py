@@ -184,15 +184,15 @@ def test_open_weights_page_matches_source_and_completes_placeholder(client):
     assert response.status_code == 200
     assert "<h1>Open weights</h1>" in html
     source_paragraphs = (
-        "We will see now how to load a weights file into our model. For this we'll use "
-        "the published weights for the GPT-2 model, which is an older model (2019), but "
-        "it is small and simple enough to work with on a modest laptop.",
-        "An important thing to note when loading open weights using your own LLM code, "
-        "is that your LLM needs to exactly match the architecture of the LLM that produced "
-        "the weights. There are many choices you can make when building an LLM; number of "
-        "transformer layers, projection dimensions, choice of activation functions, and "
-        "many more. In our case, we have carefully constructed our LLM to be compatible "
-        "with GPT-2 weights.",
+        "We’ll now see how to load a weights file into our model. For this we'll use the "
+        "published weights for the GPT-2 model, which is an older model (2019), but it is "
+        "small and simple enough to work with on a modest laptop.",
+        "An important thing to note when loading open weights using your own LLM code is "
+        "that your LLM needs to be compatible with the architecture and parameter shapes "
+        "of the LLM that produced the weights. There are many choices you can make when "
+        "building an LLM: the number of transformer layers, projection dimensions, choice "
+        "of activation functions, and many more. In our case, we have carefully constructed "
+        "our LLM to be compatible with GPT-2 weights.",
         "Now the code to actually load the weights into our model looks as follows:",
     )
     for paragraph in source_paragraphs:
