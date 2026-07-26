@@ -6,10 +6,22 @@ from self_attention import MultiHeadAttention
 
 class TransformerBlock(nn.Module):
 
-    def __init__(self, model_dim, head_dim, num_heads, hidden_dim):
+    def __init__(
+        self,
+        model_dim,
+        head_dim,
+        num_heads,
+        hidden_dim,
+        qkv_bias=False,
+    ):
         super().__init__()
         self.attention_norm = nn.LayerNorm(model_dim)
-        self.attention = MultiHeadAttention(model_dim, head_dim, num_heads)
+        self.attention = MultiHeadAttention(
+            model_dim,
+            head_dim,
+            num_heads,
+            qkv_bias=qkv_bias,
+        )
         self.feed_forward_norm = nn.LayerNorm(model_dim)
         self.feed_forward = FeedForwardLayer(model_dim, hidden_dim)
 

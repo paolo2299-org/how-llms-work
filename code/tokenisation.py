@@ -3,8 +3,8 @@ from functools import lru_cache
 import tiktoken
 
 
-# The vocabulary and merge rules used in the site's tokenisation example.
-encoding = tiktoken.get_encoding("cl100k_base")
+# GPT-2's weights only make sense with the token IDs they were trained with.
+encoding = tiktoken.get_encoding("gpt2")
 
 
 def tokenise(text):

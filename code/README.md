@@ -3,17 +3,22 @@
 This folder joins the site's code samples into one small, runnable language
 model. It accepts one prompt (not a batch) and generates exactly one next token.
 
-The model is intentionally **not trained** and cannot load pretrained weights.
-Every model weight is initialised randomly. Its generated token is therefore
-arbitrary, not a useful prediction. The example is for following the complete
-path from text to a next-token prediction without adding training, weight
-loading, or batching code.
+The model is intentionally **not trained** and does not yet contain
+weight-loading code. Every model weight is initialised randomly. Its generated
+token is therefore arbitrary, not a useful prediction.
+
+The implementation keeps the tutorial's simple, unbatched structure while
+matching the parameter-bearing parts of the GPT model in `~/projects/gpt`.
+When constructed with GPT-2's dimensions and query/key/value biases, its learned
+parameters have compatible shapes. A future loader will only need to translate
+the differing parameter names and ignore the checkpoint's reproducible mask
+buffers.
 
 ## Files
 
 | File | Site section |
 | --- | --- |
-| `tokenisation.py` | Tokenisation and detokenisation with `cl100k_base` |
+| `tokenisation.py` | Tokenisation and detokenisation with GPT-2's vocabulary |
 | `token_embedding.py` | Token and positional embeddings |
 | `self_attention.py` | Causal multi-head self-attention |
 | `feed_forward.py` | Feed-forward layer |
@@ -28,6 +33,11 @@ token IDs                 (number of tokens)
 token vectors             (number of tokens, model dimension)
 next-token logits         (vocabulary size)
 ```
+
+The compatibility-specific changes are limited to GPT-2's tokenizer and
+vocabulary, configurable query/key/value biases, biases on attention output
+projections, a bias-free vocabulary projection, and GPT-2's GELU approximation.
+Batching and dropout are not required to use trained weights for inference.
 
 ## Install
 

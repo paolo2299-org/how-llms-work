@@ -15,6 +15,7 @@ class LanguageModel(nn.Module):
         num_heads,
         hidden_dim,
         num_layers,
+        qkv_bias=False,
     ):
         super().__init__()
         self.embedding = TokenAndPositionEmbedding(
@@ -29,12 +30,17 @@ class LanguageModel(nn.Module):
                     head_dim,
                     num_heads,
                     hidden_dim,
+                    qkv_bias=qkv_bias,
                 )
                 for _ in range(num_layers)
             ]
         )
         self.final_norm = nn.LayerNorm(model_dim)
-        self.vocabulary_projection = nn.Linear(model_dim, vocab_size)
+        self.vocabulary_projection = nn.Linear(
+            model_dim,
+            vocab_size,
+            bias=False,
+        )
 
     def forward(self, token_ids):
         if token_ids.ndim != 1:

@@ -4,7 +4,7 @@ import torch.nn as nn
 
 class MultiHeadAttention(nn.Module):
 
-    def __init__(self, input_dim, head_dim, num_heads):
+    def __init__(self, input_dim, head_dim, num_heads, qkv_bias=False):
         super().__init__()
         self.num_heads = num_heads
         self.head_dim = head_dim
@@ -13,10 +13,10 @@ class MultiHeadAttention(nn.Module):
         if input_dim != out_dim:
             raise ValueError("input_dim must equal head_dim * num_heads")
 
-        self.W_query = nn.Linear(input_dim, out_dim, bias=False)
-        self.W_key = nn.Linear(input_dim, out_dim, bias=False)
-        self.W_value = nn.Linear(input_dim, out_dim, bias=False)
-        self.out_proj = nn.Linear(out_dim, out_dim, bias=False)
+        self.W_query = nn.Linear(input_dim, out_dim, bias=qkv_bias)
+        self.W_key = nn.Linear(input_dim, out_dim, bias=qkv_bias)
+        self.W_value = nn.Linear(input_dim, out_dim, bias=qkv_bias)
+        self.out_proj = nn.Linear(out_dim, out_dim)
 
     def forward(self, x):
         num_tokens = x.shape[0]
@@ -28,18 +28,25 @@ class MultiHeadAttention(nn.Module):
         # Split each token's vector into (num_heads, head_dim), then
         # move the head axis to the front so each head is processed in parallel.
         queries = queries.view(
-            num_tokens, self.num_heads, self.head_dim
+            num_tokens,
+            self.num_heads,
+            self.head_dim,
         ).transpose(0, 1)
         keys = keys.view(
-            num_tokens, self.num_heads, self.head_dim
+            num_tokens,
+            self.num_heads,
+            self.head_dim,
         ).transpose(0, 1)
         values = values.view(
-            num_tokens, self.num_heads, self.head_dim
+            num_tokens,
+            self.num_heads,
+            self.head_dim,
         ).transpose(0, 1)
 
         attention_scores = queries @ keys.transpose(-2, -1)
 
-        # A token can only attend to itself and earlier tokens.
+        # A token can only attend to itself and earlier tokens. This constant
+        # mask is rebuilt here rather than loaded from a checkpoint.
         mask = torch.triu(
             torch.ones(
                 num_tokens,
