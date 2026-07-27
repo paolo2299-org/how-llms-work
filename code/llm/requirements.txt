@@ -1,0 +1,3 @@
+# Dependencies for the trainable teaching model.
+torch==2.2.2
+tiktoken==0.7.0

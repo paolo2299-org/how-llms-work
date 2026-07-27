@@ -1,0 +1,37 @@
+"""GPT-2 tokenisation shared by training prompts and generated tokens."""
+
+from functools import lru_cache
+
+import tiktoken
+
+
+# Using the same tokenizer for training and inference ensures that each token ID
+# always refers to the same piece of text.
+encoding = tiktoken.get_encoding("gpt2")
+
+
+def tokenise(text):
+    """Turn text into one sequence of token IDs."""
+    return encoding.encode(text)
+
+
+def detokenise(token_ids):
+    """Turn one sequence of token IDs back into text."""
+    return encoding.decode(token_ids)
+
+
+def vocabulary_size():
+    return encoding.n_vocab
+
+
+@lru_cache
+def valid_token_ids():
+    """Return the token IDs that the encoding can decode."""
+    valid_ids = []
+    for token_id in range(encoding.n_vocab):
+        try:
+            encoding.decode_single_token_bytes(token_id)
+        except KeyError:
+            continue
+        valid_ids.append(token_id)
+    return tuple(valid_ids)

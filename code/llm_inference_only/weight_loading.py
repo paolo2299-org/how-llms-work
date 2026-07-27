@@ -6,7 +6,7 @@ from language_model import LanguageModel
 
 
 DEFAULT_WEIGHTS_PATH = (
-    Path(__file__).resolve().parents[1] / "weights" / "gpt2-small.pth"
+    Path(__file__).resolve().parents[2] / "weights" / "gpt2-small.pth"
 )
 
 TOP_LEVEL_NAMES = {

@@ -1,0 +1,20 @@
+At the edge of a quiet town stood a narrow workshop with a blue door.
+Every morning, Mira unlocked the door, opened the shutters, and placed a
+small brass lantern on the workbench. The lantern had no flame. Instead, it
+held a wheel, a mirror, and a row of tiny glass tiles.
+
+Mira turned the wheel one step. The first tile glowed amber. She turned it
+again, and the next tile glowed too. Soon a pattern travelled along the row:
+amber, green, amber, blue. Mira wrote the pattern in her notebook, changed
+the position of the mirror, and began again.
+
+A curious robin watched from the windowsill. When the lantern shone blue,
+the robin chirped. When it shone green, the robin tilted its head. Mira
+noticed the sequence and made a prediction in her notebook before each turn
+of the wheel. Some predictions were right and some were wrong. Each mistake
+helped her adjust the mirror by a very small amount.
+
+By evening, the lantern could continue several simple patterns. It did not
+understand the colours, the workshop, or the robin. It had only learned that
+some tiles often followed other tiles. Mira closed the shutters and left one
+final note: a useful prediction can come from many small adjustments.

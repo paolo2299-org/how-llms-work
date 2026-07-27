@@ -1,4 +1,4 @@
-# Loading the GPT-2 small weights
+# Loading the GPT-2 small weights for inference
 
 This document records the implementation decisions for loading one specific
 checkpoint into the simple language model in this directory:
