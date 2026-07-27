@@ -26,6 +26,17 @@ def test_index_contains_transformer_overviews(client):
     assert 'href="/full-llm"' in html
 
 
+def test_index_introduction_describes_the_learning_path(client):
+    html = client.get("/").get_data(as_text=True)
+
+    assert "very high level overview of all of the core concepts" in html
+    assert "No knowledge is required to learn something from this page" in html
+    assert (
+        'href="https://github.com/pdlawson/how-llms-work/tree/main/code">here</a>'
+        in html
+    )
+
+
 def test_index_table_of_contents_links_overviews_and_detail_pages(client):
     html = client.get("/").get_data(as_text=True)
 
