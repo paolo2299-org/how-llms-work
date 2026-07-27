@@ -1,33 +1,11 @@
-# Run the single-next-token LLM
+# Teaching language models
 
-## Install dependencies
+This directory contains two deliberately simple versions of the model:
 
-From the repository root, use Python 3.12 to create a virtual environment and
-install the requirements:
+- [`llm_inference_only`](llm_inference_only/) contains the original model. It
+  loads pre-trained GPT-2 small weights and generates a next token.
+- [`llm`](llm/) extends that model with the minimal code needed to pre-train a
+  small model from text.
 
-```bash
-python3.12 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -r code/requirements.txt
-```
-
-On Windows PowerShell, activate the environment with
-`.venv\Scripts\Activate.ps1`.
-
-## Generate output
-
-Place the GPT-2 small checkpoint at `weights/gpt2-small.pth`, then run:
-
-```bash
-python code/generate.py "The dog fetched the"
-```
-
-The command prints the prompt's token IDs, the selected next token and its
-probability, and the prompt with that token appended.
-
-To use a checkpoint stored elsewhere:
-
-```bash
-python code/generate.py --weights /path/to/gpt2-small.pth "The dog fetched the"
-```
+See each subdirectory's README for setup and usage instructions. See
+[`ADDITIONS.md`](ADDITIONS.md) for a concise comparison of the two versions.
