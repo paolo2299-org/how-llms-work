@@ -32,7 +32,7 @@ def test_index_introduction_describes_the_learning_path(client):
     assert "very high level overview of all of the core concepts" in html
     assert "No knowledge is required to learn something from this page" in html
     assert (
-        'href="https://github.com/pdlawson/how-llms-work/tree/main/code">here</a>'
+        'href="https://github.com/paolo2299-org/how-llms-work/tree/main/code">here</a>'
         in html
     )
 
