@@ -50,11 +50,7 @@ def open_weights():
 
 @pages_bp.route("/pre-training")
 def pre_training():
-    return render_template(
-        "work-in-progress.html",
-        page_title="Pre-training",
-        section_id="pre-training",
-    )
+    return render_template("pre-training.html")
 
 
 @pages_bp.route("/fine-tuning")
