@@ -455,8 +455,102 @@
         font-size: 0.9em;
         font-style: italic;
       }
+
+      /* Pre-training */
+      .pt-generation {
+        margin: 24px 0 28px;
+        padding: 18px;
+        background: #fff;
+        border: 1px solid #d9dce7;
+        border-radius: 8px;
+      }
+      .pt-generation figcaption {
+        margin-bottom: 12px;
+        color: #555;
+        font-size: 0.9em;
+        font-weight: bold;
+      }
+      .pt-output {
+        margin: 0;
+        padding: 14px 16px;
+        overflow-wrap: anywhere;
+        background: #f6f7ff;
+        border-left: 4px solid #1a0dab;
+        border-radius: 4px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        line-height: 1.7;
+      }
+      .pt-generated {
+        padding: 2px 3px;
+        background: #e6e8ff;
+        border-radius: 3px;
+        color: #1a0dab;
+      }
+      .pt-steps {
+        padding-left: 28px;
+      }
+      .pt-steps > li {
+        margin: 0 0 22px;
+        padding-left: 6px;
+      }
+      .pt-steps > li::marker {
+        color: #1a0dab;
+        font-weight: bold;
+      }
+      .pt-steps p {
+        margin: 0 0 16px;
+      }
+      .pt-table-wrap {
+        margin: 18px 0;
+        overflow-x: auto;
+      }
+      .pt-probabilities {
+        width: 100%;
+        min-width: 520px;
+        border-collapse: collapse;
+        font-size: 0.94em;
+      }
+      .pt-probabilities caption {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      .pt-probabilities th,
+      .pt-probabilities td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid #d9dce7;
+      }
+      .pt-probabilities th {
+        color: #333;
+        background: #f6f8fa;
+      }
+      .pt-probabilities td:first-child {
+        width: 42%;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
       @media (max-width: 480px) {
         .architecture-figure { padding: 10px 6px; }
+        .pt-generation { padding: 14px; }
+        .pt-output { padding: 12px; }
+        .pt-probabilities {
+          min-width: 100%;
+          table-layout: fixed;
+          font-size: 0.84em;
+        }
+        .pt-probabilities th,
+        .pt-probabilities td {
+          padding: 8px;
+          overflow-wrap: break-word;
+        }
+        .pt-probabilities td:first-child { width: 38%; }
       }
     </style>
   </head>
@@ -776,7 +870,88 @@
 
     <h2 id="pre-training">Pre-training</h2>
 
-    <p class="work-in-progress"><span aria-hidden="true">🚧</span> Work in progress</p>
+    <p>We talked above about how models have millions or even billions of weights. The LLM we finally managed to build in <a href="/full-llm">The Full LLM</a> section had random weights, and if you go ahead and generate text with it, you will get back random gibberish:</p>
+
+    <figure class="pt-generation" aria-labelledby="random-output-title">
+      <figcaption id="random-output-title">Generated with random weights</figcaption>
+      <p class="pt-output"><span>the cat sat on the</span><span class="pt-generated">romancersurface crimesAud dissectiffs abol</span></p>
+    </figure>
+
+    <p>We then showed how to load weights for a very small but trained model in the <a href="/open-weights">Open Weights</a> section, which produces more coherent (if a little uninspired!) results:</p>
+
+    <figure class="pt-generation" aria-labelledby="trained-output-title">
+      <figcaption id="trained-output-title">Generated with trained weights</figcaption>
+      <p class="pt-output"><span>the cat sat on the</span><span class="pt-generated"> floor, and the cat was sitting on the floor</span></p>
+    </figure>
+
+    <p>To get from our random weights to weights that will produce coherent sentences, we use a process called <em>pre-training</em>.</p>
+
+    <p>This involves the following steps:</p>
+
+    <ol class="pt-steps">
+      <li>Build a large dataset of text written by humans from internet-based sources, such as websites, books, articles, academic papers, code repositories, etc., and convert it to tokens.</li>
+      <li>Initialize the LLM with random weights</li>
+      <li>Feed “chunks” of the input text into the model. One such chunk might be “the cat sat on the mat”.</li>
+      <li>
+        <p>Our model now produces next-token probabilities that tell us how well it would have predicted the correct sentence from the incomplete sentence:</p>
+
+        <div class="pt-table-wrap">
+          <table class="pt-probabilities">
+            <caption>One next-token probability observed for the example sentence</caption>
+            <thead>
+              <tr>
+                <th scope="col">Input</th>
+                <th scope="col">Observed probability</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>The cat sat on the</td>
+                <td>The probability of “mat” is 0.02</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>In fact, the architecture of our model means that in a single pass it can actually simultaneously calculate next token probabilities for all incomplete versions of our sentence:</p>
+
+        <div class="pt-table-wrap">
+          <table class="pt-probabilities">
+            <caption>Next-token probabilities observed for every incomplete version of the example sentence</caption>
+            <thead>
+              <tr>
+                <th scope="col">Input</th>
+                <th scope="col">Observed probability</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>The</td>
+                <td>The probability of “cat” is 0.004</td>
+              </tr>
+              <tr>
+                <td>The cat</td>
+                <td>The probability of “sat” is 0.03</td>
+              </tr>
+              <tr>
+                <td>The cat sat</td>
+                <td>The probability of “on” is 0.01</td>
+              </tr>
+              <tr>
+                <td>The cat sat on</td>
+                <td>The probability of “the” is 0.06</td>
+              </tr>
+              <tr>
+                <td>The cat sat on the</td>
+                <td>The probability of “mat” is 0.02</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </li>
+      <li>We update the weights based on these observed probabilities. If the model gave us high probabilities, that means that it did well at predicting our text, and so our weights are working well, and we don’t need to adjust them much. If the probabilities are low, then the weights are not working well, and we need to adjust them more. We use a process called <em>backpropagation</em> to calculate how changing each weight would affect the model’s prediction error, and a separate optimisation process uses this information to adjust the weights.</li>
+      <li>We repeat steps 3 to 5 over and over again, iterating over our dataset, until further training produces too little improvement to justify the additional computing cost.</li>
+    </ol>
 
     <p><a href="/pre-training">Pre-training: in depth →</a></p>
 

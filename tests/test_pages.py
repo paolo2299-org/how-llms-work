@@ -224,43 +224,53 @@ def test_open_weights_page_matches_source_and_completes_placeholder(client):
     assert "Work in progress" not in html
 
 
-def test_index_contains_training_and_summary_placeholders(client):
+def test_index_contains_remaining_training_and_summary_placeholders(client):
     html = client.get("/").get_data(as_text=True)
 
     assert '<h2 id="pre-training">Pre-training</h2>' in html
     assert '<h2 id="fine-tuning">Fine-tuning</h2>' in html
     assert '<h2 id="summary">Summary</h2>' in html
-    assert html.count("🚧") == 3
+    assert html.count("🚧") == 2
 
 
-def test_pre_training_page_matches_source_and_completes_placeholders(client):
-    response = client.get("/pre-training")
+def test_index_pre_training_section_matches_source_and_completes_placeholders(client):
+    response = client.get("/")
     html = response.get_data(as_text=True)
 
     assert response.status_code == 200
-    assert "<h1>Pre-training</h1>" in html
+    assert '<h2 id="pre-training">Pre-training</h2>' in html
     source_markup = (
-        'We talked above about how models have millions or even billions of weights. The LLM we finally managed to build in the <a href="/full-llm">The Full LLM</a> section had random weights, and if you go ahead and generate text with it, you will get back random gibberish:',
+        'We talked above about how models have millions or even billions of weights. The LLM we finally managed to build in <a href="/full-llm">The Full LLM</a> section had random weights, and if you go ahead and generate text with it, you will get back random gibberish:',
         'We then showed how to load weights for a very small but trained model in the <a href="/open-weights">Open Weights</a> section, which produces more coherent (if a little uninspired!) results:',
         "To get from our random weights to weights that will produce coherent sentences, we use a process called <em>pre-training</em>.",
         "This involves the following steps:",
-        "Build a large dataset of text written by humans. This usually will be from internet-based sources, such as websites, books, articles, academic papers, code repositories etc. and convert this to tokens.",
+        "Build a large dataset of text written by humans from internet-based sources, such as websites, books, articles, academic papers, code repositories, etc., and convert it to tokens.",
         "Initialize the LLM with random weights",
         "Feed “chunks” of the input text into the model. One such chunk might be “the cat sat on the mat”.",
-        "Our model now produces next probabilities that tell us how well it would have predicted the correct sentence from the incomplete sentence:",
+        "Our model now produces next-token probabilities that tell us how well it would have predicted the correct sentence from the incomplete sentence:",
         "In fact, the architecture of our model means that in a single pass it can actually simultaneously calculate next token probabilities for all incomplete versions of our sentence:",
-        "We update the weights based on these observed probabilities. If the model gave us high probabilities, that means that it did well at predicting our text, and so our weights are working well, and we don’t need to adjust them much. If the probabilities are low, then the weights are not working well, and we need to adjust them more. The process used to determine these weight adjustments is called <em>back propagation</em>, which uses a simple differentiation-based scheme.",
-        "We repeat steps 3 to 5 a huge number of times, iterating over our dataset, until the weights start to “stabilise”, meaning that the improvement in their next token prediction ability is slowing down. At this point we are done.",
+        "We update the weights based on these observed probabilities. If the model gave us high probabilities, that means that it did well at predicting our text, and so our weights are working well, and we don’t need to adjust them much. If the probabilities are low, then the weights are not working well, and we need to adjust them more. We use a process called <em>backpropagation</em> to calculate how changing each weight would affect the model’s prediction error, and a separate optimisation process uses this information to adjust the weights.",
+        "We repeat steps 3 to 5 over and over again, iterating over our dataset, until further training produces too little improvement to justify the additional computing cost.",
     )
     for source_text in source_markup:
         assert source_text in html
 
     assert "romancersurface crimesAud dissectiffs abol" in html
-    assert "floor, and it was sitting on the floor" in html
+    assert "floor, and the cat was sitting on the floor" in html
     assert html.count('class="pt-probabilities"') == 2
     assert "The probability of “on” is 0.01" in html
     assert "The probability of “the” is 0.06" in html
-    assert "Work in progress" not in html
+    assert 'href="/pre-training"' in html
+
+
+def test_pre_training_deep_dive_page_is_work_in_progress(client):
+    response = client.get("/pre-training")
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "<h1>Pre-training</h1>" in html
+    assert "🚧" in html
+    assert "Work in progress" in html
     assert 'href="/#pre-training"' in html
 
 
