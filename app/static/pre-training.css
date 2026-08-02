@@ -308,6 +308,118 @@ pre.ptd-data code {
   white-space: nowrap;
 }
 
+.ptd-probabilities td:first-child {
+  width: 42%;
+}
+
+.ptd-chain-rule {
+  margin: 24px 0 34px;
+  padding: 18px;
+  background: #fafbff;
+  border: 1px solid #d9dce7;
+  border-radius: 8px;
+}
+
+.ptd-chain-rule figcaption {
+  margin-bottom: 6px;
+  font-weight: bold;
+}
+
+.ptd-chain-rule > p {
+  margin: 0 0 20px;
+  color: #555;
+}
+
+.ptd-chain-forward {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 46px minmax(0, 1fr) 46px minmax(0, 1fr) 46px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.ptd-chain-node {
+  display: flex;
+  min-height: 92px;
+  padding: 12px 8px;
+  flex-direction: column;
+  gap: 9px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: #fff;
+  border: 2px solid #9aa5e8;
+  border-radius: 8px;
+}
+
+.ptd-chain-node span {
+  color: #555;
+  font-size: 0.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ptd-chain-node code {
+  color: #1a0dab;
+  font-size: 0.88em;
+}
+
+.ptd-chain-loss {
+  background: #fff8df;
+  border-color: #c28a00;
+}
+
+.ptd-chain-loss code {
+  color: #6b4e00;
+}
+
+.ptd-chain-arrow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+  color: #666;
+  text-align: center;
+}
+
+.ptd-chain-arrow span {
+  font-size: 0.76em;
+}
+
+.ptd-chain-arrow strong {
+  color: #1a0dab;
+  font-size: 1.45em;
+}
+
+.ptd-chain-backward {
+  margin-top: 20px;
+  padding: 15px 16px;
+  background: #f6f7ff;
+  border-left: 4px solid #1a0dab;
+}
+
+.ptd-chain-backward > strong {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.ptd-chain-backward ol {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 20px;
+  margin: 0 0 12px;
+  padding-left: 24px;
+}
+
+.ptd-chain-backward p {
+  margin: 0;
+  overflow-x: auto;
+}
+
+.ptd-chain-backward p code {
+  display: inline-block;
+  min-width: max-content;
+}
+
 .ptd-flow {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -415,6 +527,30 @@ pre.ptd-data code {
     bottom: -16px;
     content: "↓";
     transform: translateX(50%);
+  }
+
+  .ptd-chain-forward {
+    grid-template-columns: 1fr;
+  }
+
+  .ptd-chain-arrow {
+    min-height: 42px;
+    justify-content: center;
+  }
+
+  .ptd-chain-arrow strong {
+    line-height: 0.8;
+    transform: rotate(90deg);
+  }
+
+  .ptd-chain-backward ol {
+    grid-template-columns: 1fr;
+  }
+
+  .ptd-chain-backward p code {
+    display: inline;
+    min-width: 0;
+    white-space: normal;
   }
 }
 

@@ -398,17 +398,54 @@ def test_pre_training_weight_optimisation_matches_training_step(client):
 
     assert response.status_code == 200
     assert "<h1>Pre-training: weight optimisation</h1>" in html
+    source_markup = (
+        "For each iteration in our pre-training loop, we have a batch of inputs and targets. For each input/target pair, our model simultaneously calculates the probability of predicting the target token from the input tokens:",
+        "We then use a <em>loss function</em> called <em>cross-entropy loss</em> to calculate how well our model did at predicting the correct tokens. This takes all of our predictions across all inputs in a given batch, and produces a single score called the <em>loss</em>.",
+        "The reason for using <code>flatten</code> is that PyTorch cross-entropy expects a two-dimensional collection of predictions and one target ID for each prediction. Flattening does the following:",
+        "Each flattened row of logits is still paired with exactly the same target token as before. Flattening changes only the layout expected by the loss function; it does not mix predictions and targets.",
+        "Cross-entropy gives a larger loss when the correct token receives a low score and a smaller loss when it receives a high score. By default, PyTorch averages the loss across all <code>batch × tokens</code> predictions.",
+        "Once the cross-entropy loss has been calculated, <em>backpropagation</em> calculates how sensitive that loss is to each weight in the model, i.e., how much changing that weight would likely change the loss.",
+        "More precisely, it computes the partial derivative of the loss with respect to every weight. These derivatives collectively form the <em>gradient</em>.",
+        "To do this, the model’s calculations are treated as a chain - or computational graph - of simple mathematical operations. Backpropagation works backward through these operations, repeatedly applying the differentiation chain rule to calculate how each weight may have contributed to the loss.",
+        "Don’t worry if partial derivatives and the chain rule are unfamiliar; the key point is that backpropagation provides a systematic way to obtain the gradients needed to improve the model.",
+        "Putting this all together, the code looks like the following:",
+        "After each pass through the dataset, our script prints the average loss across its batches:",
+        "This number is useful to show that optimisation is working, but for a real LLM a slightly more sophisticated training system is used, where some of our text corpus (called the <em>validation</em> <em>dataset</em>) is held back from training, and used to validate the model.",
+    )
+    for source_text in source_markup:
+        assert source_text in html
+
+    assert "<h2>Backpropagation</h2>" in html
+    assert "<h2>Optimisation</h2>" in html
+    assert "<h2>Monitor the training loss</h2>" in html
+    assert 'class="ptd-table ptd-probabilities"' in html
+    assert "The probability of “cat” is 0.004" in html
+    assert "The probability of “sat” is 0.03" in html
+    assert "The probability of “on” is 0.01" in html
+    assert "The probability of “the” is 0.06" in html
+    assert "The probability of “mat” is 0.02" in html
     assert 'id="cross-entropy-code"' in html
     assert "logits.flatten(0, 1)" in html
     assert "targets.flatten()" in html
     assert "F.cross_entropy" in html
+    assert "Shapes passed to cross-entropy" in html
+    assert "(batch × tokens, vocabulary)" in html
+    assert 'id="chain-rule-title"' in html
+    assert "∂L/∂w = ∂L/∂v × ∂v/∂u × ∂u/∂w = 10 × 1 × 4 = 40" in html
+    assert "An optimiser then uses the resulting gradients" in html
+    assert "The optimiser often used in LLMs" in html
+    assert (
+        'href="https://optimization.cbe.cornell.edu/index.php?title=AdamW">AdamW</a>'
+        in html
+    )
     assert 'id="optimisation-step-code"' in html
     assert "torch.optim.AdamW(model.parameters(), lr=learning_rate)" in html
     assert "optimiser.zero_grad()" in html
     assert "loss.backward()" in html
     assert "optimiser.step()" in html
     assert 'id="average-loss-code"' in html
-    assert "it is the loss on the training batches" in html
+    assert "Why no softmax?" not in html
+    assert "The included script is intentionally direct" not in html
     assert 'href="/pre-training/full-loop"' in html
 
     source = Path("code/llm/pretrain.py").read_text(encoding="utf-8")
