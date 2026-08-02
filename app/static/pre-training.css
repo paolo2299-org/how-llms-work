@@ -2,6 +2,10 @@ h2 {
   margin-top: 48px;
 }
 
+h3 {
+  margin-top: 38px;
+}
+
 .ptd-top-link {
   margin-bottom: 8px;
   font-size: 0.9em;
@@ -59,6 +63,106 @@ pre.ptd-code code {
   color: #24292e;
   background: none;
   font-size: 0.84em;
+}
+
+.ptd-token-figure,
+.ptd-embedding-figure {
+  margin: 18px 0 30px;
+}
+
+.ptd-token-figure figcaption,
+.ptd-embedding-figure figcaption {
+  margin-top: 9px;
+  color: #555;
+  font-size: 0.9em;
+}
+
+pre.ptd-data {
+  margin: 0;
+  padding: 14px 16px;
+  overflow-x: auto;
+  background: #f6f8fa;
+  border: 1px solid #d9dce7;
+  border-radius: 6px;
+}
+
+pre.ptd-data code {
+  padding: 0;
+  background: none;
+}
+
+.ptd-batch,
+.ptd-embedding-output {
+  overflow-x: auto;
+  border: 1px solid #d9dce7;
+  border-radius: 8px;
+  background: #f8f9ff;
+}
+
+.ptd-batch-row,
+.ptd-embedding-row {
+  display: grid;
+  grid-template-columns: 96px repeat(5, minmax(82px, 1fr));
+  gap: 8px;
+  align-items: stretch;
+  min-width: 620px;
+  padding: 10px;
+}
+
+.ptd-batch-row + .ptd-batch-row,
+.ptd-embedding-row + .ptd-embedding-row {
+  border-top: 1px solid #d9dce7;
+}
+
+.ptd-batch-row > strong,
+.ptd-embedding-row > strong {
+  align-self: center;
+  color: #444;
+  font-size: 0.84em;
+}
+
+.ptd-batch-row code {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 7px;
+  white-space: pre;
+  background: #fff;
+  border: 1px solid #bfc5d8;
+}
+
+.ptd-embedding-output {
+  padding: 7px 0;
+  background: linear-gradient(135deg, #f8f9ff, #eef1ff);
+}
+
+.ptd-embedding-row > span {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 76px;
+  padding: 8px;
+  background: #fff;
+  border: 1px solid #aeb7d4;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(29, 38, 75, 0.08);
+}
+
+.ptd-embedding-row > span > code {
+  align-self: flex-start;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: pre;
+  text-overflow: ellipsis;
+}
+
+.ptd-embedding-row small {
+  margin-top: 8px;
+  color: #5c6580;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.68em;
+  white-space: nowrap;
 }
 
 .ptd-note,

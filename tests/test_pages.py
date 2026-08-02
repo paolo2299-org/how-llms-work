@@ -307,25 +307,56 @@ def test_pre_training_inputs_page_matches_training_implementation(client):
         assert code_line in source
 
 
-def test_pre_training_model_additions_are_limited_to_training_shape_changes(client):
+def test_pre_training_model_additions_matches_source_and_completes_placeholders(client):
     response = client.get("/pre-training/model-additions")
     html = response.get_data(as_text=True)
 
     assert response.status_code == 200
     assert "<h1>Pre-training: model additions</h1>" in html
-    assert "Pre-training does not add another kind of neural-network layer" in html
-    assert "the learned matrices keep the same shapes" in html
-    assert "(batch, tokens, vocabulary)" in html
+    assert "The LLM implementation we have built so far" in html
+    assert (
+        'href="https://github.com/paolo2299-org/how-llms-work/blob/main/'
+        'code/llm_inference_only/language_model.py"'
+        in html
+    )
+    assert "Batching (passing multiple inputs in at the same time)" in html
+    assert "Producing next token predictions for every input token" in html
+    assert "<h2>Batching</h2>" in html
+    assert 'id="single-sequence-example"' in html
+    assert "[“It”, “ was”, “ a”, “ bright”, “ cold”]" in html
+    assert 'id="batch-example"' in html
+    assert "A batch containing three sequences of five tokens" in html
+    assert "107nPkg3n-CnKQSa2JI4Zk8B-UB71ZBhqqwmXq_Lazfs" in html
+    assert 'id="batched-token-ids-code"' in html
+    assert "[1026,   373,  257, 6016,  4692]" in html
     assert 'id="batched-embedding-code"' in html
     assert "token_ids must have shape (batch_size, sequence_length)" in html
+    assert "# PyTorch broadcasts the position" not in html
+    assert 'id="embedding-output-visual"' in html
+    assert "shape <code>(3, 5, model_dim)</code>" in html
     assert 'id="batched-attention-code"' in html
     assert "batch_size, num_tokens, _ = x.shape" in html
     assert ").transpose(1, 2)" in html
+    assert "The batch items never attend to one another" in html
+    assert "Next-token probabilities observed for every incomplete version" in html
+    for probability_example in (
+        "The probability of “cat” is 0.004",
+        "The probability of “sat” is 0.03",
+        "The probability of “on” is 0.01",
+        "The probability of “the” is 0.06",
+        "The probability of “mat” is 0.02",
+    ):
+        assert probability_example in html
     assert 'id="all-position-logits-code"' in html
     assert "return self.vocabulary_projection(x)" in html
     assert 'id="batched-generation-code"' in html
     assert "next_token_logits = all_logits[0, -1]" in html
+    assert "This lets one model implementation support both batched training" in html
     assert 'href="/pre-training/weight-optimisation"' in html
+    assert "<show " not in html
+    assert "<insert " not in html
+    assert "<use " not in html
+    assert "<repeat " not in html
 
     source_files = {
         "embedding": Path("code/llm/token_embedding.py").read_text(encoding="utf-8"),
