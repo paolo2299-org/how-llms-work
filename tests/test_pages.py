@@ -285,14 +285,35 @@ def test_pre_training_inputs_page_matches_training_implementation(client):
 
     assert response.status_code == 200
     assert "<h1>Pre-training: preparing the inputs</h1>" in html
+    assert 'href="/tokenisation">tokeniser</a>' in html
+    assert "extract a collection of inputs and targets" in html
+    assert "Winston Smith, his chin nuzzled into his breast" in html
+    assert "George Orwell, <cite>Nineteen Eighty-Four</cite>" in html
+    assert 'class="ptd-shift-figure"' in html
+    assert 'aria-label="Input and target pair 1"' in html
+    assert "Two input/target pairs made from the example text" in html
+    assert "&#x2420;was" in html
+    assert (
+        'href="https://github.com/paolo2299-org/how-llms-work/tree/main/code/llm"'
+        in html
+    )
     assert 'id="next-token-dataset-code"' in html
     assert "class NextTokenDataset(Dataset):" in html
     assert "len(self.token_ids) - sequence_length" in html
     assert "inputs = self.token_ids[start:stop]" in html
     assert "targets = self.token_ids[start + 1 : stop + 1]" in html
+    assert "For a given input and target pair" in html
+    assert "At position 0 the model is asked to predict" in html
+    assert "Why is one extra token required?" not in html
     assert 'id="create-data-loader-code"' in html
     assert "DataLoader(dataset, batch_size=batch_size, shuffle=True)" in html
-    assert "It does not shuffle the tokens inside a sequence" in html
+    assert "The dataset returns one input/target pair at a time" in html
+    assert "Shapes created by the dataset and data loader" not in html
+    assert (
+        "here just randomises the order in which each input/target pair is added to a batch"
+        in html
+    )
+    assert "the order that each input/target pair" not in html
     assert "Work in progress" not in html
     assert 'href="/#pre-training"' in html
     assert 'href="/pre-training/model-additions"' in html

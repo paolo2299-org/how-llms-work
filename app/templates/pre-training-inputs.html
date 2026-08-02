@@ -22,13 +22,74 @@
         </ol>
       </nav>
 
-      <p>Pre-training starts with a large body of text, but this model does not accept raw text. We first turn the entire text into one stream of token IDs using the same tokenizer that will later process prompts.</p>
+      <p>Once we have converted our text corpus to tokens using our <a href="/tokenisation">tokeniser</a>, we then extract a collection of inputs and targets which we&rsquo;ll use to train our LLM. Each input is a sequence of tokens, and each target is the same sequence shifted by one. For example, if our starting text is:</p>
 
-      <p>The important preparation step is then to make many examples in which one sequence of tokens is the input and the same sequence, shifted one position to the left, is the target. Each target token is therefore the correct next token for the corresponding input position.</p>
+      <blockquote class="ptd-source-text">
+        <p>
+          <span>&ldquo;It was a bright cold day in April, and the clocks were striking thirteen. </span>
+          <span>Winston Smith, his chin nuzzled into his breast in an effort to escape the vile wind&#44; &#115;&#108;&#105;&#112;&#112;&#101;&#100; &#113;&#117;&#105;&#99;&#107;&#108;&#121; &#116;&#104;&#114;&#111;&#117;&#103;&#104; &#116;&#104;&#101; &#103;&#108;&#97;&#115;&#115; &#100;&#111;&#111;&#114;&#115;&rdquo;</span>
+        </p>
+        <footer>&mdash; George Orwell, <cite>Nineteen Eighty-Four</cite></footer>
+      </blockquote>
 
-      <h2>Build shifted input and target sequences</h2>
+      <p>Then our inputs and targets might be:</p>
 
-      <p>Our training implementation puts this logic in <code>NextTokenDataset</code>:</p>
+      <figure class="ptd-shift-figure">
+        <figcaption>Two input/target pairs made from the example text</figcaption>
+        <p class="ptd-token-key"><code>&#x2420;</code> marks a space at the start of a token.</p>
+
+        <div class="ptd-pair" role="group" aria-label="Input and target pair 1">
+          <strong>Pair 1</strong>
+          <div class="ptd-token-line">
+            <span class="ptd-token-label">Input</span>
+            <ol>
+              <li><code>It</code></li>
+              <li><code>&#x2420;was</code></li>
+              <li><code>&#x2420;a</code></li>
+              <li><code>&#x2420;bright</code></li>
+              <li><code>&#x2420;cold</code></li>
+            </ol>
+          </div>
+          <div class="ptd-shift-arrow" aria-hidden="true">&darr; shift by one token</div>
+          <div class="ptd-token-line ptd-target-line">
+            <span class="ptd-token-label">Target</span>
+            <ol>
+              <li><code>&#x2420;was</code></li>
+              <li><code>&#x2420;a</code></li>
+              <li><code>&#x2420;bright</code></li>
+              <li><code>&#x2420;cold</code></li>
+              <li><code>&#x2420;day</code></li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="ptd-pair" role="group" aria-label="Input and target pair 2">
+          <strong>Pair 2</strong>
+          <div class="ptd-token-line">
+            <span class="ptd-token-label">Input</span>
+            <ol>
+              <li><code>&#x2420;day</code></li>
+              <li><code>&#x2420;in</code></li>
+              <li><code>&#x2420;April</code></li>
+              <li><code>,</code></li>
+              <li><code>&#x2420;and</code></li>
+            </ol>
+          </div>
+          <div class="ptd-shift-arrow" aria-hidden="true">&darr; shift by one token</div>
+          <div class="ptd-token-line ptd-target-line">
+            <span class="ptd-token-label">Target</span>
+            <ol>
+              <li><code>&#x2420;in</code></li>
+              <li><code>&#x2420;April</code></li>
+              <li><code>,</code></li>
+              <li><code>&#x2420;and</code></li>
+              <li><code>&#x2420;the</code></li>
+            </ol>
+          </div>
+        </div>
+      </figure>
+
+      <p>Our <a href="https://github.com/paolo2299-org/how-llms-work/tree/main/code/llm">full LLM implementation</a> uses the following code to achieve this:</p>
 
       <pre class="ptd-code" id="next-token-dataset-code"><code>class NextTokenDataset(Dataset):
     """Split text into fixed-length input and target sequences."""
@@ -62,7 +123,7 @@
         targets = self.token_ids[start + 1 : stop + 1]
         return inputs, targets</code></pre>
 
-      <p>If a sequence has four input tokens, the dataset needs five consecutive tokens from the full stream. The first four become the input and the last four become the target:</p>
+      <p>For a given input and target pair, each token position in the input has the corresponding &ldquo;next token&rdquo; in the same position of the target:</p>
 
       <div class="ptd-table-scroll">
         <table class="ptd-table">
@@ -79,75 +140,34 @@
           <tbody>
             <tr>
               <th scope="row">Input</th>
-              <td><code>t0</code></td>
-              <td><code>t1</code></td>
-              <td><code>t2</code></td>
-              <td><code>t3</code></td>
+              <td><code>It</code></td>
+              <td><code>&#x2420;was</code></td>
+              <td><code>&#x2420;a</code></td>
+              <td><code>&#x2420;bright</code></td>
             </tr>
             <tr>
               <th scope="row">Target</th>
-              <td><code>t1</code></td>
-              <td><code>t2</code></td>
-              <td><code>t3</code></td>
-              <td><code>t4</code></td>
+              <td><code>&#x2420;was</code></td>
+              <td><code>&#x2420;a</code></td>
+              <td><code>&#x2420;bright</code></td>
+              <td><code>&#x2420;cold</code></td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <p>At position 0 the model is asked to predict <code>t1</code> from <code>t0</code>. At position 1 it predicts <code>t2</code> after seeing <code>t0, t1</code>, and so on. The causal attention mask prevents each position from looking ahead at the target it is supposed to predict.</p>
-
-      <aside class="ptd-note">
-        <strong>Why is one extra token required?</strong> A sequence of 16 inputs needs a 17th token to provide the final target. That is why the range stops at <code>len(self.token_ids) - sequence_length</code> rather than at the end of the token stream.
-      </aside>
+      <p>At position 0 the model is asked to predict <code>&#x2420;was</code> from <code>It</code>. At position 1 it predicts <code>&#x2420;a</code> after seeing <code>It</code>, <code>&#x2420;was</code>, and so on. The causal attention mask prevents each position from looking ahead at the target it is supposed to predict.</p>
 
       <h2>Group sequences into batches</h2>
 
-      <p>The dataset returns one fixed-length input/target pair at a time. A PyTorch <code>DataLoader</code> groups several pairs so the model can process them together:</p>
+      <p>The dataset returns one input/target pair at a time. A PyTorch <code>DataLoader</code> groups several pairs so the model can process them together:</p>
 
       <pre class="ptd-code" id="create-data-loader-code"><code>def create_data_loader(text_path, sequence_length, batch_size):
     text = Path(text_path).read_text(encoding="utf-8")
     dataset = NextTokenDataset(text, sequence_length)
     return DataLoader(dataset, batch_size=batch_size, shuffle=True)</code></pre>
 
-      <div class="ptd-table-scroll">
-        <table class="ptd-table">
-          <caption>Shapes created by the dataset and data loader</caption>
-          <thead>
-            <tr>
-              <th scope="col">Value</th>
-              <th scope="col">Shape</th>
-              <th scope="col">Meaning</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>One input sequence</td>
-              <td><code>(tokens,)</code></td>
-              <td>One fixed-length window from the token stream</td>
-            </tr>
-            <tr>
-              <td>One target sequence</td>
-              <td><code>(tokens,)</code></td>
-              <td>The input window shifted by one token</td>
-            </tr>
-            <tr>
-              <td>One input batch</td>
-              <td><code>(batch, tokens)</code></td>
-              <td>Several input windows stacked together</td>
-            </tr>
-            <tr>
-              <td>One target batch</td>
-              <td><code>(batch, tokens)</code></td>
-              <td>The matching target for every input position</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <p><code>shuffle=True</code> changes the order of the fixed-length sequences on each pass through the dataset. It does not shuffle the tokens inside a sequence, because their order is exactly what the model needs to learn.</p>
-
-      <p>The teaching implementation deliberately uses non-overlapping windows and drops any final incomplete window. Production datasets often use more sophisticated packing and sampling, but the input/target shift is the same.</p>
+      <p><code>shuffle=True</code> here just randomises the order in which each input/target pair is added to a batch if we go through the text corpus multiple times. A production LLM may have a more sophisticated approach to sampling from the text corpus, but the basic idea is exactly the same.</p>
 
       <nav class="ptd-page-nav" aria-label="Pre-training page navigation">
         <a href="/#pre-training">← Pre-training overview</a>
