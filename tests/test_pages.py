@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from app import create_app
@@ -59,7 +61,10 @@ def test_index_table_of_contents_links_overviews_and_detail_pages(client):
     assert 'href="/open-weights"' in html
     assert 'href="#pre-training"' in html
     assert 'href="/pre-training"' in html
-    assert 'href="#fine-tuning"' in html
+    assert 'href="/pre-training/model-additions"' in html
+    assert 'href="/pre-training/weight-optimisation"' in html
+    assert 'href="/pre-training/full-loop"' in html
+    assert 'href="#post-training"' in html
     assert 'href="/fine-tuning"' in html
     assert 'href="#summary"' in html
 
@@ -224,13 +229,17 @@ def test_open_weights_page_matches_source_and_completes_placeholder(client):
     assert "Work in progress" not in html
 
 
-def test_index_contains_remaining_training_and_summary_placeholders(client):
+def test_index_contains_post_training_overview_and_summary_placeholder(client):
     html = client.get("/").get_data(as_text=True)
 
     assert '<h2 id="pre-training">Pre-training</h2>' in html
-    assert '<h2 id="fine-tuning">Fine-tuning</h2>' in html
+    assert '<h2 id="post-training">Post-training</h2>' in html
+    assert "the model has learned broad patterns in language" in html
+    assert "not yet the kind of chatbot people commonly associate with an LLM" in html
+    assert "preference optimisation using human or model feedback" in html
+    assert "Instruction fine-tuning: in depth →" in html
     assert '<h2 id="summary">Summary</h2>' in html
-    assert html.count("🚧") == 2
+    assert html.count("🚧") == 1
 
 
 def test_index_pre_training_section_matches_source_and_completes_placeholders(client):
@@ -260,29 +269,152 @@ def test_index_pre_training_section_matches_source_and_completes_placeholders(cl
     assert html.count('class="pt-probabilities"') == 2
     assert "The probability of “on” is 0.01" in html
     assert "The probability of “the” is 0.06" in html
-    assert 'href="/pre-training"' in html
+    deep_dive_links = (
+        ('/pre-training', "In depth: preparing the inputs"),
+        ('/pre-training/model-additions', "In depth: model additions"),
+        ('/pre-training/weight-optimisation', "In depth: weight optimisation"),
+        ('/pre-training/full-loop', "In depth: the full pre-training loop"),
+    )
+    for href, label in deep_dive_links:
+        assert f'href="{href}">{label}</a>' in html
 
 
-def test_pre_training_deep_dive_page_is_work_in_progress(client):
+def test_pre_training_inputs_page_matches_training_implementation(client):
     response = client.get("/pre-training")
     html = response.get_data(as_text=True)
 
     assert response.status_code == 200
-    assert "<h1>Pre-training</h1>" in html
-    assert "🚧" in html
-    assert "Work in progress" in html
+    assert "<h1>Pre-training: preparing the inputs</h1>" in html
+    assert 'id="next-token-dataset-code"' in html
+    assert "class NextTokenDataset(Dataset):" in html
+    assert "len(self.token_ids) - sequence_length" in html
+    assert "inputs = self.token_ids[start:stop]" in html
+    assert "targets = self.token_ids[start + 1 : stop + 1]" in html
+    assert 'id="create-data-loader-code"' in html
+    assert "DataLoader(dataset, batch_size=batch_size, shuffle=True)" in html
+    assert "It does not shuffle the tokens inside a sequence" in html
+    assert "Work in progress" not in html
+    assert 'href="/#pre-training"' in html
+    assert 'href="/pre-training/model-additions"' in html
+
+    source = Path("code/llm/pretrain.py").read_text(encoding="utf-8")
+    for code_line in (
+        "len(self.token_ids) - sequence_length",
+        "inputs = self.token_ids[start:stop]",
+        "targets = self.token_ids[start + 1 : stop + 1]",
+        "return DataLoader(dataset, batch_size=batch_size, shuffle=True)",
+    ):
+        assert code_line in source
+
+
+def test_pre_training_model_additions_are_limited_to_training_shape_changes(client):
+    response = client.get("/pre-training/model-additions")
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "<h1>Pre-training: model additions</h1>" in html
+    assert "Pre-training does not add another kind of neural-network layer" in html
+    assert "the learned matrices keep the same shapes" in html
+    assert "(batch, tokens, vocabulary)" in html
+    assert 'id="batched-embedding-code"' in html
+    assert "token_ids must have shape (batch_size, sequence_length)" in html
+    assert 'id="batched-attention-code"' in html
+    assert "batch_size, num_tokens, _ = x.shape" in html
+    assert ").transpose(1, 2)" in html
+    assert 'id="all-position-logits-code"' in html
+    assert "return self.vocabulary_projection(x)" in html
+    assert 'id="batched-generation-code"' in html
+    assert "next_token_logits = all_logits[0, -1]" in html
+    assert 'href="/pre-training/weight-optimisation"' in html
+
+    source_files = {
+        "embedding": Path("code/llm/token_embedding.py").read_text(encoding="utf-8"),
+        "attention": Path("code/llm/self_attention.py").read_text(encoding="utf-8"),
+        "model": Path("code/llm/language_model.py").read_text(encoding="utf-8"),
+        "generation": Path("code/llm/generate.py").read_text(encoding="utf-8"),
+    }
+    assert "token_ids must have shape (batch_size, sequence_length)" in source_files["embedding"]
+    assert "batch_size, num_tokens, _ = x.shape" in source_files["attention"]
+    assert ").transpose(1, 2)" in source_files["attention"]
+    assert "return self.vocabulary_projection(x)" in source_files["model"]
+    assert "next_token_logits = all_logits[0, -1]" in source_files["generation"]
+
+
+def test_pre_training_weight_optimisation_matches_training_step(client):
+    response = client.get("/pre-training/weight-optimisation")
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "<h1>Pre-training: weight optimisation</h1>" in html
+    assert 'id="cross-entropy-code"' in html
+    assert "logits.flatten(0, 1)" in html
+    assert "targets.flatten()" in html
+    assert "F.cross_entropy" in html
+    assert 'id="optimisation-step-code"' in html
+    assert "torch.optim.AdamW(model.parameters(), lr=learning_rate)" in html
+    assert "optimiser.zero_grad()" in html
+    assert "loss.backward()" in html
+    assert "optimiser.step()" in html
+    assert 'id="average-loss-code"' in html
+    assert "it is the loss on the training batches" in html
+    assert 'href="/pre-training/full-loop"' in html
+
+    source = Path("code/llm/pretrain.py").read_text(encoding="utf-8")
+    for code_line in (
+        "optimiser = torch.optim.AdamW(model.parameters(), lr=learning_rate)",
+        "logits.flatten(0, 1)",
+        "targets.flatten()",
+        "optimiser.zero_grad()",
+        "loss.backward()",
+        "optimiser.step()",
+    ):
+        assert code_line in source
+
+
+def test_pre_training_full_loop_matches_checkpoint_workflow(client):
+    response = client.get("/pre-training/full-loop")
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "<h1>Pre-training: the full pre-training loop</h1>" in html
+    assert 'id="pretrain-command-code"' in html
+    assert "python code/llm/pretrain.py" in html
+    assert 'id="model-and-data-code"' in html
+    assert '"model_dim": 32' in html
+    assert '"num_layers": 2' in html
+    assert "batches = create_data_loader(" in html
+    assert 'id="train-call-code"' in html
+    assert 'id="save-checkpoint-code"' in html
+    assert '"model_config": model_config' in html
+    assert '"model_state": model.state_dict()' in html
+    assert 'id="load-training-checkpoint-code"' in html
+    assert "model.load_state_dict(checkpoint[\"model_state\"], strict=True)" in html
+    assert 'id="generate-checkpoint-command-code"' in html
+    assert "--checkpoint weights/tiny-teaching-model.pth" in html
+    assert 'href="/pre-training/weight-optimisation"' in html
     assert 'href="/#pre-training"' in html
 
+    pretrain_source = Path("code/llm/pretrain.py").read_text(encoding="utf-8")
+    loading_source = Path("code/llm/weight_loading.py").read_text(encoding="utf-8")
+    readme_source = Path("code/llm/README.md").read_text(encoding="utf-8")
+    assert '"model_dim": 32' in pretrain_source
+    assert '"num_layers": 2' in pretrain_source
+    assert '"model_config": model_config' in pretrain_source
+    assert '"model_state": model.state_dict()' in pretrain_source
+    assert "def load_training_checkpoint" in loading_source
+    assert "python code/llm/pretrain.py" in readme_source
+    assert "--checkpoint weights/tiny-teaching-model.pth" in readme_source
 
-def test_fine_tuning_deep_dive_page_is_work_in_progress(client):
+
+def test_instruction_fine_tuning_deep_dive_page_is_work_in_progress(client):
     response = client.get("/fine-tuning")
     html = response.get_data(as_text=True)
 
     assert response.status_code == 200
-    assert "<h1>Fine-tuning</h1>" in html
+    assert "<h1>Instruction fine-tuning</h1>" in html
     assert "🚧" in html
     assert "Work in progress" in html
-    assert 'href="/#fine-tuning"' in html
+    assert 'href="/#post-training"' in html
 
 
 def test_tokenisation_page_contains_worked_example(client):

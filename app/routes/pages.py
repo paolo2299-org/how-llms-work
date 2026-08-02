@@ -50,17 +50,28 @@ def open_weights():
 
 @pages_bp.route("/pre-training")
 def pre_training():
-    return render_template(
-        "work-in-progress.html",
-        page_title="Pre-training",
-        section_id="pre-training",
-    )
+    return render_template("pre-training-inputs.html")
+
+
+@pages_bp.route("/pre-training/model-additions")
+def pre_training_model_additions():
+    return render_template("pre-training-model-additions.html")
+
+
+@pages_bp.route("/pre-training/weight-optimisation")
+def pre_training_weight_optimisation():
+    return render_template("pre-training-weight-optimisation.html")
+
+
+@pages_bp.route("/pre-training/full-loop")
+def pre_training_full_loop():
+    return render_template("pre-training-full-loop.html")
 
 
 @pages_bp.route("/fine-tuning")
 def fine_tuning():
     return render_template(
         "work-in-progress.html",
-        page_title="Fine-tuning",
-        section_id="fine-tuning",
+        page_title="Instruction fine-tuning",
+        section_id="post-training",
     )

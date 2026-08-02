@@ -535,6 +535,13 @@
         width: 42%;
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
+      .pt-deep-dives {
+        margin: 18px 0 0;
+        padding-left: 24px;
+      }
+      .pt-deep-dives li {
+        margin: 6px 0;
+      }
 
       @media (max-width: 480px) {
         .architecture-figure { padding: 10px 6px; }
@@ -610,13 +617,16 @@
         <li>
           <a href="#pre-training">Pre-training</a>
           <ul class="toc-detail">
-            <li><a href="/pre-training">Pre-training: in depth</a></li>
+            <li><a href="/pre-training">In depth: preparing the inputs</a></li>
+            <li><a href="/pre-training/model-additions">In depth: model additions</a></li>
+            <li><a href="/pre-training/weight-optimisation">In depth: weight optimisation</a></li>
+            <li><a href="/pre-training/full-loop">In depth: the full pre-training loop</a></li>
           </ul>
         </li>
         <li>
-          <a href="#fine-tuning">Fine-tuning</a>
+          <a href="#post-training">Post-training</a>
           <ul class="toc-detail">
-            <li><a href="/fine-tuning">Fine-tuning: in depth</a></li>
+            <li><a href="/fine-tuning">Instruction fine-tuning: in depth</a></li>
           </ul>
         </li>
         <li>
@@ -953,13 +963,22 @@
       <li>We repeat steps 3 to 5 over and over again, iterating over our dataset, until further training produces too little improvement to justify the additional computing cost.</li>
     </ol>
 
-    <p><a href="/pre-training">Pre-training: in depth →</a></p>
+    <ul class="pt-deep-dives">
+      <li><a href="/pre-training">In depth: preparing the inputs</a></li>
+      <li><a href="/pre-training/model-additions">In depth: model additions</a></li>
+      <li><a href="/pre-training/weight-optimisation">In depth: weight optimisation</a></li>
+      <li><a href="/pre-training/full-loop">In depth: the full pre-training loop</a></li>
+    </ul>
 
-    <h2 id="fine-tuning">Fine-tuning</h2>
+    <h2 id="post-training">Post-training</h2>
 
-    <p class="work-in-progress"><span aria-hidden="true">🚧</span> Work in progress</p>
+    <p>After pre-training, the model has learned broad patterns in language, along with a great deal of knowledge encoded in its weights. It can complete passages, generate fluent text, answer some questions, and perform other tasks when prompted in the right way.</p>
 
-    <p><a href="/fine-tuning">Fine-tuning: in depth →</a></p>
+    <p>However, it is still fundamentally trained to predict the next token. It has not been specifically trained to interpret a user’s message as an instruction, follow a conversation, or consistently provide answers that are helpful, safe and relevant. This makes the pre-trained model a powerful foundation, but not yet the kind of chatbot people commonly associate with an LLM.</p>
+
+    <p>Post-training builds on this foundation using techniques such as instruction fine-tuning on examples of prompts and good responses, preference optimisation using human or model feedback, and additional training focused on safety, reliability, tool use, or particular domains.</p>
+
+    <p><a href="/fine-tuning">Instruction fine-tuning: in depth →</a></p>
 
     <h2 id="summary">Summary</h2>
 

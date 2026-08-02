@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pre-training: weight optimisation — How LLMs Work</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='pre-training.css') }}">
+  </head>
+  <body>
+    <p class="ptd-top-link"><a href="/#pre-training">← Back to How LLMs Work</a></p>
+    <main>
+      <h1>Pre-training: weight optimisation</h1>
+
+      <nav class="ptd-series" aria-label="Pre-training deep dives">
+        <strong>Pre-training deep dives</strong>
+        <ol>
+          <li><a href="/pre-training">Preparing the inputs</a></li>
+          <li><a href="/pre-training/model-additions">Model additions</a></li>
+          <li aria-current="page">Weight optimisation</li>
+          <li><a href="/pre-training/full-loop">The full pre-training loop</a></li>
+        </ol>
+      </nav>
+
+      <p>For every input position, the model produces one logit for every token in its vocabulary. The matching target batch tells us which token should have received the strongest score at each position.</p>
+
+      <p>Training turns that comparison into a single loss value, calculates how changing every weight would affect the loss, and then lets an optimiser update the weights.</p>
+
+      <ol class="ptd-flow" aria-label="One optimisation step">
+        <li><strong>Clear</strong><span>Remove gradients left by the previous batch</span></li>
+        <li><strong>Predict</strong><span>Run the input batch through the model</span></li>
+        <li><strong>Measure</strong><span>Compare every position with its target</span></li>
+        <li><strong>Backpropagate</strong><span>Calculate a gradient for every weight</span></li>
+        <li><strong>Update</strong><span>Let AdamW adjust the weights</span></li>
+      </ol>
+
+      <h2>Turn all predictions into one loss</h2>
+
+      <p>The model’s logits have three axes: <code>(batch, tokens, vocabulary)</code>. PyTorch cross-entropy expects a two-dimensional collection of predictions and one target ID for each prediction, so the training code combines the batch and token axes:</p>
+
+      <pre class="ptd-code" id="cross-entropy-code"><code>logits = model(inputs)
+loss = F.cross_entropy(
+    logits.flatten(0, 1),
+    targets.flatten(),
+)</code></pre>
+
+      <div class="ptd-table-scroll">
+        <table class="ptd-table">
+          <caption>Shapes passed to cross-entropy</caption>
+          <thead>
+            <tr>
+              <th scope="col">Value</th>
+              <th scope="col">Before flattening</th>
+              <th scope="col">After flattening</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Logits</td>
+              <td><code>(batch, tokens, vocabulary)</code></td>
+              <td><code>(batch × tokens, vocabulary)</code></td>
+            </tr>
+            <tr>
+              <td>Target token IDs</td>
+              <td><code>(batch, tokens)</code></td>
+              <td><code>(batch × tokens)</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Each flattened row of logits is still paired with exactly the same target token as before. Flattening changes only the layout expected by the loss function; it does not mix predictions and targets.</p>
+
+      <aside class="ptd-key-point">
+        <strong>Why no softmax?</strong> <code>F.cross_entropy</code> accepts raw logits and performs the required log-softmax calculation internally. Applying softmax first would be redundant and less numerically stable.
+      </aside>
+
+      <p>Cross-entropy gives a larger loss when the correct token receives a low score and a smaller loss when it receives a high score. By default, PyTorch averages the loss across all <code>batch × tokens</code> predictions.</p>
+
+      <h2>Backpropagation and AdamW do different jobs</h2>
+
+      <p>Backpropagation does not update a weight or assign it a share of blame. It calculates the gradient of the loss with respect to that weight: how a small change to the weight would change the loss at the model’s current state.</p>
+
+      <p>The optimiser then uses those gradients to choose and apply the updates. Our implementation uses AdamW:</p>
+
+      <pre class="ptd-code" id="optimisation-step-code"><code>model.to(device)
+model.train()
+optimiser = torch.optim.AdamW(model.parameters(), lr=learning_rate)
+
+for epoch in range(epochs):
+    total_loss = 0.0
+
+    for inputs, targets in batches:
+        inputs = inputs.to(device)
+        targets = targets.to(device)
+
+        optimiser.zero_grad()
+        logits = model(inputs)
+        loss = F.cross_entropy(
+            logits.flatten(0, 1),
+            targets.flatten(),
+        )
+        loss.backward()
+        optimiser.step()
+
+        total_loss += loss.item()</code></pre>
+
+      <p>Each line has a distinct role:</p>
+
+      <ul>
+        <li><code>optimiser.zero_grad()</code> clears old gradients, because PyTorch accumulates gradients unless asked to reset them.</li>
+        <li><code>model(inputs)</code> performs the forward pass and records the operations needed for differentiation.</li>
+        <li><code>loss.backward()</code> runs backpropagation and stores a gradient on every parameter that contributed to the loss.</li>
+        <li><code>optimiser.step()</code> uses those gradients, AdamW’s running statistics, the learning rate, and weight decay to update the parameters.</li>
+      </ul>
+
+      <p>The learning rate controls the overall scale of the updates. AdamW adapts individual updates using recent gradient behaviour, while its decoupled weight decay gently discourages weights from growing without bound.</p>
+
+      <h2>Monitor the training loss</h2>
+
+      <p>After each pass through the dataset, the teaching script prints the average loss across its batches:</p>
+
+      <pre class="ptd-code" id="average-loss-code"><code>average_loss = total_loss / len(batches)
+print(f"Epoch {epoch + 1}: loss = {average_loss:.4f}")</code></pre>
+
+      <p>This number is useful for confirming that optimisation is working, but it is the loss on the training batches. A larger training system would normally also evaluate held-out validation data and use additional monitoring and checkpointing.</p>
+
+      <aside class="ptd-note">
+        The included script is intentionally direct: one optimiser, one loss, and a fixed number of epochs. Techniques such as learning-rate schedules, gradient clipping, mixed precision, and distributed training are useful at larger scales, but they do not change the core sequence shown here.
+      </aside>
+
+      <nav class="ptd-page-nav" aria-label="Pre-training page navigation">
+        <a href="/pre-training/model-additions">← Previous: model additions</a>
+        <a href="/pre-training/full-loop">Next: the full pre-training loop →</a>
+      </nav>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pre-training: preparing the inputs — How LLMs Work</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='pre-training.css') }}">
+  </head>
+  <body>
+    <p class="ptd-top-link"><a href="/#pre-training">← Back to How LLMs Work</a></p>
+    <main>
+      <h1>Pre-training: preparing the inputs</h1>
+
+      <nav class="ptd-series" aria-label="Pre-training deep dives">
+        <strong>Pre-training deep dives</strong>
+        <ol>
+          <li aria-current="page">Preparing the inputs</li>
+          <li><a href="/pre-training/model-additions">Model additions</a></li>
+          <li><a href="/pre-training/weight-optimisation">Weight optimisation</a></li>
+          <li><a href="/pre-training/full-loop">The full pre-training loop</a></li>
+        </ol>
+      </nav>
+
+      <p>Pre-training starts with a large body of text, but this model does not accept raw text. We first turn the entire text into one stream of token IDs using the same tokenizer that will later process prompts.</p>
+
+      <p>The important preparation step is then to make many examples in which one sequence of tokens is the input and the same sequence, shifted one position to the left, is the target. Each target token is therefore the correct next token for the corresponding input position.</p>
+
+      <h2>Build shifted input and target sequences</h2>
+
+      <p>Our training implementation puts this logic in <code>NextTokenDataset</code>:</p>
+
+      <pre class="ptd-code" id="next-token-dataset-code"><code>class NextTokenDataset(Dataset):
+    """Split text into fixed-length input and target sequences."""
+
+    def __init__(self, text, sequence_length):
+        self.token_ids = torch.tensor(tokenise(text), dtype=torch.long)
+        self.sequence_length = sequence_length
+
+        # Each target is the corresponding input shifted one token to the left.
+        # Non-overlapping starts keep this example small and easy to inspect.
+        self.start_positions = list(
+            range(
+                0,
+                len(self.token_ids) - sequence_length,
+                sequence_length,
+            )
+        )
+
+        if not self.start_positions:
+            raise ValueError(
+                "the input text must contain more tokens than sequence_length"
+            )
+
+    def __len__(self):
+        return len(self.start_positions)
+
+    def __getitem__(self, index):
+        start = self.start_positions[index]
+        stop = start + self.sequence_length
+        inputs = self.token_ids[start:stop]
+        targets = self.token_ids[start + 1 : stop + 1]
+        return inputs, targets</code></pre>
+
+      <p>If a sequence has four input tokens, the dataset needs five consecutive tokens from the full stream. The first four become the input and the last four become the target:</p>
+
+      <div class="ptd-table-scroll">
+        <table class="ptd-table">
+          <caption>One shifted training sequence</caption>
+          <thead>
+            <tr>
+              <th scope="col">Position</th>
+              <th scope="col">0</th>
+              <th scope="col">1</th>
+              <th scope="col">2</th>
+              <th scope="col">3</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Input</th>
+              <td><code>t0</code></td>
+              <td><code>t1</code></td>
+              <td><code>t2</code></td>
+              <td><code>t3</code></td>
+            </tr>
+            <tr>
+              <th scope="row">Target</th>
+              <td><code>t1</code></td>
+              <td><code>t2</code></td>
+              <td><code>t3</code></td>
+              <td><code>t4</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>At position 0 the model is asked to predict <code>t1</code> from <code>t0</code>. At position 1 it predicts <code>t2</code> after seeing <code>t0, t1</code>, and so on. The causal attention mask prevents each position from looking ahead at the target it is supposed to predict.</p>
+
+      <aside class="ptd-note">
+        <strong>Why is one extra token required?</strong> A sequence of 16 inputs needs a 17th token to provide the final target. That is why the range stops at <code>len(self.token_ids) - sequence_length</code> rather than at the end of the token stream.
+      </aside>
+
+      <h2>Group sequences into batches</h2>
+
+      <p>The dataset returns one fixed-length input/target pair at a time. A PyTorch <code>DataLoader</code> groups several pairs so the model can process them together:</p>
+
+      <pre class="ptd-code" id="create-data-loader-code"><code>def create_data_loader(text_path, sequence_length, batch_size):
+    text = Path(text_path).read_text(encoding="utf-8")
+    dataset = NextTokenDataset(text, sequence_length)
+    return DataLoader(dataset, batch_size=batch_size, shuffle=True)</code></pre>
+
+      <div class="ptd-table-scroll">
+        <table class="ptd-table">
+          <caption>Shapes created by the dataset and data loader</caption>
+          <thead>
+            <tr>
+              <th scope="col">Value</th>
+              <th scope="col">Shape</th>
+              <th scope="col">Meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>One input sequence</td>
+              <td><code>(tokens,)</code></td>
+              <td>One fixed-length window from the token stream</td>
+            </tr>
+            <tr>
+              <td>One target sequence</td>
+              <td><code>(tokens,)</code></td>
+              <td>The input window shifted by one token</td>
+            </tr>
+            <tr>
+              <td>One input batch</td>
+              <td><code>(batch, tokens)</code></td>
+              <td>Several input windows stacked together</td>
+            </tr>
+            <tr>
+              <td>One target batch</td>
+              <td><code>(batch, tokens)</code></td>
+              <td>The matching target for every input position</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p><code>shuffle=True</code> changes the order of the fixed-length sequences on each pass through the dataset. It does not shuffle the tokens inside a sequence, because their order is exactly what the model needs to learn.</p>
+
+      <p>The teaching implementation deliberately uses non-overlapping windows and drops any final incomplete window. Production datasets often use more sophisticated packing and sampling, but the input/target shift is the same.</p>
+
+      <nav class="ptd-page-nav" aria-label="Pre-training page navigation">
+        <a href="/#pre-training">← Pre-training overview</a>
+        <a href="/pre-training/model-additions">Next: model additions →</a>
+      </nav>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pre-training: model additions — How LLMs Work</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='pre-training.css') }}">
+  </head>
+  <body>
+    <p class="ptd-top-link"><a href="/#pre-training">← Back to How LLMs Work</a></p>
+    <main>
+      <h1>Pre-training: model additions</h1>
+
+      <nav class="ptd-series" aria-label="Pre-training deep dives">
+        <strong>Pre-training deep dives</strong>
+        <ol>
+          <li><a href="/pre-training">Preparing the inputs</a></li>
+          <li aria-current="page">Model additions</li>
+          <li><a href="/pre-training/weight-optimisation">Weight optimisation</a></li>
+          <li><a href="/pre-training/full-loop">The full pre-training loop</a></li>
+        </ol>
+      </nav>
+
+      <p>The inference-only model already contains every learned component we need: token and position embeddings, transformer blocks, a final LayerNorm, and the vocabulary projection. Pre-training does not add another kind of neural-network layer.</p>
+
+      <p>What changes is how data moves through those components. Training processes several sequences at once and needs a next-token prediction at every position, rather than only the final prediction for one prompt.</p>
+
+      <div class="ptd-table-scroll">
+        <table class="ptd-table">
+          <caption>The shape changes introduced by the trainable model</caption>
+          <thead>
+            <tr>
+              <th scope="col">Value</th>
+              <th scope="col">Inference-only model</th>
+              <th scope="col">Trainable model</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Token IDs</td>
+              <td><code>(tokens,)</code></td>
+              <td><code>(batch, tokens)</code></td>
+            </tr>
+            <tr>
+              <td>Token vectors</td>
+              <td><code>(tokens, model_dim)</code></td>
+              <td><code>(batch, tokens, model_dim)</code></td>
+            </tr>
+            <tr>
+              <td>One attention calculation</td>
+              <td><code>(heads, tokens, head_dim)</code></td>
+              <td><code>(batch, heads, tokens, head_dim)</code></td>
+            </tr>
+            <tr>
+              <td>Vocabulary logits</td>
+              <td><code>(vocabulary,)</code></td>
+              <td><code>(batch, tokens, vocabulary)</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <aside class="ptd-key-point">
+        <strong>The key idea:</strong> the learned matrices keep the same shapes. The new batch axis groups independent sequences, while the token axis is retained so every position can contribute to the training loss.
+      </aside>
+
+      <h2>1. Embeddings accept a batch</h2>
+
+      <p>The inference-only embedding receives one sequence. The trainable version requires a two-dimensional tensor and reads the sequence length from its second axis:</p>
+
+      <pre class="ptd-code" id="batched-embedding-code"><code>def forward(self, token_ids):
+    if token_ids.ndim != 2:
+        raise ValueError(
+            "token_ids must have shape (batch_size, sequence_length)"
+        )
+
+    sequence_length = token_ids.size(1)
+    if sequence_length &gt; self.max_sequence_length:
+        raise ValueError(
+            f"input has {sequence_length} tokens, but the maximum is "
+            f"{self.max_sequence_length}"
+        )
+
+    positions = torch.arange(
+        sequence_length,
+        device=token_ids.device,
+    )
+    token_vectors = self.token_embedding(token_ids)
+    position_vectors = self.position_embedding(positions)
+
+    # PyTorch broadcasts the position vectors across every sequence in the
+    # batch. Each sequence therefore uses positions 0, 1, 2, and so on.
+    return token_vectors + position_vectors</code></pre>
+
+      <p><code>token_vectors</code> has shape <code>(batch, tokens, model_dim)</code>. The position lookup has shape <code>(tokens, model_dim)</code>; PyTorch broadcasts those same positions across every sequence in the batch.</p>
+
+      <h2>2. Attention preserves the batch axis</h2>
+
+      <p>The attention calculation itself is unchanged. The only new concept is choosing the correct axes when splitting token vectors into heads and joining them again:</p>
+
+      <pre class="ptd-code" id="batched-attention-code"><code>batch_size, num_tokens, _ = x.shape
+
+queries = self.W_query(x)
+keys = self.W_key(x)
+values = self.W_value(x)
+
+queries = queries.view(
+    batch_size,
+    num_tokens,
+    self.num_heads,
+    self.head_dim,
+).transpose(1, 2)
+keys = keys.view(
+    batch_size,
+    num_tokens,
+    self.num_heads,
+    self.head_dim,
+).transpose(1, 2)
+values = values.view(
+    batch_size,
+    num_tokens,
+    self.num_heads,
+    self.head_dim,
+).transpose(1, 2)
+
+attention_scores = queries @ keys.transpose(-2, -1)
+
+mask = torch.triu(
+    torch.ones(
+        num_tokens,
+        num_tokens,
+        dtype=torch.bool,
+        device=x.device,
+    ),
+    diagonal=1,
+)
+attention_scores = attention_scores.masked_fill(mask, float("-inf"))
+
+attention_weights = torch.softmax(
+    attention_scores / self.head_dim**0.5,
+    dim=-1,
+)
+
+context = attention_weights @ values
+context = context.transpose(1, 2).reshape(
+    batch_size,
+    num_tokens,
+    self.num_heads * self.head_dim,
+)
+
+return self.out_proj(context)</code></pre>
+
+      <p>After <code>transpose(1, 2)</code>, each sequence and each attention head has its own token-by-token attention calculation. The batch items never attend to one another; they are simply processed in parallel.</p>
+
+      <p>The causal mask still has shape <code>(tokens, tokens)</code>. PyTorch broadcasts it across every batch item and attention head, so the same look-ahead rule applies throughout the batch.</p>
+
+      <h2>3. Return logits for every position</h2>
+
+      <p>The inference-only model selects the final token vector before applying the vocabulary projection. Training instead projects the complete sequence:</p>
+
+      <pre class="ptd-code" id="all-position-logits-code"><code>def forward(self, token_ids):
+    if token_ids.ndim != 2:
+        raise ValueError(
+            "token_ids must have shape (batch_size, sequence_length)"
+        )
+    if token_ids.size(1) == 0:
+        raise ValueError("each sequence must contain at least one token")
+
+    x = self.embedding(token_ids)
+
+    for block in self.transformer_blocks:
+        x = block(x)
+
+    x = self.final_norm(x)
+
+    # Training needs a next-token prediction at every input position.
+    return self.vocabulary_projection(x)</code></pre>
+
+      <p>The result has shape <code>(batch, tokens, vocabulary)</code>. At each batch item and token position, there is one logit for every possible next token.</p>
+
+      <p>Generation still needs only the last position of one prompt, so the inference code selects it after running the model:</p>
+
+      <pre class="ptd-code" id="batched-generation-code"><code>with torch.inference_mode():
+    all_logits = model(token_ids)
+    next_token_logits = all_logits[0, -1]</code></pre>
+
+      <p><code>0</code> selects the single prompt in the batch, and <code>-1</code> selects its final position. This lets one model implementation support both batched training and ordinary next-token generation.</p>
+
+      <nav class="ptd-page-nav" aria-label="Pre-training page navigation">
+        <a href="/pre-training">← Previous: preparing the inputs</a>
+        <a href="/pre-training/weight-optimisation">Next: weight optimisation →</a>
+      </nav>
+    </main>
+  </body>
+</html>
