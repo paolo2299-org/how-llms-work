@@ -3,14 +3,14 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Pre-training: the full loop — How LLMs Work</title>
+    <title>Pre-training: the full training loop — How LLMs Work</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='pre-training.css') }}">
   </head>
   <body>
     <p class="ptd-top-link"><a href="/#pre-training">← Back to How LLMs Work</a></p>
     <main>
-      <h1>Pre-training: the full pre-training loop</h1>
+      <h1>Pre-training: the full training loop</h1>
 
       <nav class="ptd-series" aria-label="Pre-training deep dives">
         <strong>Pre-training deep dives</strong>
@@ -22,19 +22,7 @@
         </ol>
       </nav>
 
-      <p>We now have all the pieces needed to pre-train the teaching model. The complete program reads and tokenises text, constructs shifted batches, initialises a model, repeatedly optimises its weights, and saves a checkpoint that can be loaded later.</p>
-
-      <ol class="ptd-flow" aria-label="Complete pre-training pipeline">
-        <li><strong>Text</strong><span>Read a plain-text training corpus</span></li>
-        <li><strong>Batches</strong><span>Create shifted input and target sequences</span></li>
-        <li><strong>Model</strong><span>Initialise the language model with random weights</span></li>
-        <li><strong>Train</strong><span>Repeat forward, loss, backward, and update steps</span></li>
-        <li><strong>Checkpoint</strong><span>Save the configuration and learned weights</span></li>
-      </ol>
-
-      <h2>Choose the run configuration</h2>
-
-      <p>The script exposes the training text, output path, number of epochs, batch size, sequence length, learning rate, and device as command-line arguments. Its defaults deliberately create a very small model that can demonstrate the process on a CPU.</p>
+      <p>We now have all the pieces needed to pre-train our model. The <a href="https://github.com/paolo2299-org/how-llms-work/tree/main/code/llm">complete program</a> reads and tokenises text, constructs shifted batches, initialises a model, repeatedly optimises its weights, and saves a checkpoint that can be loaded later.</p>
 
       <p>For example, this command runs two passes through the sample text, using batches of four 16-token sequences:</p>
 
@@ -64,15 +52,13 @@ batches = create_data_loader(
     args.batch_size,
 )</code></pre>
 
-      <p><code>torch.manual_seed(1)</code> makes the random initial weights and shuffled batches reproducible for this teaching example. The model dimensions are tiny compared with a practical LLM, but the structure of the training loop is the same.</p>
+      <p><code>torch.manual_seed(1)</code> makes the random initial weights and shuffled batches reproducible.</p>
 
-      <aside class="ptd-note">
-        <strong>This produces a demonstration, not a useful LLM.</strong> The included <code>sample.txt</code> corpus and small model are intentionally chosen so the program is easy to run and inspect. Useful language models require vastly more data, parameters, and computation.
-      </aside>
+      <p>The model dimensions and training text are tiny compared with a practical LLM, but the structure of the training loop is the same.</p>
 
       <h2>Run the training loop</h2>
 
-      <p>The orchestration code passes the model, batches, and training settings into the <code>train</code> function:</p>
+      <p>We then pass the model, batches, and training settings into the train function:</p>
 
       <pre class="ptd-code" id="train-call-code"><code>print(
     f"Training on {len(batches.dataset)} sequences "
@@ -86,13 +72,13 @@ train(
     args.device,
 )</code></pre>
 
-      <p>Inside <code>train</code>, each epoch visits every batch once. Every batch produces one optimiser update. The next epoch asks the now-updated model to make predictions over the dataset again, so its loss can continue to fall.</p>
+      <p>Inside <code>train</code>, each epoch visits every batch once. Every batch produces one optimiser update. The next epoch asks the now-updated model to make predictions over the dataset again, so that the loss can continue to fall.</p>
 
-      <p>The script uses a fixed epoch count because it is a compact demonstration. Larger runs commonly add validation, learning-rate schedules, periodic checkpoints, and explicit stopping criteria.</p>
+      <p>The script uses a fixed epoch count because it is a demonstration for learning purposes. Larger runs commonly add validation, learning-rate schedules, periodic checkpoints, and more sophisticated stopping criteria.</p>
 
       <h2>Save a reusable checkpoint</h2>
 
-      <p>Training changes the tensors returned by <code>model.state_dict()</code>. To reconstruct the model later, the checkpoint also stores the dimensions used to create it:</p>
+      <p>In order to reconstruct the model later, we save checkpoint files containing <code>model.state_dict()</code>, which holds all of the model’s weights at that point in time. We also store the dimensions used to create the model:</p>
 
       <pre class="ptd-code" id="save-checkpoint-code"><code>args.output.parent.mkdir(parents=True, exist_ok=True)
 torch.save(
@@ -104,55 +90,30 @@ torch.save(
 )
 print(f"Saved checkpoint to {args.output}")</code></pre>
 
-      <div class="ptd-table-scroll">
-        <table class="ptd-table">
-          <caption>What the training checkpoint contains</caption>
-          <thead>
-            <tr>
-              <th scope="col">Checkpoint entry</th>
-              <th scope="col">Purpose</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><code>model_config</code></td>
-              <td>Recreates a model with the same vocabulary, sequence length, and layer dimensions</td>
-            </tr>
-            <tr>
-              <td><code>model_state</code></td>
-              <td>Restores every learned parameter tensor after training</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <p>The matching loader constructs the model first, copies in the saved state, switches to evaluation mode, and moves it to the requested device:</p>
-
-      <pre class="ptd-code" id="load-training-checkpoint-code"><code>def load_training_checkpoint(checkpoint_path, device="cpu"):
-    """Load a checkpoint written by pretrain.py."""
-    checkpoint = torch.load(
-        Path(checkpoint_path).expanduser(),
-        map_location="cpu",
-        weights_only=True,
-    )
-    model = LanguageModel(**checkpoint["model_config"])
-    model.load_state_dict(checkpoint["model_state"], strict=True)
-    model.eval()
-    return model.to(device)</code></pre>
-
       <h2>Generate with the trained model</h2>
 
-      <p>The generated checkpoint can be selected instead of the external GPT-2 weights:</p>
+      <p>By default the <code>generate.py</code> script loads our GPT-2 open weight file:</p>
+
+      <pre class="ptd-code" id="generate-default-command-code"><code># implicitly loads weights/gpt2-small.pth
+python code/llm/generate.py \
+    "The cat sat on the"</code></pre>
+
+      <p>We can instead specify a checkpoint file that our training produced:</p>
 
       <pre class="ptd-code" id="generate-checkpoint-command-code"><code>python code/llm/generate.py \
     --checkpoint weights/tiny-teaching-model.pth \
-    "The lantern"</code></pre>
+    "The cat sat on the"</code></pre>
 
-      <p>Generation wraps the prompt in a batch of one, runs the same trainable model, and selects the logits at its final position. The model is therefore trained and used for inference without maintaining two separate architectures.</p>
+      <p>The way this works is that our code models our prompt as a “batch” of size one which it inputs into the model:</p>
 
-      <aside class="ptd-key-point">
-        The output from this tiny checkpoint will usually be poor. That is expected: the purpose of the implementation is to make every stage of pre-training visible, not to conceal it behind the scale and infrastructure required for a practical model.
-      </aside>
+      <pre class="ptd-code" id="single-prompt-batch-code"><code>prompt_token_ids = tokenise(prompt)
+token_ids = torch.tensor(
+    [prompt_token_ids],
+    dtype=torch.long,
+    device=device,
+)</code></pre>
+
+      <p>Don’t expect this to produce anything sensible! We’re using a tiny input file and a tiny model. We could in principle increase the model size and amount of training text dramatically and get a more impressive result, but we would need access to powerful hardware.</p>
 
       <nav class="ptd-page-nav" aria-label="Pre-training page navigation">
         <a href="/pre-training/weight-optimisation">← Previous: weight optimisation</a>

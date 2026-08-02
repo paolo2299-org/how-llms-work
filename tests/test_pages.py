@@ -397,7 +397,16 @@ def test_pre_training_full_loop_matches_checkpoint_workflow(client):
     html = response.get_data(as_text=True)
 
     assert response.status_code == 200
-    assert "<h1>Pre-training: the full pre-training loop</h1>" in html
+    assert "<h1>Pre-training: the full training loop</h1>" in html
+    assert (
+        "We now have all the pieces needed to pre-train our model. The "
+        in html
+    )
+    assert (
+        'href="https://github.com/paolo2299-org/how-llms-work/tree/main/code/llm"'
+        in html
+    )
+    assert "constructs shifted batches, initialises a model" in html
     assert 'id="pretrain-command-code"' in html
     assert "python code/llm/pretrain.py" in html
     assert 'id="model-and-data-code"' in html
@@ -408,23 +417,27 @@ def test_pre_training_full_loop_matches_checkpoint_workflow(client):
     assert 'id="save-checkpoint-code"' in html
     assert '"model_config": model_config' in html
     assert '"model_state": model.state_dict()' in html
-    assert 'id="load-training-checkpoint-code"' in html
-    assert "model.load_state_dict(checkpoint[\"model_state\"], strict=True)" in html
+    assert "In order to reconstruct the model later" in html
+    assert 'id="generate-default-command-code"' in html
+    assert "# implicitly loads weights/gpt2-small.pth" in html
     assert 'id="generate-checkpoint-command-code"' in html
     assert "--checkpoint weights/tiny-teaching-model.pth" in html
+    assert 'id="single-prompt-batch-code"' in html
+    assert "prompt_token_ids = tokenise(prompt)" in html
+    assert "[prompt_token_ids]" in html
+    assert "amount of training text dramatically" in html
+    assert 'id="load-training-checkpoint-code"' not in html
     assert 'href="/pre-training/weight-optimisation"' in html
     assert 'href="/#pre-training"' in html
 
     pretrain_source = Path("code/llm/pretrain.py").read_text(encoding="utf-8")
-    loading_source = Path("code/llm/weight_loading.py").read_text(encoding="utf-8")
-    readme_source = Path("code/llm/README.md").read_text(encoding="utf-8")
+    generation_source = Path("code/llm/generate.py").read_text(encoding="utf-8")
     assert '"model_dim": 32' in pretrain_source
     assert '"num_layers": 2' in pretrain_source
     assert '"model_config": model_config' in pretrain_source
     assert '"model_state": model.state_dict()' in pretrain_source
-    assert "def load_training_checkpoint" in loading_source
-    assert "python code/llm/pretrain.py" in readme_source
-    assert "--checkpoint weights/tiny-teaching-model.pth" in readme_source
+    assert "prompt_token_ids = tokenise(prompt)" in generation_source
+    assert "[prompt_token_ids]" in generation_source
 
 
 def test_instruction_fine_tuning_deep_dive_page_is_work_in_progress(client):
