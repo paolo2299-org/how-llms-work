@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Instruction fine-tuning — How LLMs Work</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='fine-tuning.css') }}">
+  </head>
+  <body>
+    <p class="ift-top-link"><a href="/#post-training">← Back to How LLMs Work</a></p>
+    <main>
+      <h1>Instruction fine-tuning</h1>
+
+      <p>At the end of <a href="/pre-training/full-loop">pre-training</a>, a language model is good at continuing text. It has learned from a huge variety of writing, but it has not necessarily learned that a user’s request should be followed or that an answer should be clear and useful.</p>
+
+      <p><em>Instruction fine-tuning</em> gives the pre-trained model further training on examples of instructions paired with good responses. The aim is to turn the model’s broad ability to predict text into more reliable behaviour: interpret the request, follow its constraints, and respond in an appropriate form.</p>
+
+      <aside class="ift-key-point">
+        Fine-tuning starts with the weights learned during pre-training. It adjusts those weights; it does not build a new model from scratch.
+      </aside>
+
+      <h2>Build a dataset of demonstrations</h2>
+
+      <p>The training data contains many demonstrations of the behaviour we want. Some can be written by people, some can be adapted from existing data, and some can be produced by another model and then checked or filtered.</p>
+
+      <div class="ift-examples" aria-label="Example instruction fine-tuning demonstrations">
+        <article class="ift-example">
+          <h3>Answer a question</h3>
+          <dl>
+            <dt>User</dt>
+            <dd>Why does the Moon appear to change shape?</dd>
+            <dt>Good response</dt>
+            <dd>The Moon does not change shape. As it orbits Earth, we see different amounts of its sunlit half, creating the phases of the Moon.</dd>
+          </dl>
+        </article>
+
+        <article class="ift-example">
+          <h3>Transform some text</h3>
+          <dl>
+            <dt>User</dt>
+            <dd>Rewrite this politely: “Send me the figures today.”</dd>
+            <dt>Good response</dt>
+            <dd>Could you please send me the figures today?</dd>
+          </dl>
+        </article>
+
+        <article class="ift-example">
+          <h3>Follow a format</h3>
+          <dl>
+            <dt>User</dt>
+            <dd>Give me three names for a bakery. Use a bulleted list.</dd>
+            <dt>Good response</dt>
+            <dd>
+              <ul>
+                <li>Golden Crumb</li>
+                <li>Morning Loaf</li>
+                <li>Flour &amp; Hearth</li>
+              </ul>
+            </dd>
+          </dl>
+        </article>
+      </div>
+
+      <p>A useful dataset varies the wording, subject, difficulty, and desired response style. It may also contain multi-turn conversations, where each response needs to take account of earlier messages. Across many examples, the model can learn that the instruction itself—not a particular stock phrase—determines what kind of answer should follow.</p>
+
+      <h2>Train on the desired responses</h2>
+
+      <p>The learning mechanism is closely related to pre-training. The model reads the instruction and the response so far, predicts the next token of the good response, and is penalised when it gives the correct token a low probability. Backpropagation then makes small adjustments to the model’s weights.</p>
+
+      <ol class="ift-flow" aria-label="Instruction fine-tuning loop">
+        <li><strong>Demonstration</strong><span>Choose an instruction and its good response</span></li>
+        <li><strong>Prediction</strong><span>Ask the model to predict each response token</span></li>
+        <li><strong>Loss</strong><span>Measure how far its predictions are from the response</span></li>
+        <li><strong>Update</strong><span>Adjust the weights, then repeat across the dataset</span></li>
+      </ol>
+
+      <p>Usually, the instruction is supplied as context but the training loss is focused on the response. We want the model to learn what to say <em>after</em> an instruction, rather than to learn to reproduce the user’s words.</p>
+
+      <h2>A worked training example</h2>
+
+      <p>Suppose one demonstration asks the model to rewrite a sentence politely:</p>
+
+      <div class="ift-worked-example">
+        <p><strong>Instruction</strong><br>Rewrite this politely: “Send me the figures today.”</p>
+        <p><strong>Desired response</strong><br>Could you please send me the figures today?</p>
+      </div>
+
+      <p>The response is broken into tokens. During training, the model is repeatedly shown the instruction and the correct response up to a particular point:</p>
+
+      <div class="ift-table-scroll">
+        <table class="ift-table">
+          <caption>A simplified view of three next-token predictions</caption>
+          <thead>
+            <tr>
+              <th scope="col">What the model has seen</th>
+              <th scope="col">Token it should predict</th>
+              <th scope="col">What is learned</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>The instruction</td>
+              <td>Could</td>
+              <td>A polite rewrite can begin with a courteous request</td>
+            </tr>
+            <tr>
+              <td>The instruction + “Could”</td>
+              <td>you</td>
+              <td>The response should continue as a natural sentence</td>
+            </tr>
+            <tr>
+              <td>The instruction + “Could you please send me the figures”</td>
+              <td>today</td>
+              <td>The important content of the original should be preserved</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>The weight update is based on all of these predictions together. One example makes only a tiny difference. Repeating the process across many varied demonstrations gradually makes responses that follow instructions more likely.</p>
+
+      <h2>What the model learns</h2>
+
+      <p>The demonstrations do not provide an explicit rulebook. Instead, they shape the probabilities of possible responses. For example, training across the demonstrations above can make the model more likely to:</p>
+
+      <ul>
+        <li>answer the question instead of merely continuing or restating it</li>
+        <li>preserve relevant details while transforming text</li>
+        <li>follow constraints such as tone, length, or output format</li>
+        <li>use the roles in a conversation to distinguish user requests from assistant replies</li>
+      </ul>
+
+      <aside class="ift-note">
+        <strong>Instruction fine-tuning does not guarantee a correct answer.</strong> The model can still misunderstand a request, invent information, or fail on unfamiliar tasks. It teaches a pattern of responding; other post-training stages can further optimise helpfulness, safety, and reliability using human or model feedback.
+      </aside>
+
+      <p class="ift-top-link ift-bottom-link"><a href="/#post-training">← Back to the Post-training overview</a></p>
+    </main>
+  </body>
+</html>
