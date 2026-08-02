@@ -229,7 +229,7 @@ def test_open_weights_page_matches_source_and_completes_placeholder(client):
     assert "Work in progress" not in html
 
 
-def test_index_contains_post_training_overview_and_summary_placeholder(client):
+def test_index_contains_post_training_overview_and_completed_summary(client):
     html = client.get("/").get_data(as_text=True)
 
     assert '<h2 id="pre-training">Pre-training</h2>' in html
@@ -239,7 +239,18 @@ def test_index_contains_post_training_overview_and_summary_placeholder(client):
     assert "preference optimisation using human or model feedback" in html
     assert "Instruction fine-tuning: in depth →" in html
     assert '<h2 id="summary">Summary</h2>' in html
-    assert html.count("🚧") == 1
+    assert "We’ve now learned all of the core concepts of an LLM" in html
+    assert (
+        'href="https://github.com/paolo2299-org/how-llms-work/tree/main/code/'
+        'llm_inference_only">A slightly simplified LLM</a>' in html
+    )
+    assert (
+        'href="https://github.com/paolo2299-org/how-llms-work/tree/main/code/llm">'
+        "A modified version of the above LLM</a>" in html
+    )
+    for difference in ("Scale:", "Architecture:", "Training:", "Post-training:", "Inference:"):
+        assert f"<strong>{difference}</strong>" in html
+    assert "Work in progress" not in html
 
 
 def test_index_pre_training_section_matches_source_and_completes_placeholders(client):
