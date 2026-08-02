@@ -165,6 +165,102 @@ pre.ptd-data code {
   white-space: nowrap;
 }
 
+.ptd-source-text {
+  margin: 22px 0;
+  padding: 14px 18px;
+  background: #f6f7ff;
+  border-left: 4px solid #1a0dab;
+  font-size: 1.03em;
+}
+
+.ptd-source-text p {
+  margin: 0;
+}
+
+.ptd-source-text footer {
+  margin-top: 10px;
+  color: #555;
+  font-size: 0.88em;
+}
+
+.ptd-shift-figure {
+  margin: 22px 0 32px;
+  padding: 18px;
+  background: #fafbff;
+  border: 1px solid #d9dce7;
+  border-radius: 8px;
+}
+
+.ptd-shift-figure figcaption {
+  font-weight: bold;
+}
+
+.ptd-token-key {
+  margin: 2px 0 16px;
+  color: #555;
+  font-size: 0.86em;
+}
+
+.ptd-pair {
+  margin-top: 14px;
+  padding: 14px;
+  overflow-x: auto;
+  background: #fff;
+  border: 1px solid #e1e4e8;
+  border-radius: 7px;
+}
+
+.ptd-pair > strong {
+  display: block;
+  min-width: 570px;
+  margin-bottom: 8px;
+  color: #1a0dab;
+}
+
+.ptd-token-line {
+  display: grid;
+  grid-template-columns: 66px minmax(480px, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-width: 570px;
+}
+
+.ptd-token-label {
+  font-size: 0.86em;
+  font-weight: bold;
+}
+
+.ptd-token-line ol {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ptd-token-line code {
+  display: block;
+  padding: 7px 8px;
+  color: #1a0dab;
+  text-align: center;
+  background: #eef0ff;
+  border: 1px solid #c9cffa;
+}
+
+.ptd-target-line code {
+  color: #5c4300;
+  background: #fff2cc;
+  border-color: #d8b95e;
+}
+
+.ptd-shift-arrow {
+  min-width: 496px;
+  margin: 4px 0 4px 74px;
+  color: #666;
+  font-size: 0.82em;
+}
+
 .ptd-note,
 .ptd-key-point {
   margin: 22px 0;
@@ -270,6 +366,38 @@ pre.ptd-data code {
 @media (max-width: 620px) {
   .ptd-series ol {
     grid-template-columns: 1fr;
+  }
+
+  .ptd-pair {
+    overflow-x: visible;
+  }
+
+  .ptd-pair > strong,
+  .ptd-token-line,
+  .ptd-shift-arrow {
+    min-width: 0;
+  }
+
+  .ptd-token-line {
+    display: block;
+  }
+
+  .ptd-token-label {
+    display: block;
+    margin-bottom: 5px;
+  }
+
+  .ptd-token-line ol {
+    gap: 4px;
+  }
+
+  .ptd-token-line code {
+    padding: 5px 2px;
+    font-size: 0.74em;
+  }
+
+  .ptd-shift-arrow {
+    margin: 4px 0;
   }
 
   .ptd-flow {
