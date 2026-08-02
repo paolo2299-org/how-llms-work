@@ -22,27 +22,51 @@
         </ol>
       </nav>
 
-      <p>For every input position, the model produces one logit for every token in its vocabulary. The matching target batch tells us which token should have received the strongest score at each position.</p>
+      <p>For each iteration in our pre-training loop, we have a batch of inputs and targets. For each input/target pair, our model simultaneously calculates the probability of predicting the target token from the input tokens:</p>
 
-      <p>Training turns that comparison into a single loss value, calculates how changing every weight would affect the loss, and then lets an optimiser update the weights.</p>
+      <div class="ptd-table-scroll">
+        <table class="ptd-table ptd-probabilities">
+          <caption>Next-token probabilities observed for every incomplete version of the example sentence</caption>
+          <thead>
+            <tr>
+              <th scope="col">Input</th>
+              <th scope="col">Observed probability</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>The</td>
+              <td>The probability of “cat” is 0.004</td>
+            </tr>
+            <tr>
+              <td>The cat</td>
+              <td>The probability of “sat” is 0.03</td>
+            </tr>
+            <tr>
+              <td>The cat sat</td>
+              <td>The probability of “on” is 0.01</td>
+            </tr>
+            <tr>
+              <td>The cat sat on</td>
+              <td>The probability of “the” is 0.06</td>
+            </tr>
+            <tr>
+              <td>The cat sat on the</td>
+              <td>The probability of “mat” is 0.02</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-      <ol class="ptd-flow" aria-label="One optimisation step">
-        <li><strong>Clear</strong><span>Remove gradients left by the previous batch</span></li>
-        <li><strong>Predict</strong><span>Run the input batch through the model</span></li>
-        <li><strong>Measure</strong><span>Compare every position with its target</span></li>
-        <li><strong>Backpropagate</strong><span>Calculate a gradient for every weight</span></li>
-        <li><strong>Update</strong><span>Let AdamW adjust the weights</span></li>
-      </ol>
-
-      <h2>Turn all predictions into one loss</h2>
-
-      <p>The model’s logits have three axes: <code>(batch, tokens, vocabulary)</code>. PyTorch cross-entropy expects a two-dimensional collection of predictions and one target ID for each prediction, so the training code combines the batch and token axes:</p>
+      <p>We then use a <em>loss function</em> called <em>cross-entropy loss</em> to calculate how well our model did at predicting the correct tokens. This takes all of our predictions across all inputs in a given batch, and produces a single score called the <em>loss</em>.</p>
 
       <pre class="ptd-code" id="cross-entropy-code"><code>logits = model(inputs)
 loss = F.cross_entropy(
     logits.flatten(0, 1),
     targets.flatten(),
 )</code></pre>
+
+      <p>The reason for using <code>flatten</code> is that PyTorch cross-entropy expects a two-dimensional collection of predictions and one target ID for each prediction. Flattening does the following:</p>
 
       <div class="ptd-table-scroll">
         <table class="ptd-table">
@@ -71,17 +95,69 @@ loss = F.cross_entropy(
 
       <p>Each flattened row of logits is still paired with exactly the same target token as before. Flattening changes only the layout expected by the loss function; it does not mix predictions and targets.</p>
 
-      <aside class="ptd-key-point">
-        <strong>Why no softmax?</strong> <code>F.cross_entropy</code> accepts raw logits and performs the required log-softmax calculation internally. Applying softmax first would be redundant and less numerically stable.
-      </aside>
-
       <p>Cross-entropy gives a larger loss when the correct token receives a low score and a smaller loss when it receives a high score. By default, PyTorch averages the loss across all <code>batch × tokens</code> predictions.</p>
 
-      <h2>Backpropagation and AdamW do different jobs</h2>
+      <h2>Backpropagation</h2>
 
-      <p>Backpropagation does not update a weight or assign it a share of blame. It calculates the gradient of the loss with respect to that weight: how a small change to the weight would change the loss at the model’s current state.</p>
+      <p>Once the cross-entropy loss has been calculated, <em>backpropagation</em> calculates how sensitive that loss is to each weight in the model, i.e., how much changing that weight would likely change the loss.</p>
 
-      <p>The optimiser then uses those gradients to choose and apply the updates. Our implementation uses AdamW:</p>
+      <p>More precisely, it computes the partial derivative of the loss with respect to every weight. These derivatives collectively form the <em>gradient</em>.</p>
+
+      <p>To do this, the model’s calculations are treated as a chain - or computational graph - of simple mathematical operations. Backpropagation works backward through these operations, repeatedly applying the differentiation chain rule to calculate how each weight may have contributed to the loss.</p>
+
+      <figure class="ptd-chain-rule" aria-labelledby="chain-rule-title">
+        <figcaption id="chain-rule-title">A small computational graph with the chain rule applied</figcaption>
+        <p>Suppose one weight passes through three simple operations on the way to the loss.</p>
+
+        <div class="ptd-chain-forward" role="img" aria-label="Forward pass: weight w equals 2, square it to get u equals 4, add 1 to get v equals 5, then square v to get loss L equals 25">
+          <div class="ptd-chain-node">
+            <span>Weight</span>
+            <code>w = 2</code>
+          </div>
+          <div class="ptd-chain-arrow" aria-hidden="true">
+            <span>square</span>
+            <strong>→</strong>
+          </div>
+          <div class="ptd-chain-node">
+            <span>Intermediate</span>
+            <code>u = w² = 4</code>
+          </div>
+          <div class="ptd-chain-arrow" aria-hidden="true">
+            <span>add 1</span>
+            <strong>→</strong>
+          </div>
+          <div class="ptd-chain-node">
+            <span>Intermediate</span>
+            <code>v = u + 1 = 5</code>
+          </div>
+          <div class="ptd-chain-arrow" aria-hidden="true">
+            <span>square</span>
+            <strong>→</strong>
+          </div>
+          <div class="ptd-chain-node ptd-chain-loss">
+            <span>Loss</span>
+            <code>L = v² = 25</code>
+          </div>
+        </div>
+
+        <div class="ptd-chain-backward">
+          <strong>Work backward, multiplying each local derivative</strong>
+          <ol>
+            <li><code>∂L/∂v = 2v = 10</code></li>
+            <li><code>∂v/∂u = 1</code></li>
+            <li><code>∂u/∂w = 2w = 4</code></li>
+          </ol>
+          <p><code>∂L/∂w = ∂L/∂v × ∂v/∂u × ∂u/∂w = 10 × 1 × 4 = 40</code></p>
+        </div>
+      </figure>
+
+      <p>Don’t worry if partial derivatives and the chain rule are unfamiliar; the key point is that backpropagation provides a systematic way to obtain the gradients needed to improve the model.</p>
+
+      <h2>Optimisation</h2>
+
+      <p>An optimiser then uses the resulting gradients to update the weights in a direction expected to reduce the loss. The optimiser often used in LLMs is one called <a href="https://optimization.cbe.cornell.edu/index.php?title=AdamW">AdamW</a>.</p>
+
+      <p>Putting this all together, the code looks like the following:</p>
 
       <pre class="ptd-code" id="optimisation-step-code"><code>model.to(device)
 model.train()
@@ -105,8 +181,6 @@ for epoch in range(epochs):
 
         total_loss += loss.item()</code></pre>
 
-      <p>Each line has a distinct role:</p>
-
       <ul>
         <li><code>optimiser.zero_grad()</code> clears old gradients, because PyTorch accumulates gradients unless asked to reset them.</li>
         <li><code>model(inputs)</code> performs the forward pass and records the operations needed for differentiation.</li>
@@ -114,20 +188,14 @@ for epoch in range(epochs):
         <li><code>optimiser.step()</code> uses those gradients, AdamW’s running statistics, the learning rate, and weight decay to update the parameters.</li>
       </ul>
 
-      <p>The learning rate controls the overall scale of the updates. AdamW adapts individual updates using recent gradient behaviour, while its decoupled weight decay gently discourages weights from growing without bound.</p>
-
       <h2>Monitor the training loss</h2>
 
-      <p>After each pass through the dataset, the teaching script prints the average loss across its batches:</p>
+      <p>After each pass through the dataset, our script prints the average loss across its batches:</p>
 
       <pre class="ptd-code" id="average-loss-code"><code>average_loss = total_loss / len(batches)
 print(f"Epoch {epoch + 1}: loss = {average_loss:.4f}")</code></pre>
 
-      <p>This number is useful for confirming that optimisation is working, but it is the loss on the training batches. A larger training system would normally also evaluate held-out validation data and use additional monitoring and checkpointing.</p>
-
-      <aside class="ptd-note">
-        The included script is intentionally direct: one optimiser, one loss, and a fixed number of epochs. Techniques such as learning-rate schedules, gradient clipping, mixed precision, and distributed training are useful at larger scales, but they do not change the core sequence shown here.
-      </aside>
+      <p>This number is useful to show that optimisation is working, but for a real LLM a slightly more sophisticated training system is used, where some of our text corpus (called the <em>validation</em> <em>dataset</em>) is held back from training, and used to validate the model.</p>
 
       <nav class="ptd-page-nav" aria-label="Pre-training page navigation">
         <a href="/pre-training/model-additions">← Previous: model additions</a>
