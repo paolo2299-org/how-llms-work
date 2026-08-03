@@ -519,25 +519,34 @@ def test_pre_training_full_loop_matches_checkpoint_workflow(client):
     assert "[prompt_token_ids]" in generation_source
 
 
-def test_instruction_fine_tuning_deep_dive_explains_training_with_examples(client):
+def test_instruction_fine_tuning_deep_dive_matches_source_and_placeholders(client):
     response = client.get("/fine-tuning")
     html = response.get_data(as_text=True)
 
     assert response.status_code == 200
     assert "<h1>Instruction fine-tuning</h1>" in html
-    assert "further training on examples of instructions paired with good responses" in html
-    assert "Build a dataset of demonstrations" in html
-    assert "Train on the desired responses" in html
-    assert "A worked training example" in html
-    assert "What the model learns" in html
+    assert "a language model is good at text completion" in html
+    assert "used as a chatbot" in html
+    assert "if I were to ask" in html
+    assert "What should I have for dinner tonight?" in html
+    assert "Building the examples" in html
+    assert "so-called <em>synthetic instruction tuning</em>" in html
+    assert "synthetic instruction tuning" in html
+    assert "examples might look like:</p>" in html
     assert html.count('class="ift-example"') == 3
     assert "Why does the Moon appear to change shape?" in html
     assert "Rewrite this politely" in html
     assert "Give me three names for a bakery" in html
-    assert "The instruction + “Could”" in html
-    assert "Instruction fine-tuning does not guarantee a correct answer" in html
+    assert "<h2>Training</h2>" in html
+    assert "Backpropagation and optimisation then make small adjustments" in html
+    assert 'class="ift-loss-figure"' in html
+    assert "A simplified response-only loss mask" in html
+    assert html.count('class="ift-scored-token"') == 8
+    assert "Context only" in html
     assert "Work in progress" not in html
-    assert "<pre" not in html
+    assert "&lt;insert possible" not in html
+    assert "&lt;include the examples" not in html
+    assert "&lt;visualisation" not in html
     assert 'href="/#post-training"' in html
 
 

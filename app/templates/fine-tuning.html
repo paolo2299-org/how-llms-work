@@ -12,17 +12,25 @@
     <main>
       <h1>Instruction fine-tuning</h1>
 
-      <p>At the end of <a href="/pre-training/full-loop">pre-training</a>, a language model is good at continuing text. It has learned from a huge variety of writing, but it has not necessarily learned that a user’s request should be followed or that an answer should be clear and useful.</p>
+      <p>At the end of pre-training, a language model is good at text completion. Given a starting phrase, it can complete a paragraph in fluent English. However, it will perform badly when used as a chatbot, as it’s not yet learned how to answer questions or fulfil requests. For example, if I were to ask a newly pre-trained LLM</p>
 
-      <p><em>Instruction fine-tuning</em> gives the pre-trained model further training on examples of instructions paired with good responses. The aim is to turn the model’s broad ability to predict text into more reliable behaviour: interpret the request, follow its constraints, and respond in an appropriate form.</p>
+      <blockquote class="ift-completion ift-completion-prompt">
+        <p>“What should I have for dinner tonight?”</p>
+      </blockquote>
 
-      <aside class="ift-key-point">
-        Fine-tuning starts with the weights learned during pre-training. It adjusts those weights; it does not build a new model from scratch.
-      </aside>
+      <p>it might respond</p>
 
-      <h2>Build a dataset of demonstrations</h2>
+      <blockquote class="ift-completion ift-completion-response">
+        <p>“What should I have for dinner tonight?” is a question many of us ask ourselves at the end of a long day.</p>
+      </blockquote>
 
-      <p>The training data contains many demonstrations of the behaviour we want. Some can be written by people, some can be adapted from existing data, and some can be produced by another model and then checked or filtered.</p>
+      <p>Instruction fine-tuning gives the pre-trained model further training on examples of instructions paired with good responses. From a technical point of view this is straightforward; we just take the newly pre-trained model and feed it a large number of examples, and allow the weights to update using the same mechanism that we used in pre-training.</p>
+
+      <h2>Building the examples</h2>
+
+      <p>The main step is to build a training dataset of examples for the LLM to learn from. These examples can come from online sources that happen to be in roughly the correct format, and can be adapted from existing data (perhaps using another LLM). Somewhat surprisingly, it’s been shown that you can use other LLMs to create and filter instruction response examples from scratch—so-called <em>synthetic instruction tuning</em>—and this is very effective.</p>
+
+      <p>Here is what some of these examples might look like:</p>
 
       <div class="ift-examples" aria-label="Example instruction fine-tuning demonstrations">
         <article class="ift-example">
@@ -62,78 +70,78 @@
         </article>
       </div>
 
-      <p>A useful dataset varies the wording, subject, difficulty, and desired response style. It may also contain multi-turn conversations, where each response needs to take account of earlier messages. Across many examples, the model can learn that the instruction itself—not a particular stock phrase—determines what kind of answer should follow.</p>
+      <p>A useful dataset varies the wording, subject, difficulty, and desired response style. It may also contain multi-turn conversations, where each response needs to take account of earlier messages.</p>
 
-      <h2>Train on the desired responses</h2>
+      <h2>Training</h2>
 
-      <p>The learning mechanism is closely related to pre-training. The model reads the instruction and the response so far, predicts the next token of the good response, and is penalised when it gives the correct token a low probability. Backpropagation then makes small adjustments to the model’s weights.</p>
+      <p>The learning mechanism is closely related to pre-training. The model reads the instruction and the response so far, predicts the next token of the good response, and is penalised when it gives the correct token a low probability. Backpropagation and optimisation then make small adjustments to the model’s weights.</p>
 
-      <ol class="ift-flow" aria-label="Instruction fine-tuning loop">
-        <li><strong>Demonstration</strong><span>Choose an instruction and its good response</span></li>
-        <li><strong>Prediction</strong><span>Ask the model to predict each response token</span></li>
-        <li><strong>Loss</strong><span>Measure how far its predictions are from the response</span></li>
-        <li><strong>Update</strong><span>Adjust the weights, then repeat across the dataset</span></li>
-      </ol>
+      <p>The main difference is that we only get the model to predict the next tokens in the response, given the instruction:</p>
 
-      <p>Usually, the instruction is supplied as context but the training loss is focused on the response. We want the model to learn what to say <em>after</em> an instruction, rather than to learn to reproduce the user’s words.</p>
+      <figure class="ift-loss-figure" aria-labelledby="ift-loss-title ift-loss-description">
+        <figcaption>
+          <strong id="ift-loss-title">A simplified response-only loss mask</strong>
+          <span id="ift-loss-description">The full instruction and response are input tokens, but only the response tokens are training targets.</span>
+        </figcaption>
 
-      <h2>A worked training example</h2>
+        <div class="ift-loss-scroll">
+          <div class="ift-sequence" role="group" aria-label="Input token sequence followed by response-only loss targets">
+            <div class="ift-sequence-label">Input sequence</div>
+            <ol class="ift-token-row ift-input-row" aria-label="Tokens fed into the model">
+              <li class="ift-context-token"><code>[user]</code></li>
+              <li class="ift-context-token"><code>Rewrite</code></li>
+              <li class="ift-context-token"><code>this</code></li>
+              <li class="ift-context-token"><code>politely</code></li>
+              <li class="ift-context-token"><code>:</code></li>
+              <li class="ift-context-token"><code>“Send</code></li>
+              <li class="ift-context-token"><code>me</code></li>
+              <li class="ift-context-token"><code>the</code></li>
+              <li class="ift-context-token"><code>figures</code></li>
+              <li class="ift-context-token"><code>today.”</code></li>
+              <li class="ift-context-token"><code>[assistant]</code></li>
+              <li class="ift-response-token"><code>Could</code></li>
+              <li class="ift-response-token"><code>you</code></li>
+              <li class="ift-response-token"><code>please</code></li>
+              <li class="ift-response-token"><code>send</code></li>
+              <li class="ift-response-token"><code>me</code></li>
+              <li class="ift-response-token"><code>the</code></li>
+              <li class="ift-response-token"><code>figures</code></li>
+              <li class="ift-response-token"><code>today?</code></li>
+            </ol>
 
-      <p>Suppose one demonstration asks the model to rewrite a sentence politely:</p>
+            <div class="ift-sequence-label">Loss target</div>
+            <ol class="ift-token-row ift-target-row" aria-label="Instruction tokens are ignored and response tokens contribute to the loss">
+              <li class="ift-ignored-token" aria-label="Ignored">—</li>
+              <li class="ift-ignored-token" aria-label="Ignored">—</li>
+              <li class="ift-ignored-token" aria-label="Ignored">—</li>
+              <li class="ift-ignored-token" aria-label="Ignored">—</li>
+              <li class="ift-ignored-token" aria-label="Ignored">—</li>
+              <li class="ift-ignored-token" aria-label="Ignored">—</li>
+              <li class="ift-ignored-token" aria-label="Ignored">—</li>
+              <li class="ift-ignored-token" aria-label="Ignored">—</li>
+              <li class="ift-ignored-token" aria-label="Ignored">—</li>
+              <li class="ift-ignored-token" aria-label="Ignored">—</li>
+              <li class="ift-ignored-token" aria-label="Ignored">—</li>
+              <li class="ift-scored-token"><code>Could</code></li>
+              <li class="ift-scored-token"><code>you</code></li>
+              <li class="ift-scored-token"><code>please</code></li>
+              <li class="ift-scored-token"><code>send</code></li>
+              <li class="ift-scored-token"><code>me</code></li>
+              <li class="ift-scored-token"><code>the</code></li>
+              <li class="ift-scored-token"><code>figures</code></li>
+              <li class="ift-scored-token"><code>today?</code></li>
+            </ol>
+          </div>
+        </div>
 
-      <div class="ift-worked-example">
-        <p><strong>Instruction</strong><br>Rewrite this politely: “Send me the figures today.”</p>
-        <p><strong>Desired response</strong><br>Could you please send me the figures today?</p>
-      </div>
+        <div class="ift-loss-key" aria-label="Diagram key">
+          <span><i class="ift-key-swatch ift-key-context" aria-hidden="true"></i>Context only</span>
+          <span><i class="ift-key-swatch ift-key-response" aria-hidden="true"></i>Response input</span>
+          <span><i class="ift-key-swatch ift-key-scored" aria-hidden="true"></i>Included in loss</span>
+        </div>
+      </figure>
 
-      <p>The response is broken into tokens. During training, the model is repeatedly shown the instruction and the correct response up to a particular point:</p>
-
-      <div class="ift-table-scroll">
-        <table class="ift-table">
-          <caption>A simplified view of three next-token predictions</caption>
-          <thead>
-            <tr>
-              <th scope="col">What the model has seen</th>
-              <th scope="col">Token it should predict</th>
-              <th scope="col">What is learned</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>The instruction</td>
-              <td>Could</td>
-              <td>A polite rewrite can begin with a courteous request</td>
-            </tr>
-            <tr>
-              <td>The instruction + “Could”</td>
-              <td>you</td>
-              <td>The response should continue as a natural sentence</td>
-            </tr>
-            <tr>
-              <td>The instruction + “Could you please send me the figures”</td>
-              <td>today</td>
-              <td>The important content of the original should be preserved</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <p>The weight update is based on all of these predictions together. One example makes only a tiny difference. Repeating the process across many varied demonstrations gradually makes responses that follow instructions more likely.</p>
-
-      <h2>What the model learns</h2>
-
-      <p>The demonstrations do not provide an explicit rulebook. Instead, they shape the probabilities of possible responses. For example, training across the demonstrations above can make the model more likely to:</p>
-
-      <ul>
-        <li>answer the question instead of merely continuing or restating it</li>
-        <li>preserve relevant details while transforming text</li>
-        <li>follow constraints such as tone, length, or output format</li>
-        <li>use the roles in a conversation to distinguish user requests from assistant replies</li>
-      </ul>
-
-      <aside class="ift-note">
-        <strong>Instruction fine-tuning does not guarantee a correct answer.</strong> The model can still misunderstand a request, invent information, or fail on unfamiliar tasks. It teaches a pattern of responding; other post-training stages can further optimise helpfulness, safety, and reliability using human or model feedback.
-      </aside>
+      <p>The reason for this is that we want the model to learn what to say after an instruction, rather than to learn to reproduce the user’s words.</p>
 
       <p class="ift-top-link ift-bottom-link"><a href="/#post-training">← Back to the Post-training overview</a></p>
     </main>
