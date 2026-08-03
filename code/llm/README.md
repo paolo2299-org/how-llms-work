@@ -51,7 +51,9 @@ small.
 
 ## Generate with GPT-2 small
 
-Place the GPT-2 small checkpoint at `weights/gpt2-small.pth`, then run:
+Download the public GPT-2 small checkpoint by following
+[`weights/README.md`](../../weights/README.md), save it as
+`weights/gpt2-small.pth`, then run:
 
 ```bash
 python code/llm/generate.py "The dog fetched the"
