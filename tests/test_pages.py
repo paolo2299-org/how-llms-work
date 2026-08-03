@@ -229,7 +229,7 @@ def test_open_weights_page_matches_source_and_completes_placeholder(client):
     assert "Work in progress" not in html
 
 
-def test_index_contains_post_training_overview_and_summary_placeholder(client):
+def test_index_contains_post_training_overview_and_completed_summary(client):
     html = client.get("/").get_data(as_text=True)
 
     assert '<h2 id="pre-training">Pre-training</h2>' in html
@@ -239,7 +239,18 @@ def test_index_contains_post_training_overview_and_summary_placeholder(client):
     assert "preference optimisation using human or model feedback" in html
     assert "Instruction fine-tuning: in depth →" in html
     assert '<h2 id="summary">Summary</h2>' in html
-    assert html.count("🚧") == 1
+    assert "We’ve now learned all of the core concepts of an LLM" in html
+    assert (
+        'href="https://github.com/paolo2299-org/how-llms-work/tree/main/code/'
+        'llm_inference_only">A slightly simplified LLM</a>' in html
+    )
+    assert (
+        'href="https://github.com/paolo2299-org/how-llms-work/tree/main/code/llm">'
+        "A modified version of the above LLM</a>" in html
+    )
+    for difference in ("Scale:", "Architecture:", "Training:", "Post-training:", "Inference:"):
+        assert f"<strong>{difference}</strong>" in html
+    assert "Work in progress" not in html
 
 
 def test_index_pre_training_section_matches_source_and_completes_placeholders(client):
@@ -328,25 +339,56 @@ def test_pre_training_inputs_page_matches_training_implementation(client):
         assert code_line in source
 
 
-def test_pre_training_model_additions_are_limited_to_training_shape_changes(client):
+def test_pre_training_model_additions_matches_source_and_completes_placeholders(client):
     response = client.get("/pre-training/model-additions")
     html = response.get_data(as_text=True)
 
     assert response.status_code == 200
     assert "<h1>Pre-training: model additions</h1>" in html
-    assert "Pre-training does not add another kind of neural-network layer" in html
-    assert "the learned matrices keep the same shapes" in html
-    assert "(batch, tokens, vocabulary)" in html
+    assert "The LLM implementation we have built so far" in html
+    assert (
+        'href="https://github.com/paolo2299-org/how-llms-work/blob/main/'
+        'code/llm_inference_only/language_model.py"'
+        in html
+    )
+    assert "Batching (passing multiple inputs in at the same time)" in html
+    assert "Producing next token predictions for every input token" in html
+    assert "<h2>Batching</h2>" in html
+    assert 'id="single-sequence-example"' in html
+    assert "[“It”, “ was”, “ a”, “ bright”, “ cold”]" in html
+    assert 'id="batch-example"' in html
+    assert "A batch containing three sequences of five tokens" in html
+    assert "107nPkg3n-CnKQSa2JI4Zk8B-UB71ZBhqqwmXq_Lazfs" in html
+    assert 'id="batched-token-ids-code"' in html
+    assert "[1026,   373,  257, 6016,  4692]" in html
     assert 'id="batched-embedding-code"' in html
     assert "token_ids must have shape (batch_size, sequence_length)" in html
+    assert "# PyTorch broadcasts the position" not in html
+    assert 'id="embedding-output-visual"' in html
+    assert "shape <code>(3, 5, model_dim)</code>" in html
     assert 'id="batched-attention-code"' in html
     assert "batch_size, num_tokens, _ = x.shape" in html
     assert ").transpose(1, 2)" in html
+    assert "The batch items never attend to one another" in html
+    assert "Next-token probabilities observed for every incomplete version" in html
+    for probability_example in (
+        "The probability of “cat” is 0.004",
+        "The probability of “sat” is 0.03",
+        "The probability of “on” is 0.01",
+        "The probability of “the” is 0.06",
+        "The probability of “mat” is 0.02",
+    ):
+        assert probability_example in html
     assert 'id="all-position-logits-code"' in html
     assert "return self.vocabulary_projection(x)" in html
     assert 'id="batched-generation-code"' in html
     assert "next_token_logits = all_logits[0, -1]" in html
+    assert "This lets one model implementation support both batched training" in html
     assert 'href="/pre-training/weight-optimisation"' in html
+    assert "<show " not in html
+    assert "<insert " not in html
+    assert "<use " not in html
+    assert "<repeat " not in html
 
     source_files = {
         "embedding": Path("code/llm/token_embedding.py").read_text(encoding="utf-8"),
@@ -367,17 +409,54 @@ def test_pre_training_weight_optimisation_matches_training_step(client):
 
     assert response.status_code == 200
     assert "<h1>Pre-training: weight optimisation</h1>" in html
+    source_markup = (
+        "For each iteration in our pre-training loop, we have a batch of inputs and targets. For each input/target pair, our model simultaneously calculates the probability of predicting the target token from the input tokens:",
+        "We then use a <em>loss function</em> called <em>cross-entropy loss</em> to calculate how well our model did at predicting the correct tokens. This takes all of our predictions across all inputs in a given batch, and produces a single score called the <em>loss</em>.",
+        "The reason for using <code>flatten</code> is that PyTorch cross-entropy expects a two-dimensional collection of predictions and one target ID for each prediction. Flattening does the following:",
+        "Each flattened row of logits is still paired with exactly the same target token as before. Flattening changes only the layout expected by the loss function; it does not mix predictions and targets.",
+        "Cross-entropy gives a larger loss when the correct token receives a low score and a smaller loss when it receives a high score. By default, PyTorch averages the loss across all <code>batch × tokens</code> predictions.",
+        "Once the cross-entropy loss has been calculated, <em>backpropagation</em> calculates how sensitive that loss is to each weight in the model, i.e., how much changing that weight would likely change the loss.",
+        "More precisely, it computes the partial derivative of the loss with respect to every weight. These derivatives collectively form the <em>gradient</em>.",
+        "To do this, the model’s calculations are treated as a chain - or computational graph - of simple mathematical operations. Backpropagation works backward through these operations, repeatedly applying the differentiation chain rule to calculate how each weight may have contributed to the loss.",
+        "Don’t worry if partial derivatives and the chain rule are unfamiliar; the key point is that backpropagation provides a systematic way to obtain the gradients needed to improve the model.",
+        "Putting this all together, the code looks like the following:",
+        "After each pass through the dataset, our script prints the average loss across its batches:",
+        "This number is useful to show that optimisation is working, but for a real LLM a slightly more sophisticated training system is used, where some of our text corpus (called the <em>validation</em> <em>dataset</em>) is held back from training, and used to validate the model.",
+    )
+    for source_text in source_markup:
+        assert source_text in html
+
+    assert "<h2>Backpropagation</h2>" in html
+    assert "<h2>Optimisation</h2>" in html
+    assert "<h2>Monitor the training loss</h2>" in html
+    assert 'class="ptd-table ptd-probabilities"' in html
+    assert "The probability of “cat” is 0.004" in html
+    assert "The probability of “sat” is 0.03" in html
+    assert "The probability of “on” is 0.01" in html
+    assert "The probability of “the” is 0.06" in html
+    assert "The probability of “mat” is 0.02" in html
     assert 'id="cross-entropy-code"' in html
     assert "logits.flatten(0, 1)" in html
     assert "targets.flatten()" in html
     assert "F.cross_entropy" in html
+    assert "Shapes passed to cross-entropy" in html
+    assert "(batch × tokens, vocabulary)" in html
+    assert 'id="chain-rule-title"' in html
+    assert "∂L/∂w = ∂L/∂v × ∂v/∂u × ∂u/∂w = 10 × 1 × 4 = 40" in html
+    assert "An optimiser then uses the resulting gradients" in html
+    assert "The optimiser often used in LLMs" in html
+    assert (
+        'href="https://optimization.cbe.cornell.edu/index.php?title=AdamW">AdamW</a>'
+        in html
+    )
     assert 'id="optimisation-step-code"' in html
     assert "torch.optim.AdamW(model.parameters(), lr=learning_rate)" in html
     assert "optimiser.zero_grad()" in html
     assert "loss.backward()" in html
     assert "optimiser.step()" in html
     assert 'id="average-loss-code"' in html
-    assert "it is the loss on the training batches" in html
+    assert "Why no softmax?" not in html
+    assert "The included script is intentionally direct" not in html
     assert 'href="/pre-training/full-loop"' in html
 
     source = Path("code/llm/pretrain.py").read_text(encoding="utf-8")
@@ -397,7 +476,16 @@ def test_pre_training_full_loop_matches_checkpoint_workflow(client):
     html = response.get_data(as_text=True)
 
     assert response.status_code == 200
-    assert "<h1>Pre-training: the full pre-training loop</h1>" in html
+    assert "<h1>Pre-training: the full training loop</h1>" in html
+    assert (
+        "We now have all the pieces needed to pre-train our model. The "
+        in html
+    )
+    assert (
+        'href="https://github.com/paolo2299-org/how-llms-work/tree/main/code/llm"'
+        in html
+    )
+    assert "constructs shifted batches, initialises a model" in html
     assert 'id="pretrain-command-code"' in html
     assert "python code/llm/pretrain.py" in html
     assert 'id="model-and-data-code"' in html
@@ -408,23 +496,27 @@ def test_pre_training_full_loop_matches_checkpoint_workflow(client):
     assert 'id="save-checkpoint-code"' in html
     assert '"model_config": model_config' in html
     assert '"model_state": model.state_dict()' in html
-    assert 'id="load-training-checkpoint-code"' in html
-    assert "model.load_state_dict(checkpoint[\"model_state\"], strict=True)" in html
+    assert "In order to reconstruct the model later" in html
+    assert 'id="generate-default-command-code"' in html
+    assert "# implicitly loads weights/gpt2-small.pth" in html
     assert 'id="generate-checkpoint-command-code"' in html
     assert "--checkpoint weights/tiny-teaching-model.pth" in html
+    assert 'id="single-prompt-batch-code"' in html
+    assert "prompt_token_ids = tokenise(prompt)" in html
+    assert "[prompt_token_ids]" in html
+    assert "amount of training text dramatically" in html
+    assert 'id="load-training-checkpoint-code"' not in html
     assert 'href="/pre-training/weight-optimisation"' in html
     assert 'href="/#pre-training"' in html
 
     pretrain_source = Path("code/llm/pretrain.py").read_text(encoding="utf-8")
-    loading_source = Path("code/llm/weight_loading.py").read_text(encoding="utf-8")
-    readme_source = Path("code/llm/README.md").read_text(encoding="utf-8")
+    generation_source = Path("code/llm/generate.py").read_text(encoding="utf-8")
     assert '"model_dim": 32' in pretrain_source
     assert '"num_layers": 2' in pretrain_source
     assert '"model_config": model_config' in pretrain_source
     assert '"model_state": model.state_dict()' in pretrain_source
-    assert "def load_training_checkpoint" in loading_source
-    assert "python code/llm/pretrain.py" in readme_source
-    assert "--checkpoint weights/tiny-teaching-model.pth" in readme_source
+    assert "prompt_token_ids = tokenise(prompt)" in generation_source
+    assert "[prompt_token_ids]" in generation_source
 
 
 def test_instruction_fine_tuning_deep_dive_matches_source_and_placeholders(client):

@@ -982,7 +982,22 @@
 
     <h2 id="summary">Summary</h2>
 
-    <p class="work-in-progress"><span aria-hidden="true">🚧</span> Work in progress</p>
+    <p>We’ve now learned all of the core concepts of an LLM, and have built two complete and fully functional examples along the way:</p>
+
+    <ul>
+      <li><a href="https://github.com/paolo2299-org/how-llms-work/tree/main/code/llm_inference_only">A slightly simplified LLM</a> that can load pre-trained weight files and be used for inference.</li>
+      <li><a href="https://github.com/paolo2299-org/how-llms-work/tree/main/code/llm">A modified version of the above LLM</a> that can be used for inference and can also be pre-trained from scratch.</li>
+    </ul>
+
+    <p>Production LLMs use all of the same core concepts as our example models. The main differences you will see in a modern production LLM are:</p>
+
+    <ul>
+      <li><strong>Scale:</strong> production models have many more layers, attention heads and weights, and can process much longer sequences of tokens.</li>
+      <li><strong>Architecture:</strong> they often use newer variations of the components we’ve explored, such as rotary position embeddings, RMS normalisation and different activation functions.</li>
+      <li><strong>Training:</strong> they are trained on vastly larger, carefully prepared datasets using many powerful processors working together, often over weeks or months.</li>
+      <li><strong>Post-training:</strong> they undergo extensive instruction fine-tuning, preference optimisation and safety training to make them helpful and reliable assistants.</li>
+      <li><strong>Inference:</strong> they use techniques such as lower-precision weights, caching and batching to serve responses faster and more efficiently.</li>
+    </ul>
 
     <p class="back"><a href="https://pdlawson.com">← Back to home</a></p>
 

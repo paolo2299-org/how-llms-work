@@ -2,6 +2,10 @@ h2 {
   margin-top: 48px;
 }
 
+h3 {
+  margin-top: 38px;
+}
+
 .ptd-top-link {
   margin-bottom: 8px;
   font-size: 0.9em;
@@ -59,6 +63,106 @@ pre.ptd-code code {
   color: #24292e;
   background: none;
   font-size: 0.84em;
+}
+
+.ptd-token-figure,
+.ptd-embedding-figure {
+  margin: 18px 0 30px;
+}
+
+.ptd-token-figure figcaption,
+.ptd-embedding-figure figcaption {
+  margin-top: 9px;
+  color: #555;
+  font-size: 0.9em;
+}
+
+pre.ptd-data {
+  margin: 0;
+  padding: 14px 16px;
+  overflow-x: auto;
+  background: #f6f8fa;
+  border: 1px solid #d9dce7;
+  border-radius: 6px;
+}
+
+pre.ptd-data code {
+  padding: 0;
+  background: none;
+}
+
+.ptd-batch,
+.ptd-embedding-output {
+  overflow-x: auto;
+  border: 1px solid #d9dce7;
+  border-radius: 8px;
+  background: #f8f9ff;
+}
+
+.ptd-batch-row,
+.ptd-embedding-row {
+  display: grid;
+  grid-template-columns: 96px repeat(5, minmax(82px, 1fr));
+  gap: 8px;
+  align-items: stretch;
+  min-width: 620px;
+  padding: 10px;
+}
+
+.ptd-batch-row + .ptd-batch-row,
+.ptd-embedding-row + .ptd-embedding-row {
+  border-top: 1px solid #d9dce7;
+}
+
+.ptd-batch-row > strong,
+.ptd-embedding-row > strong {
+  align-self: center;
+  color: #444;
+  font-size: 0.84em;
+}
+
+.ptd-batch-row code {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 7px;
+  white-space: pre;
+  background: #fff;
+  border: 1px solid #bfc5d8;
+}
+
+.ptd-embedding-output {
+  padding: 7px 0;
+  background: linear-gradient(135deg, #f8f9ff, #eef1ff);
+}
+
+.ptd-embedding-row > span {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 76px;
+  padding: 8px;
+  background: #fff;
+  border: 1px solid #aeb7d4;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(29, 38, 75, 0.08);
+}
+
+.ptd-embedding-row > span > code {
+  align-self: flex-start;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: pre;
+  text-overflow: ellipsis;
+}
+
+.ptd-embedding-row small {
+  margin-top: 8px;
+  color: #5c6580;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.68em;
+  white-space: nowrap;
 }
 
 .ptd-source-text {
@@ -204,6 +308,118 @@ pre.ptd-code code {
   white-space: nowrap;
 }
 
+.ptd-probabilities td:first-child {
+  width: 42%;
+}
+
+.ptd-chain-rule {
+  margin: 24px 0 34px;
+  padding: 18px;
+  background: #fafbff;
+  border: 1px solid #d9dce7;
+  border-radius: 8px;
+}
+
+.ptd-chain-rule figcaption {
+  margin-bottom: 6px;
+  font-weight: bold;
+}
+
+.ptd-chain-rule > p {
+  margin: 0 0 20px;
+  color: #555;
+}
+
+.ptd-chain-forward {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 46px minmax(0, 1fr) 46px minmax(0, 1fr) 46px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.ptd-chain-node {
+  display: flex;
+  min-height: 92px;
+  padding: 12px 8px;
+  flex-direction: column;
+  gap: 9px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: #fff;
+  border: 2px solid #9aa5e8;
+  border-radius: 8px;
+}
+
+.ptd-chain-node span {
+  color: #555;
+  font-size: 0.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ptd-chain-node code {
+  color: #1a0dab;
+  font-size: 0.88em;
+}
+
+.ptd-chain-loss {
+  background: #fff8df;
+  border-color: #c28a00;
+}
+
+.ptd-chain-loss code {
+  color: #6b4e00;
+}
+
+.ptd-chain-arrow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+  color: #666;
+  text-align: center;
+}
+
+.ptd-chain-arrow span {
+  font-size: 0.76em;
+}
+
+.ptd-chain-arrow strong {
+  color: #1a0dab;
+  font-size: 1.45em;
+}
+
+.ptd-chain-backward {
+  margin-top: 20px;
+  padding: 15px 16px;
+  background: #f6f7ff;
+  border-left: 4px solid #1a0dab;
+}
+
+.ptd-chain-backward > strong {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.ptd-chain-backward ol {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 20px;
+  margin: 0 0 12px;
+  padding-left: 24px;
+}
+
+.ptd-chain-backward p {
+  margin: 0;
+  overflow-x: auto;
+}
+
+.ptd-chain-backward p code {
+  display: inline-block;
+  min-width: max-content;
+}
+
 .ptd-flow {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -311,6 +527,30 @@ pre.ptd-code code {
     bottom: -16px;
     content: "↓";
     transform: translateX(50%);
+  }
+
+  .ptd-chain-forward {
+    grid-template-columns: 1fr;
+  }
+
+  .ptd-chain-arrow {
+    min-height: 42px;
+    justify-content: center;
+  }
+
+  .ptd-chain-arrow strong {
+    line-height: 0.8;
+    transform: rotate(90deg);
+  }
+
+  .ptd-chain-backward ol {
+    grid-template-columns: 1fr;
+  }
+
+  .ptd-chain-backward p code {
+    display: inline;
+    min-width: 0;
+    white-space: normal;
   }
 }
 
