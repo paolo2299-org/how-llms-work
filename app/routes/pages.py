@@ -70,8 +70,4 @@ def pre_training_full_loop():
 
 @pages_bp.route("/fine-tuning")
 def fine_tuning():
-    return render_template(
-        "work-in-progress.html",
-        page_title="Instruction fine-tuning",
-        section_id="post-training",
-    )
+    return render_template("fine-tuning.html")
