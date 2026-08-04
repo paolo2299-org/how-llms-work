@@ -1,3 +1,11 @@
+# LLM for inference (next token generation)
+
+This folder contains an LLM implementation that can be used for inference. It relies on
+loading pre-trained weights.
+
+We build on this model in `../llm`, adding in the necessary components to allow for 
+pre-training as well as inference.
+
 # Run the inference-only LLM
 
 ## Install dependencies
@@ -11,9 +19,6 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r code/llm_inference_only/requirements.txt
 ```
-
-On Windows PowerShell, activate the environment with
-`.venv\Scripts\Activate.ps1`.
 
 ## Generate output
 
