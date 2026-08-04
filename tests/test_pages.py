@@ -335,6 +335,30 @@ def test_index_contains_post_training_overview_and_completed_summary(client):
     assert "Work in progress" not in html
 
 
+def test_index_in_depth_calls_to_action_contain_only_links(client):
+    html = client.get("/").get_data(as_text=True)
+
+    in_depth_links = (
+        ('/tokenisation', "Tokenisation: in depth →"),
+        ('/token-embeddings', "Token embeddings: in depth →"),
+        ('/self-attention', "Self-attention: in depth →"),
+        ('/feed-forward', "Feed-forward layer: in depth →"),
+        ('/transformer-block', "Transformer block: in depth →"),
+        ('/full-llm', "Full LLM: in depth →"),
+        ('/open-weights', "Open weights: in depth →"),
+        ('/fine-tuning', "Instruction fine-tuning: in depth →"),
+    )
+    for href, label in in_depth_links:
+        assert f'<p><a href="{href}">{label}</a></p>' in html
+
+    assert "Want to inspect the mechanism?" not in html
+    assert "Want to follow the tensors?" not in html
+    assert "Want to see the actual mechanism?" not in html
+    assert "Want to follow the numbers?" not in html
+    assert "Want to see how those wrappers fit" not in html
+    assert "Want to connect all the parts?" not in html
+
+
 def test_index_pre_training_section_matches_source_and_completes_placeholders(client):
     response = client.get("/")
     html = response.get_data(as_text=True)

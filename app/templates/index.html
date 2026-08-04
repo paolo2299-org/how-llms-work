@@ -652,7 +652,7 @@
       <div id="token-count" aria-live="polite"></div>
     </div>
 
-    <p>Want to inspect the mechanism? <a href="/tokenisation">Tokenisation: in depth →</a> — see how text becomes reusable sub-word pieces and token IDs before the model sees it.</p>
+    <p><a href="/tokenisation">Tokenisation: in depth →</a></p>
 
     <h2 id="token-embeddings">Token Embeddings</h2>
     <p>Once a prompt has been converted to tokens, each token is then represented as a point in a high-dimensional geometrical space. This is because LLMs are neural networks, and neural networks need mathematical objects to work with instead of text data.</p>
@@ -676,7 +676,7 @@
       <div id="embed-status" aria-live="polite"></div>
     </div>
 
-    <p>Want to follow the tensors? <a href="/token-embeddings">Token embeddings: in depth →</a> — see token IDs look up learned vectors, combine with position embeddings, and become the first sequence tensor.</p>
+    <p><a href="/token-embeddings">Token embeddings: in depth →</a></p>
 
     <h2 id="self-attention">Self-Attention</h2>
     <p>Once a prompt has been tokenised and embedded, the next key step is <em>self-attention</em>. This is the mechanism that allows each token to look at all the other tokens in the sequence and decide which ones are most relevant to it.</p>
@@ -699,7 +699,7 @@
       </div>
     </div>
 
-    <p>Want to see the actual mechanism? <a href="/self-attention">Self-attention: in depth →</a> — a small worked example that takes a sentence all the way from token embeddings to an enriched output, with every number visible.</p>
+    <p><a href="/self-attention">Self-attention: in depth →</a></p>
 
     <h2 id="feed-forward">Feed-Forward Layer</h2>
 
@@ -725,7 +725,7 @@
       <div id="ffn-diagram"></div>
     </div>
 
-    <p>Want to follow the numbers? <a href="/feed-forward">Feed-forward layer: in depth →</a> — see one sequence expand into learned features, pass through GELU, and return to its original width, with every tensor shape visible.</p>
+    <p><a href="/feed-forward">Feed-forward layer: in depth →</a></p>
 
     <h2 id="transformer-block">Inside a Transformer Block</h2>
 
@@ -801,7 +801,7 @@
     shortcuts also give the learning signal (called the <em>gradient</em>) a clearer
     route back through the model, helping even the earliest blocks learn effectively.</p>
 
-    <p>Want to see how those wrappers fit around attention and the feed-forward layer? <a href="/transformer-block">Transformer block: in depth →</a> — follow LayerNorm, residual connections, attention, and the feed-forward layer through a complete block.</p>
+    <p><a href="/transformer-block">Transformer block: in depth →</a></p>
 
     <h2 id="llm-architecture">The Full LLM</h2>
 
@@ -871,7 +871,7 @@
     result passes to the <em>output head</em>, which produces the model's output —
     in this case, the next token.</p>
 
-    <p>Want to connect all the parts? <a href="/full-llm">Full LLM: in depth →</a> — follow token IDs through embeddings, repeated transformer blocks, logits, softmax, and next-token generation.</p>
+    <p><a href="/full-llm">Full LLM: in depth →</a></p>
 
     <h2 id="open-weights">Open weights</h2>
 
