@@ -31,7 +31,12 @@ def test_index_contains_transformer_overviews(client):
 def test_index_introduction_describes_the_learning_path(client):
     html = client.get("/").get_data(as_text=True)
 
-    assert "very high level overview of all of the core concepts" in html
+    assert (
+        "This page gives a high level overview of all of the core concepts that "
+        "underpin the tech behind LLMs. Each section has one or more deep dives, "
+        "where you’ll piece together the complete code for a fully functional LLM."
+        in html
+    )
     assert (
         "No specialist knowledge is required to read this overview page, but to get "
         "the most out of the deep dive pages some familiarity with python and neural "
