@@ -1,16 +1,39 @@
 # Loading model weights
 
-The trainable model uses the same learned parameters and layer names as the
-inference-only model. Adding a batch dimension and returning logits at every
-token position changes the forward pass, but does not change parameter shapes.
-The GPT-2 small translation described in
-[`../llm_inference_only/WEIGHT_LOADING.md`](../llm_inference_only/WEIGHT_LOADING.md)
-therefore still applies.
+`generate.py` can load GPT-2 small weights or a checkpoint created by
+`pretrain.py`.
 
-`weight_loading.py` supports two checkpoint types:
+## GPT-2 small weights
 
-- `load_gpt2_small()` translates the external GPT-2 small checkpoint.
-- `load_training_checkpoint()` loads the model configuration and state written
-  by `pretrain.py`.
+Save `gpt2-small.pth` in the repository's `weights` directory, then run:
 
-Both loaders put the model in evaluation mode before returning it.
+```bash
+python code/llm/generate.py "The dog fetched the"
+```
+
+To use a file stored elsewhere:
+
+```bash
+python code/llm/generate.py \
+    --weights /path/to/gpt2-small.pth \
+    "The dog fetched the"
+```
+
+## Checkpoints created by `pretrain.py`
+
+Create the default teaching-model checkpoint:
+
+```bash
+python code/llm/pretrain.py
+```
+
+Load it for generation:
+
+```bash
+python code/llm/generate.py \
+    --checkpoint weights/tiny-teaching-model.pth \
+    "The dog"
+```
+
+Use `--device cuda` or another PyTorch device to run either model somewhere
+other than the CPU.
