@@ -45,8 +45,7 @@ class MultiHeadAttention(nn.Module):
 
         attention_scores = queries @ keys.transpose(-2, -1)
 
-        # A token can only attend to itself and earlier tokens. This constant
-        # mask is rebuilt here rather than loaded from a checkpoint.
+        # A token can only attend to itself and earlier tokens
         mask = torch.triu(
             torch.ones(
                 num_tokens,
