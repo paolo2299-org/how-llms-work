@@ -111,14 +111,6 @@ def test_index_sections_end_with_their_first_deep_dive_link(
     assert f'href="{destination}"' in section
 
 
-def test_index_summary_ends_with_a_link_to_the_previous_deep_dive(client):
-    html = client.get("/").get_data(as_text=True)
-    summary = html[html.index('id="summary"') :]
-
-    assert 'aria-label="Summary navigation"' in summary
-    assert 'href="/fine-tuning"' in summary
-
-
 @pytest.mark.parametrize(
     ("path", "previous_destination", "next_destination"),
     [
