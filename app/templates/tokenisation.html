@@ -55,7 +55,10 @@
     </style>
   </head>
   <body>
-    <p class="tok-top-link"><a href="/#tokenisation">← Back to How LLMs Work</a></p>
+    <nav class="content-nav" aria-label="Deep dive navigation">
+      <a href="/#tokenisation">← Previous: tokenisation overview</a>
+      <a href="/#token-embeddings">Next: token embeddings overview →</a>
+    </nav>
     <h1>Tokenisation</h1>
 
     <p>The job of a tokeniser is to break down a prompt into <em>tokens</em>. Then it uses a scheme to map each token to a unique number, called a <em>token id</em>, which the LLM can process. When the LLM then generates token ids in response to our prompt, we can use this number mapping to convert those token ids to tokens, and then to generated text.</p>
@@ -254,6 +257,9 @@ encoding.<span class="tok-fn">decode</span>(token_ids)
       </ol>
     </div>
 
-    <p class="tok-top-link"><a href="/token-embeddings">Next — token embeddings: in depth →</a></p>
+    <nav class="content-nav content-nav--bottom" aria-label="Deep dive navigation">
+      <a href="/#tokenisation">← Previous: tokenisation overview</a>
+      <a href="/#token-embeddings">Next: token embeddings overview →</a>
+    </nav>
   </body>
 </html>

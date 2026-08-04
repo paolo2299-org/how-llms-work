@@ -8,7 +8,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='pre-training.css') }}">
   </head>
   <body>
-    <p class="ptd-top-link"><a href="/#pre-training">← Back to How LLMs Work</a></p>
+    <nav class="content-nav" aria-label="Deep dive navigation">
+      <a href="/pre-training/weight-optimisation">← Previous: weight optimisation</a>
+      <a href="/#post-training">Next: post-training overview →</a>
+    </nav>
     <main>
       <h1>Pre-training: the full training loop</h1>
 
@@ -115,9 +118,9 @@ token_ids = torch.tensor(
 
       <p>Don’t expect this to produce anything sensible! We’re using a tiny input file and a tiny model. We could in principle increase the model size and amount of training text dramatically and get a more impressive result, but we would need access to powerful hardware.</p>
 
-      <nav class="ptd-page-nav" aria-label="Pre-training page navigation">
+      <nav class="ptd-page-nav content-nav--bottom" aria-label="Deep dive navigation">
         <a href="/pre-training/weight-optimisation">← Previous: weight optimisation</a>
-        <a href="/#pre-training">Back to the Pre-training overview →</a>
+        <a href="/#post-training">Next: post-training overview →</a>
       </nav>
     </main>
   </body>

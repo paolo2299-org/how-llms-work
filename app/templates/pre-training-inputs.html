@@ -8,7 +8,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='pre-training.css') }}">
   </head>
   <body>
-    <p class="ptd-top-link"><a href="/#pre-training">← Back to How LLMs Work</a></p>
+    <nav class="content-nav" aria-label="Deep dive navigation">
+      <a href="/#pre-training">← Previous: pre-training overview</a>
+      <a href="/pre-training/model-additions">Next: model additions →</a>
+    </nav>
     <main>
       <h1>Pre-training: preparing the inputs</h1>
 
@@ -169,7 +172,7 @@
 
       <p><code>shuffle=True</code> here just randomises the order in which each input/target pair is added to a batch if we go through the text corpus multiple times. A production LLM may have a more sophisticated approach to sampling from the text corpus, but the basic idea is exactly the same.</p>
 
-      <nav class="ptd-page-nav" aria-label="Pre-training page navigation">
+      <nav class="ptd-page-nav content-nav--bottom" aria-label="Deep dive navigation">
         <a href="/#pre-training">← Pre-training overview</a>
         <a href="/pre-training/model-additions">Next: model additions →</a>
       </nav>

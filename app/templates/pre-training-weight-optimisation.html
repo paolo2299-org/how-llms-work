@@ -8,7 +8,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='pre-training.css') }}">
   </head>
   <body>
-    <p class="ptd-top-link"><a href="/#pre-training">← Back to How LLMs Work</a></p>
+    <nav class="content-nav" aria-label="Deep dive navigation">
+      <a href="/pre-training/model-additions">← Previous: model additions</a>
+      <a href="/pre-training/full-loop">Next: the full pre-training loop →</a>
+    </nav>
     <main>
       <h1>Pre-training: weight optimisation</h1>
 
@@ -197,7 +200,7 @@ print(f"Epoch {epoch + 1}: loss = {average_loss:.4f}")</code></pre>
 
       <p>This number is useful to show that optimisation is working, but for a real LLM a slightly more sophisticated training system is used, where some of our text corpus (called the <em>validation</em> <em>dataset</em>) is held back from training, and used to validate the model.</p>
 
-      <nav class="ptd-page-nav" aria-label="Pre-training page navigation">
+      <nav class="ptd-page-nav content-nav--bottom" aria-label="Deep dive navigation">
         <a href="/pre-training/model-additions">← Previous: model additions</a>
         <a href="/pre-training/full-loop">Next: the full pre-training loop →</a>
       </nav>

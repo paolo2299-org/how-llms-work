@@ -31,8 +31,27 @@ def test_index_contains_transformer_overviews(client):
 def test_index_introduction_describes_the_learning_path(client):
     html = client.get("/").get_data(as_text=True)
 
-    assert "very high level overview of all of the core concepts" in html
-    assert "No knowledge is required to learn something from this page" in html
+    assert (
+        "This page gives a high level overview of all of the core concepts that "
+        "underpin the tech behind LLMs. Each section has one or more deep dives, "
+        "where you’ll piece together the complete code for a fully functional LLM."
+        in html
+    )
+    assert (
+        "No specialist knowledge is required to read this overview page, but to get "
+        "the most out of the deep dive pages some familiarity with python and neural "
+        "networks is recommended."
+        in html
+    )
+    assert "Here are a couple of excellent resources for this:" in html
+    assert (
+        'href="https://victorzhou.com/blog/intro-to-neural-networks/">An introduction to neural networks</a>'
+        in html
+    )
+    assert (
+        'href="https://www.python.org/about/gettingstarted/">Python for beginners</a>'
+        in html
+    )
     assert (
         'href="https://github.com/paolo2299-org/how-llms-work/tree/main/code">here</a>'
         in html
@@ -67,6 +86,77 @@ def test_index_table_of_contents_links_overviews_and_detail_pages(client):
     assert 'href="#post-training"' in html
     assert 'href="/fine-tuning"' in html
     assert 'href="#summary"' in html
+
+
+@pytest.mark.parametrize(
+    ("section_id", "next_section_id", "destination"),
+    [
+        ("tokenisation", "token-embeddings", "/tokenisation"),
+        ("token-embeddings", "self-attention", "/token-embeddings"),
+        ("self-attention", "feed-forward", "/self-attention"),
+        ("feed-forward", "transformer-block", "/feed-forward"),
+        ("transformer-block", "llm-architecture", "/transformer-block"),
+        ("llm-architecture", "open-weights", "/full-llm"),
+        ("open-weights", "pre-training", "/open-weights"),
+        ("pre-training", "post-training", "/pre-training"),
+        ("post-training", "summary", "/fine-tuning"),
+    ],
+)
+def test_index_sections_end_with_their_first_deep_dive_link(
+    client, section_id, next_section_id, destination
+):
+    html = client.get("/").get_data(as_text=True)
+    section = html[html.index(f'id="{section_id}"') : html.index(f'id="{next_section_id}"')]
+
+    assert f'href="{destination}"' in section
+
+
+def test_index_summary_ends_with_a_link_to_the_previous_deep_dive(client):
+    html = client.get("/").get_data(as_text=True)
+    summary = html[html.index('id="summary"') :]
+
+    assert 'aria-label="Summary navigation"' in summary
+    assert 'href="/fine-tuning"' in summary
+
+
+@pytest.mark.parametrize(
+    ("path", "previous_destination", "next_destination"),
+    [
+        ("/tokenisation", "/#tokenisation", "/#token-embeddings"),
+        ("/token-embeddings", "/#token-embeddings", "/#self-attention"),
+        ("/self-attention", "/#self-attention", "/multi-head-attention"),
+        ("/multi-head-attention", "/self-attention", "/#feed-forward"),
+        ("/feed-forward", "/#feed-forward", "/#transformer-block"),
+        ("/transformer-block", "/#transformer-block", "/#llm-architecture"),
+        ("/full-llm", "/#llm-architecture", "/#open-weights"),
+        ("/open-weights", "/#open-weights", "/#pre-training"),
+        ("/pre-training", "/#pre-training", "/pre-training/model-additions"),
+        (
+            "/pre-training/model-additions",
+            "/pre-training",
+            "/pre-training/weight-optimisation",
+        ),
+        (
+            "/pre-training/weight-optimisation",
+            "/pre-training/model-additions",
+            "/pre-training/full-loop",
+        ),
+        (
+            "/pre-training/full-loop",
+            "/pre-training/weight-optimisation",
+            "/#post-training",
+        ),
+        ("/fine-tuning", "/#post-training", "/#summary"),
+    ],
+)
+def test_deep_dives_have_logical_navigation_at_the_top_and_bottom(
+    client, path, previous_destination, next_destination
+):
+    html = client.get(path).get_data(as_text=True)
+
+    assert html.count('aria-label="Deep dive navigation"') == 2
+    assert html.count(f'href="{previous_destination}"') >= 2
+    assert html.count(f'href="{next_destination}"') >= 2
 
 
 def test_feed_forward_page_matches_source_and_completes_placeholders(client):
@@ -507,7 +597,7 @@ def test_pre_training_full_loop_matches_checkpoint_workflow(client):
     assert "amount of training text dramatically" in html
     assert 'id="load-training-checkpoint-code"' not in html
     assert 'href="/pre-training/weight-optimisation"' in html
-    assert 'href="/#pre-training"' in html
+    assert 'href="/#post-training"' in html
 
     pretrain_source = Path("code/llm/pretrain.py").read_text(encoding="utf-8")
     generation_source = Path("code/llm/generate.py").read_text(encoding="utf-8")

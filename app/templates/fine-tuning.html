@@ -8,7 +8,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='fine-tuning.css') }}">
   </head>
   <body>
-    <p class="ift-top-link"><a href="/#post-training">← Back to How LLMs Work</a></p>
+    <nav class="content-nav" aria-label="Deep dive navigation">
+      <a href="/#post-training">← Previous: post-training overview</a>
+      <a href="/#summary">Next: summary →</a>
+    </nav>
     <main>
       <h1>Instruction fine-tuning</h1>
 
@@ -143,7 +146,10 @@
 
       <p>The reason for this is that we want the model to learn what to say after an instruction, rather than to learn to reproduce the user’s words.</p>
 
-      <p class="ift-top-link ift-bottom-link"><a href="/#post-training">← Back to the Post-training overview</a></p>
+      <nav class="content-nav content-nav--bottom" aria-label="Deep dive navigation">
+        <a href="/#post-training">← Previous: post-training overview</a>
+        <a href="/#summary">Next: summary →</a>
+      </nav>
     </main>
   </body>
 </html>

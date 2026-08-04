@@ -130,7 +130,10 @@
     </style>
   </head>
   <body>
-    <p class="ff-top-link"><a href="/#feed-forward">← Back to How LLMs Work</a></p>
+    <nav class="content-nav" aria-label="Deep dive navigation">
+      <a href="/#feed-forward">← Previous: feed-forward overview</a>
+      <a href="/#transformer-block">Next: transformer block overview →</a>
+    </nav>
     <h1>Feed-Forward Layer</h1>
 
     <p>The feed-forward layer helps an LLM to <em>learn features</em> of the text that it is trained on.</p>
@@ -258,7 +261,10 @@
 
     <p>The linear layers here (nn.Linear) contain weights (random to start with) which determine how the input vectors are projected into the larger space, and how the results of that projection are projected back to the smaller space. These weights are then optimised during training.</p>
 
-    <p class="back"><a href="/#feed-forward">← Back to How LLMs Work</a></p>
+    <nav class="content-nav content-nav--bottom" aria-label="Deep dive navigation">
+      <a href="/#feed-forward">← Previous: feed-forward overview</a>
+      <a href="/#transformer-block">Next: transformer block overview →</a>
+    </nav>
 
   </body>
 </html>

@@ -8,7 +8,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='pre-training.css') }}">
   </head>
   <body>
-    <p class="ptd-top-link"><a href="/#pre-training">← Back to How LLMs Work</a></p>
+    <nav class="content-nav" aria-label="Deep dive navigation">
+      <a href="/pre-training">← Previous: preparing the inputs</a>
+      <a href="/pre-training/weight-optimisation">Next: weight optimisation →</a>
+    </nav>
     <main>
       <h1>Pre-training: model additions</h1>
 
@@ -262,7 +265,7 @@ return self.out_proj(context)</code></pre>
 
       <p><code>0</code> selects the single prompt in the batch, and <code>-1</code> selects its final position. This lets one model implementation support both batched training and ordinary next-token generation.</p>
 
-      <nav class="ptd-page-nav" aria-label="Pre-training page navigation">
+      <nav class="ptd-page-nav content-nav--bottom" aria-label="Deep dive navigation">
         <a href="/pre-training">← Previous: preparing the inputs</a>
         <a href="/pre-training/weight-optimisation">Next: weight optimisation →</a>
       </nav>
