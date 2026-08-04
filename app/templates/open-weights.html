@@ -83,7 +83,10 @@
     </style>
   </head>
   <body>
-    <p class="ow-top-link"><a href="/#open-weights">← Back to How LLMs Work</a></p>
+    <nav class="content-nav" aria-label="Deep dive navigation">
+      <a href="/#open-weights">← Previous: open weights overview</a>
+      <a href="/#pre-training">Next: pre-training overview →</a>
+    </nav>
     <main>
       <h1>Open weights</h1>
 
@@ -195,6 +198,9 @@ token_ids = torch.<span class="ow-fn">tensor</span>(<span class="ow-fn">tokenise
       <p>The runnable example keeps all checkpoint-specific work in a separate weight-loading file. This leaves the language-model classes focused on the components we have already explored: embeddings, attention, feed-forward layers, transformer blocks, and the vocabulary projection.</p>
     </main>
 
-    <p class="back"><a href="/#open-weights">← Back to How LLMs Work</a></p>
+    <nav class="content-nav content-nav--bottom" aria-label="Deep dive navigation">
+      <a href="/#open-weights">← Previous: open weights overview</a>
+      <a href="/#pre-training">Next: pre-training overview →</a>
+    </nav>
   </body>
 </html>
