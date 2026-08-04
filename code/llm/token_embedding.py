@@ -32,6 +32,4 @@ class TokenAndPositionEmbedding(nn.Module):
         token_vectors = self.token_embedding(token_ids)
         position_vectors = self.position_embedding(positions)
 
-        # PyTorch broadcasts the position vectors across every sequence in the
-        # batch. Each sequence therefore uses positions 0, 1, 2, and so on.
         return token_vectors + position_vectors
