@@ -5,8 +5,6 @@ from functools import lru_cache
 import tiktoken
 
 
-# Using the same tokenizer for training and inference ensures that each token ID
-# always refers to the same piece of text.
 encoding = tiktoken.get_encoding("gpt2")
 
 
