@@ -461,7 +461,7 @@ values  = values.<span class="sa-fn">view</span>(num_tokens, num_heads, head_dim
       </div>
       <p class="sa-caption">These are just the blue and teal columns from Step 1, lifted out into a
         separate set of queries, keys and values per head. Each head now has its own complete
-        <code>(5, 3)</code> query/key/value set and attends completely independently.</p>
+        <code>(5, 3)</code> query/key/value set.</p>
     </div>
 
     <p>From here, every head is just the single-head attention we already know, run independently
@@ -649,7 +649,7 @@ output  = self.<span class="sa-fn">out_proj</span>(context)   <span class="sa-co
         values  = self.<span class="sa-fn">W_value</span>(x)
 
         <span class="sa-comment"># split each token's vector into (num_heads, head_dim), then</span>
-        <span class="sa-comment"># move the head axis to the front so each head is a batch</span>
+        <span class="sa-comment"># move the head axis to the front</span>
         queries = queries.<span class="sa-fn">view</span>(num_tokens, self.num_heads, self.head_dim).<span class="sa-fn">transpose</span>(0, 1)
         keys    = keys.<span class="sa-fn">view</span>(num_tokens, self.num_heads, self.head_dim).<span class="sa-fn">transpose</span>(0, 1)
         values  = values.<span class="sa-fn">view</span>(num_tokens, self.num_heads, self.head_dim).<span class="sa-fn">transpose</span>(0, 1)

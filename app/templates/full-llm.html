@@ -158,12 +158,7 @@
 
       <p>We have already encountered almost all of the components required to make an LLM. An LLM consists of tokenisation and vector embedding, followed by a series of transformer blocks. We then use a final LayerNorm and project the final resulting vector into an array of logits, with one logit for each token in the vocabulary:</p>
 
-      <figure class="llm-figure" id="full-llm-visual" aria-labelledby="llm-visual-title">
-        <figcaption id="llm-visual-title">
-          <strong>From prompt to next-token probabilities</strong>
-          <span>Each stage transforms the prompt while the sequence of token vectors flows through the model.</span>
-        </figcaption>
-
+      <figure class="llm-figure" id="full-llm-visual">
         <svg class="llm-diagram" viewBox="0 0 680 920" role="img"
           aria-labelledby="llm-diagram-title llm-diagram-desc">
           <title id="llm-diagram-title">Full language model pipeline</title>
