@@ -3,7 +3,6 @@ from functools import lru_cache
 import tiktoken
 
 
-# GPT-2's weights only make sense with the token IDs they were trained with.
 encoding = tiktoken.get_encoding("gpt2")
 
 
