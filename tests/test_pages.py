@@ -32,7 +32,21 @@ def test_index_introduction_describes_the_learning_path(client):
     html = client.get("/").get_data(as_text=True)
 
     assert "very high level overview of all of the core concepts" in html
-    assert "No knowledge is required to learn something from this page" in html
+    assert (
+        "No specialist knowledge is required to read this overview page, but to get "
+        "the most out of the deep dive pages some familiarity with python and neural "
+        "networks is recommended."
+        in html
+    )
+    assert "Here are a couple of excellent resources for this:" in html
+    assert (
+        'href="https://victorzhou.com/blog/intro-to-neural-networks/">An introduction to neural networks</a>'
+        in html
+    )
+    assert (
+        'href="https://www.python.org/about/gettingstarted/">Python for beginners</a>'
+        in html
+    )
     assert (
         'href="https://github.com/paolo2299-org/how-llms-work/tree/main/code">here</a>'
         in html
