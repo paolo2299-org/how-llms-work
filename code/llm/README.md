@@ -1,4 +1,9 @@
-# Run and pre-train the batched LLM
+# LLM for pre-training and inference
+
+This folder builds on the `llm_inference_only` example by adding the necessary 
+functionality to enable it to be used for pre-training as well as for inference.
+
+# Run and pre-train the LLM
 
 ## Install dependencies
 
@@ -28,7 +33,7 @@ The command tokenises the text, forms batches of input/target sequences, trains
 for one epoch, and saves a checkpoint to
 `weights/tiny-teaching-model.pth`.
 
-The main options can be changed directly:
+The script is configurable, for example:
 
 ```bash
 python code/llm/pretrain.py \
@@ -38,18 +43,18 @@ python code/llm/pretrain.py \
     --sequence-length 16
 ```
 
-## Generate from the small checkpoint
+## Generate next token from the small checkpoint
 
 ```bash
 python code/llm/generate.py \
     --checkpoint weights/tiny-teaching-model.pth \
-    "The lantern"
+    "The dog"
 ```
 
 The output will usually be poor because the model and input are deliberately
 small.
 
-## Generate with GPT-2 small
+## Generate next token with GPT-2 open weights
 
 Download the public GPT-2 small checkpoint by following
 [`weights/README.md`](../../weights/README.md), save it as
@@ -66,5 +71,3 @@ python code/llm/generate.py \
     --weights /path/to/gpt2-small.pth \
     "The dog fetched the"
 ```
-
-See `ADDITIONS.md` for a concise comparison with the inference-only version.
