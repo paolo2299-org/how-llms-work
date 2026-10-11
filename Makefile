@@ -14,7 +14,7 @@ run:
 	$(COMPOSE) up --build how-llms-work
 
 test:
-	$(COMPOSE) run --rm test
+	$(COMPOSE) run --build --rm test
 
 down:
 	$(COMPOSE) down --remove-orphans
