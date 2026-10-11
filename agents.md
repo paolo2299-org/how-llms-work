@@ -66,9 +66,11 @@ GitHub Actions (`.github/workflows/deploy.yml`):
 1. Run tests
 2. Build Docker image
 3. Push to GHCR (`ghcr.io/...`)
-4. SSH deploy to production VM using `compose.prod.yml`
 
-Production uses gunicorn with 4 workers × 2 threads. Secrets live in GitHub Actions secrets/vars.
+The workflow stops after publishing and has no SSH access to production. The VPS
+independently pulls the public package and deploys changed `main` digests from a
+root-owned Compose definition. Production uses gunicorn with 4 workers × 2
+threads and mounts the GloVe data from `/srv/how-llms-work/data`.
 
 ## Key Constraints
 
