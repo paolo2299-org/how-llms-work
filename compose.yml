@@ -1,3 +1,5 @@
+name: how-llms-work-dev
+
 services:
   how-llms-work:
     image: ${IMAGE_NAME:-how-llms-work}:${IMAGE_TAG:-main}
