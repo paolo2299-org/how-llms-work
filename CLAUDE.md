@@ -2,14 +2,15 @@
 
 Interactive educational web app demonstrating key in LLM concepts and how LLMs work. Flask backend, vanilla JS frontend, Three.js for 3D visualization.
 
-See [agents.md](agents.md) for architecture details, API contracts, testing patterns, and deployment notes.
+See [AGENTS.md](AGENTS.md) for architecture details, API contracts, testing patterns, and development lifecycle instructions.
 
 ## Quick Commands
 
 ```bash
-make dev     # Start dev server on port 8080 (Docker, hot reload)
-make test    # Run test suite (pytest in Docker)
-make down    # Stop containers
+make setup      # Create this worktree's Python 3.12 environment
+make dev-start  # Start a persistent server on its allocated loopback/Tailscale port
+make test       # Run pytest in this worktree's virtualenv
+make dev-stop   # Stop only this worktree's server
 ```
 
 ## Key Files
@@ -21,4 +22,5 @@ make down    # Stop containers
 
 ## Setup
 
-Copy `.env.example` to `.env`. Set `GLOVE_PATH` to your local `glove.6B.50d.txt`.
+See [local development](docs/local-development.md). A `.env` file is optional.
+Use `DEV_GLOVE_PATH` to select a host vector file; shared vectors are read-only input.

@@ -5,34 +5,27 @@ concepts.
 
 ## Local development
 
-Copy the example environment, make sure the GloVe data exists under `data/`,
-and start the development container:
+Development and CI use Python 3.12 with uv. Docker is used for production images
+and deployment.
 
 ```bash
-cp .env.example .env
-make dev
+make worktree-create NAME=example-task
+# cd to the printed path
+make setup
+make dev-start
+make test
 ```
 
-The app is available at `http://localhost:18083`. Development always uses the
-`how-llms-work-dev` Compose project and publishes only on the host loopback
-interface, keeping its container, network, and configuration separate from
-production. Run tests with `make test` and stop the development containers with
-`make down`.
+The server reports its allocated loopback or Tailscale URL and stays running
+across chat endings. GloVe vectors are read from the worktree/main checkout's
+`data/`, or from the existing shared VPS vector file. Use `DEV_GLOVE_PATH` to
+select a different host file. The shared file is never modified or copied into
+the worktree. Without vectors, page/tokenisation development works with
+embeddings unavailable. Tests use mocked vectors.
 
-On the VPS, the existing GloVe data can be reused through a read-only mount by
-setting this in `.env`:
-
-```bash
-DEV_DATA_DIR=/srv/how-llms-work/data
-```
-
-From a Mac, forward the development port and open `http://localhost:18083`:
-
-```bash
-ssh -N -L 18083:127.0.0.1:18083 deploy@hetzner
-```
-
-Set `DEV_PORT` in `.env` to override the default port when necessary.
+When finished testing, run `make worktree-finish NAME=example-task` from a
+retained checkout. It refuses unfinished/unpublished work and retains the
+branch. See [local development](docs/local-development.md).
 
 ## Publishing images
 
