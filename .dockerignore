@@ -8,3 +8,4 @@ data/
 .dev
 .venv
 .mypy_cache
+.agents

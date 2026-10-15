@@ -47,6 +47,9 @@ The app requires `glove.6B.50d.txt` at the path set by `GLOVE_PATH` (default: `/
 
 ## Development environments
 
+For plain-language preview/start/stop/cleanup requests, use this repository's
+`.agents/skills/dev-app/SKILL.md`. It is project-scoped on both the Mac and VPS.
+
 Development and CI use a worktree-local Python 3.12 environment with uv. Docker
 is reserved for production images and deployment. No production credentials are
 needed for setup or the tests.

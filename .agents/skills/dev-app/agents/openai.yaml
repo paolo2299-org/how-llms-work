@@ -1,0 +1,7 @@
+interface:
+  display_name: "How LLMs Work Development"
+  short_description: "Run an app preview or finish its development environment"
+  default_prompt: "Use $dev-app to run How LLMs Work's app for me."
+
+policy:
+  allow_implicit_invocation: true
