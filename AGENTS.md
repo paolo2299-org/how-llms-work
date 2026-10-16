@@ -140,3 +140,10 @@ threads and mounts the GloVe data from `/srv/how-llms-work/data`.
 
 - **No frontend build step** — JS files are loaded directly as ES modules via importmap in `index.html`. Do not introduce a bundler without updating the template.
 - **Python 3.12** — specified in the Dockerfile base image.
+
+## Private native-development configuration
+
+Use the project-specific host config in `docs/local-development.md` for reusable
+credentials/settings. `make dev-config` reports names only. Never print secrets,
+copy an entire production env, or delete host config when finishing a worktree.
+Production-key provisioning requires the user's specific authorisation.

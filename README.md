@@ -33,3 +33,7 @@ Pushing to `main` runs `.github/workflows/deploy.yml`, which publishes a
 versioned container image to GHCR. The VPS independently detects and deploys a
 changed `main` digest using the root-owned configuration in the
 `hetzner-vm-setup` repository; GitHub Actions has no SSH access to production.
+
+Private native-development settings can be shared across worktrees without
+committing secrets: see [private development configuration](docs/local-development.md#private-configuration-shared-by-worktrees).
+Use `make dev-config` to validate the project's host config without printing values.
